@@ -1,0 +1,17 @@
+{
+  "luci-app-tailscale-derp": {
+    "description": "Grant UCI and ubus access to DERP relay manager",
+    "read": {
+      "ubus": {
+        "go-tailscale-derp": ["get_status", "get_version"]
+      },
+      "uci": ["go-tailscale-derp"]
+    },
+    "write": {
+      "ubus": {
+        "go-tailscale-derp": ["start", "stop", "restart", "reload_config"]
+      },
+      "uci": ["go-tailscale-derp"]
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "admin/services/derp": {
+    "title": "DERP Relay",
+    "order": 90,
+    "action": {
+      "type": "view",
+      "path": "tailscale-derp"
+    },
+    "children": {
+      "status": {
+        "title": "Status",
+        "order": 1,
+        "action": {
+          "type": "view",
+          "path": "tailscale-derp-status"
+        }
+      }
+    }
+  }
+}
