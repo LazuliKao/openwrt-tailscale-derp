@@ -48,7 +48,7 @@ function normalizeStatus(data) {
         listen: data.listen || 'Not configured',
         stun: data.stun ? 'Yes' : 'No',
         mesh: data.mesh ? 'Yes' : 'No',
-        metrics: data.metrics || ':9911',
+        metrics: data.metrics || '127.0.0.1:9911',
         health: data.health || ':9912',
         error: data.error || ''
     };

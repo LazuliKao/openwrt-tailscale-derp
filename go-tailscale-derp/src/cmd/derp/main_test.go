@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -32,8 +31,8 @@ func TestBuildConfig_DefaultsWithoutUCI(t *testing.T) {
 	if !cfg.STUN {
 		t.Fatal("expected STUN enabled by default")
 	}
-	if cfg.OpsAddr != ":9911" {
-		t.Fatalf("expected default ops addr :9911, got %q", cfg.OpsAddr)
+	if cfg.OpsAddr != "127.0.0.1:9911" {
+		t.Fatalf("expected default ops addr 127.0.0.1:9911, got %q", cfg.OpsAddr)
 	}
 	if cfg.Health != ":9912" {
 		t.Fatalf("expected default health addr :9912, got %q", cfg.Health)
@@ -53,7 +52,7 @@ func TestBuildConfig_AppliesUCIConfig(t *testing.T) {
 		},
 		"mesh": {
 			"enabled": {"1"},
-			"peers":   {"peer1:1234", " peer2:5678 "},
+			"key":     {"shared-mesh-key"},
 		},
 		"ops": {
 			"metrics": {":9001"},
@@ -77,8 +76,8 @@ func TestBuildConfig_AppliesUCIConfig(t *testing.T) {
 	if !cfg.Mesh {
 		t.Fatal("expected mesh enabled from UCI")
 	}
-	if !reflect.DeepEqual(cfg.Peers, []string{"peer1:1234", "peer2:5678"}) {
-		t.Fatalf("unexpected peers: %#v", cfg.Peers)
+	if cfg.MeshKey != "shared-mesh-key" {
+		t.Fatalf("unexpected mesh key: %q", cfg.MeshKey)
 	}
 	if cfg.OpsAddr != ":9001" || cfg.Health != ":9002" {
 		t.Fatalf("unexpected ops config: %+v", cfg)
@@ -107,7 +106,7 @@ func TestBuildConfig_FlagOverridesUCI(t *testing.T) {
 		"--listen", ":5555",
 		"--stun",
 		"--mesh",
-		"--peers", "peer3:3333, peer4:4444",
+		"--mesh-key", "override-mesh-key",
 		"--ops", ":9100",
 		"--health", ":9101",
 	}
@@ -122,8 +121,8 @@ func TestBuildConfig_FlagOverridesUCI(t *testing.T) {
 	if !cfg.Enabled || cfg.Listen != ":5555" || !cfg.STUN || !cfg.Mesh {
 		t.Fatalf("flag overrides were not applied: %+v", cfg)
 	}
-	if !reflect.DeepEqual(cfg.Peers, []string{"peer3:3333", "peer4:4444"}) {
-		t.Fatalf("unexpected overridden peers: %#v", cfg.Peers)
+	if cfg.MeshKey != "override-mesh-key" {
+		t.Fatalf("unexpected overridden mesh key: %q", cfg.MeshKey)
 	}
 	if cfg.OpsAddr != ":9100" || cfg.Health != ":9101" {
 		t.Fatalf("unexpected overridden ops values: %+v", cfg)
@@ -198,7 +197,7 @@ func TestStatusFromConfig_RecoversAfterError(t *testing.T) {
 		Listen:  ":3478",
 		STUN:    true,
 		Mesh:    true,
-		OpsAddr: ":9911",
+		OpsAddr: "127.0.0.1:9911",
 		Health:  ":9912",
 	}, state)
 
@@ -215,7 +214,7 @@ func TestValidateConfig_Valid(t *testing.T) {
 		Enabled: true,
 		Listen:  ":3478",
 		STUN:    true,
-		OpsAddr: ":9911",
+		OpsAddr: "127.0.0.1:9911",
 		Health:  ":9912",
 	}
 	if err := validateConfig(cfg); err != nil {
@@ -236,26 +235,27 @@ func TestValidateConfig_EmptyListen(t *testing.T) {
 	}
 }
 
-func TestValidateConfig_MeshWithoutPeers(t *testing.T) {
+func TestValidateConfig_MeshWithoutKey(t *testing.T) {
 	cfg := &Config{
-		Listen: ":3478",
-		Mesh:   true,
-		Peers:  nil,
+		Listen:  ":3478",
+		Mesh:    true,
+		OpsAddr: "127.0.0.1:9911",
 	}
 	err := validateConfig(cfg)
 	if err == nil {
-		t.Fatal("expected error for mesh without peers")
+		t.Fatal("expected error for mesh without key")
 	}
-	if !strings.Contains(err.Error(), "mesh requires at least one peer") {
+	if !strings.Contains(err.Error(), "mesh requires a shared key") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
-func TestValidateConfig_MeshWithPeers(t *testing.T) {
+func TestValidateConfig_MeshWithKey(t *testing.T) {
 	cfg := &Config{
-		Listen: ":3478",
-		Mesh:   true,
-		Peers:  []string{"peer1", "peer2"},
+		Listen:  ":3478",
+		Mesh:    true,
+		MeshKey: "shared-mesh-key",
+		OpsAddr: "127.0.0.1:9911",
 	}
 	if err := validateConfig(cfg); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
@@ -297,9 +297,38 @@ func TestValidateConfig_BothTLSFiles(t *testing.T) {
 		Listen:   ":3478",
 		CertFile: "/path/to/cert.pem",
 		KeyFile:  "/path/to/key.pem",
+		OpsAddr:  "127.0.0.1:9911",
 	}
 	if err := validateConfig(cfg); err != nil {
 		t.Fatalf("expected no error, got: %v", err)
+	}
+}
+
+func TestValidateConfig_LoopbackOpsAddressAllowed(t *testing.T) {
+	cfg := &Config{
+		Listen:  ":3478",
+		OpsAddr: "127.0.0.1:9911",
+		Health:  ":9912",
+	}
+
+	if err := validateConfig(cfg); err != nil {
+		t.Fatalf("expected loopback ops address to be allowed, got: %v", err)
+	}
+}
+
+func TestValidateConfig_NonLoopbackOpsAddressRejected(t *testing.T) {
+	cfg := &Config{
+		Listen:  ":3478",
+		OpsAddr: "10.0.0.5:9911",
+		Health:  ":9912",
+	}
+
+	err := validateConfig(cfg)
+	if err == nil {
+		t.Fatal("expected non-loopback ops address to be rejected")
+	}
+	if !strings.Contains(err.Error(), "ops must bind to loopback only") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
@@ -549,8 +578,8 @@ func TestStatusEndpoint(t *testing.T) {
 	if result["stun"] != true {
 		t.Fatalf("expected stun true, got %v", result["stun"])
 	}
-	if result["metrics"] != ":9911" {
-		t.Fatalf("expected metrics :9911, got %v", result["metrics"])
+	if result["metrics"] != "127.0.0.1:9911" {
+		t.Fatalf("expected metrics 127.0.0.1:9911, got %v", result["metrics"])
 	}
 	if result["health"] != ":9912" {
 		t.Fatalf("expected health :9912, got %v", result["health"])
@@ -562,7 +591,7 @@ func TestStatusEndpoint_ServiceUnavailable(t *testing.T) {
 		Listen:  ":3478",
 		STUN:    false,
 		Mesh:    false,
-		OpsAddr: ":9911",
+		OpsAddr: "127.0.0.1:9911",
 		Health:  ":9912",
 	}
 	state := &runtimeState{}
@@ -644,15 +673,12 @@ func TestVersionEndpoint(t *testing.T) {
 
 func TestConfig_PeerParsing(t *testing.T) {
 	cfg := &Config{
-		Listen: ":3478",
-		Mesh:   true,
-		Peers:  []string{"peer1.example.com", "peer2.example.com"},
+		Listen:  ":3478",
+		Mesh:    true,
+		MeshKey: "shared-mesh-key",
 	}
-	if len(cfg.Peers) != 2 {
-		t.Fatalf("expected 2 peers, got %d", len(cfg.Peers))
-	}
-	if cfg.Peers[0] != "peer1.example.com" {
-		t.Fatalf("expected peer1.example.com, got %s", cfg.Peers[0])
+	if cfg.MeshKey != "shared-mesh-key" {
+		t.Fatalf("expected shared-mesh-key, got %s", cfg.MeshKey)
 	}
 }
 
@@ -661,7 +687,7 @@ func TestConfig_DefaultValues(t *testing.T) {
 		Enabled: true,
 		Listen:  ":3478",
 		STUN:    true,
-		OpsAddr: ":9911",
+		OpsAddr: "127.0.0.1:9911",
 		Health:  ":9912",
 	}
 	if !cfg.Enabled {

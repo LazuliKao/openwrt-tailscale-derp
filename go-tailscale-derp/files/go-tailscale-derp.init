@@ -8,20 +8,8 @@ USE_PROCD=1
 PROG=/usr/bin/go-tailscale-derp
 CONFIG_FILE=/etc/config/go-tailscale-derp
 
-append_mesh_peer() {
-    local peer="$1"
-
-    [ -n "$peer" ] || return 0
-
-    if [ -n "$peers_csv" ]; then
-        peers_csv="${peers_csv},${peer}"
-    else
-        peers_csv="$peer"
-    fi
-}
-
 start_service() {
-    local enabled listen stun certfile keyfile mesh metrics health peers_csv
+    local enabled listen stun certfile keyfile mesh mesh_key metrics health
 
     config_load go-tailscale-derp
 
@@ -33,7 +21,8 @@ start_service() {
     config_get certfile tls certfile ''
     config_get keyfile tls keyfile ''
     config_get mesh mesh enabled '0'
-    config_get metrics ops metrics ':9911'
+	config_get mesh_key mesh key ''
+	config_get metrics ops metrics '127.0.0.1:9911'
     config_get health ops health ':9912'
 
     procd_open_instance
@@ -49,8 +38,7 @@ start_service() {
 
     if [ "$mesh" = "1" ]; then
         procd_append_param command --mesh
-        config_list_foreach mesh peers append_mesh_peer
-        [ -n "$peers_csv" ] && procd_append_param command --peers "$peers_csv"
+        [ -n "$mesh_key" ] && procd_append_param command --mesh-key "$mesh_key"
     fi
 
     procd_append_param command --ops "$metrics"

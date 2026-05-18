@@ -21,16 +21,25 @@ function validateSocketAddress(title, value) {
     return true;
 }
 
-function validatePeerList(sectionId, value) {
-    var i;
+function isLoopbackSocketAddress(value) {
+    return /^(:\d+|127\.0\.0\.1:\d+|localhost:\d+|\[::1\]:\d+)$/.test(value);
+}
 
-    if (!value || !value.length)
-        return true;
+function validateLoopbackSocketAddress(title, value) {
+    if (!value)
+        return title + ' is required';
 
-    for (i = 0; i < value.length; i++) {
-        if (!isSocketAddress(value[i]))
-            return 'Mesh peers must be in :port or host:port format';
-    }
+    if (!isLoopbackSocketAddress(value))
+        return title + ' must stay on loopback (:port, 127.0.0.1:port, localhost:port, or [::1]:port)';
+
+    return true;
+}
+
+function validateMeshKey(sectionId, value) {
+    var enabled = this.section.formvalue(sectionId, 'enabled');
+
+    if ((enabled === '1' || enabled === true) && !value)
+        return 'Mesh key is required when mesh mode is enabled';
 
     return true;
 }
@@ -69,7 +78,7 @@ function captureExpectedStatus(map) {
         listen: optionFormValue(map, 'global', 'listen', ':3478'),
         stun: boolFormValue(map, 'global', 'stun', true),
         mesh: boolFormValue(map, 'mesh', 'enabled', false),
-        metrics: optionFormValue(map, 'ops', 'metrics', ':9911'),
+        metrics: optionFormValue(map, 'ops', 'metrics', '127.0.0.1:9911'),
         health: optionFormValue(map, 'ops', 'health', ':9912')
     };
 }
@@ -175,11 +184,12 @@ return view.extend({
         o.default = '0';
         o.rmempty = false;
 
-        o = s.option(form.DynamicList, 'peers', 'Mesh Peers',
-            'List of peer DERP server addresses');
+        o = s.option(form.Value, 'key', 'Mesh Shared Key',
+            'Shared mesh key passed to the DERP server when mesh mode is enabled');
         o.rmempty = true;
         o.depends('enabled', '1');
-        o.validate = validatePeerList;
+        o.password = true;
+        o.validate = validateMeshKey;
 
         // --- Ops Section ---
         s = m.section(form.TypedSection, 'ops', 'Operations');
@@ -187,11 +197,11 @@ return view.extend({
 
         o = s.option(form.Value, 'metrics', 'Metrics Port',
             'Port for Prometheus metrics endpoint');
-        o.default = ':9911';
+        o.default = '127.0.0.1:9911';
         o.rmempty = false;
-        o.placeholder = ':9911';
+        o.placeholder = '127.0.0.1:9911';
         o.validate = function(sectionId, value) {
-            return validateSocketAddress('Metrics address', value);
+            return validateLoopbackSocketAddress('Metrics address', value);
         };
 
         o = s.option(form.Value, 'health', 'Health Port',

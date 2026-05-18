@@ -3,7 +3,19 @@
 . /usr/share/libubox/jshn.sh
 
 CONFIG_NAME=go-tailscale-derp
-DEFAULT_OPS_ADDR=:9911
+DEFAULT_OPS_ADDR=127.0.0.1:9911
+SERVICE_SCRIPT=/etc/init.d/go-tailscale-derp
+
+is_loopback_ops_addr() {
+    case "$1" in
+        :[0-9]*|127.0.0.1:[0-9]*|localhost:[0-9]*|\[::1\]:[0-9]*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
 
 ops_addr() {
     local configured
@@ -11,17 +23,30 @@ ops_addr() {
     configured="$(uci -q get ${CONFIG_NAME}.ops.metrics)"
     [ -n "$configured" ] || configured="$DEFAULT_OPS_ADDR"
 
+    is_loopback_ops_addr "$configured" || configured="$DEFAULT_OPS_ADDR"
+
     case "$configured" in
         :*)
             echo "http://127.0.0.1${configured}"
-            ;;
-        http://*|https://*)
-            echo "$configured"
             ;;
         *)
             echo "http://${configured}"
             ;;
     esac
+}
+
+service_action() {
+    local action="$1"
+    local output
+
+    output="$($SERVICE_SCRIPT "$action" 2>&1)" || {
+        output="$(printf '%s' "$output" | sed 's/"/\\"/g')"
+        [ -n "$output" ] || output="service action failed"
+        echo "{\"action\":\"${action}\",\"result\":\"error\",\"error\":\"${output}\"}"
+        return 1
+    }
+
+    echo "{\"action\":\"${action}\",\"result\":\"ok\"}"
 }
 
 fetch_json() {
@@ -61,21 +86,18 @@ rpc_read() {
 }
 
 rpc_write() {
-    local base_url
-    base_url="$(ops_addr)"
-
     case "$1" in
         start)
-            fetch_json "${base_url}/ops?action=start" POST
+            service_action start
             ;;
         stop)
-            fetch_json "${base_url}/ops?action=stop" POST
+            service_action stop
             ;;
         restart)
-            fetch_json "${base_url}/ops?action=restart" POST
+            service_action restart
             ;;
         reload_config)
-            fetch_json "${base_url}/ops?action=reload" POST
+            service_action reload
             ;;
         *)
             echo '{"error":"unknown method"}'

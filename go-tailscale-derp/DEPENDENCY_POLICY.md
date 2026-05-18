@@ -22,6 +22,6 @@
 
 - DERP server starts without panic
 - STUN responds on the configured listener
-- Mesh peers still connect when mesh is enabled
+- Mesh key handling still works when mesh mode is enabled
 - TLS cert/key handling still works
 - Health and metrics endpoints still respond

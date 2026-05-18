@@ -36,7 +36,7 @@ type Config struct {
 	CertFile string
 	KeyFile  string
 	Mesh     bool
-	Peers    []string
+	MeshKey  string
 	OpsAddr  string
 	Health   string
 }
@@ -97,7 +97,7 @@ type configFlags struct {
 	CertFile   *string
 	KeyFile    *string
 	Mesh       *bool
-	Peers      *string
+	MeshKey    *string
 	OpsAddr    *string
 	HealthAddr *string
 	ConfigPath *string
@@ -113,6 +113,28 @@ var execServiceAction actionExecutor = runServiceAction
 
 const serviceScriptPath = "/etc/init.d/go-tailscale-derp"
 
+func isLoopbackOpsAddress(value string) bool {
+	trimmed := strings.TrimSpace(value)
+
+	if trimmed == "" {
+		return false
+	}
+
+	if strings.HasPrefix(trimmed, ":") {
+		_, err := strconv.Atoi(strings.TrimPrefix(trimmed, ":"))
+		return err == nil
+	}
+
+	for _, prefix := range []string{"127.0.0.1:", "localhost:", "[::1]:"} {
+		if strings.HasPrefix(trimmed, prefix) {
+			_, err := strconv.Atoi(strings.TrimPrefix(trimmed, prefix))
+			return err == nil
+		}
+	}
+
+	return false
+}
+
 func newFlagSet(args []string) (*flag.FlagSet, *configFlags, error) {
 	fs := flag.NewFlagSet("go-tailscale-derp", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
@@ -124,7 +146,7 @@ func newFlagSet(args []string) (*flag.FlagSet, *configFlags, error) {
 		CertFile:   fs.String("certfile", "", "TLS certificate file"),
 		KeyFile:    fs.String("keyfile", "", "TLS key file"),
 		Mesh:       fs.Bool("mesh", false, "enable mesh mode"),
-		Peers:      fs.String("peers", "", "comma-separated mesh peers"),
+		MeshKey:    fs.String("mesh-key", "", "shared mesh key"),
 		OpsAddr:    fs.String("ops", "", "ops server address"),
 		HealthAddr: fs.String("health", "", "health server address"),
 		ConfigPath: fs.String("config", defaultConfigPath(), "UCI config path"),
@@ -154,27 +176,6 @@ func parseBoolValue(value string) (bool, error) {
 	default:
 		return false, fmt.Errorf("invalid boolean value %q", value)
 	}
-}
-
-func splitPeers(raw string) []string {
-	if raw == "" {
-		return nil
-	}
-
-	parts := strings.Split(raw, ",")
-	peers := make([]string, 0, len(parts))
-	for _, part := range parts {
-		peer := strings.TrimSpace(part)
-		if peer != "" {
-			peers = append(peers, peer)
-		}
-	}
-
-	if len(peers) == 0 {
-		return nil
-	}
-
-	return peers
 }
 
 func parseUCIConfig(path string) (*uciConfig, error) {
@@ -260,7 +261,7 @@ func buildConfig(args []string, openFile func(string) (*uciConfig, error)) (*Con
 		Enabled: false,
 		Listen:  ":3478",
 		STUN:    true,
-		OpsAddr: ":9911",
+		OpsAddr: "127.0.0.1:9911",
 		Health:  ":9912",
 	}
 
@@ -322,8 +323,8 @@ func applyUCIConfig(cfg *Config, parsed *uciConfig) error {
 		cfg.Mesh = parsedBool
 	}
 
-	if peers := parsed.list("mesh", "peers"); len(peers) > 0 {
-		cfg.Peers = compactStrings(peers)
+	if value, ok := parsed.first("mesh", "key"); ok {
+		cfg.MeshKey = strings.TrimSpace(value)
 	}
 
 	if value, ok := parsed.first("ops", "metrics"); ok && value != "" {
@@ -352,37 +353,6 @@ func (u *uciConfig) first(section, key string) (string, bool) {
 	return values[0], true
 }
 
-func (u *uciConfig) list(section, key string) []string {
-	if u == nil {
-		return nil
-	}
-	sectionValues, ok := u.values[section]
-	if !ok {
-		return nil
-	}
-	values := sectionValues[key]
-	if len(values) == 0 {
-		return nil
-	}
-	copyValues := make([]string, len(values))
-	copy(copyValues, values)
-	return copyValues
-}
-
-func compactStrings(values []string) []string {
-	compacted := make([]string, 0, len(values))
-	for _, value := range values {
-		trimmed := strings.TrimSpace(value)
-		if trimmed != "" {
-			compacted = append(compacted, trimmed)
-		}
-	}
-	if len(compacted) == 0 {
-		return nil
-	}
-	return compacted
-}
-
 func applyFlagOverrides(cfg *Config, fs *flag.FlagSet, flags *configFlags) {
 	if boolFlagProvided(fs, "enabled") {
 		cfg.Enabled = *flags.Enabled
@@ -402,8 +372,8 @@ func applyFlagOverrides(cfg *Config, fs *flag.FlagSet, flags *configFlags) {
 	if boolFlagProvided(fs, "mesh") {
 		cfg.Mesh = *flags.Mesh
 	}
-	if stringFlagProvided(fs, "peers") {
-		cfg.Peers = splitPeers(*flags.Peers)
+	if stringFlagProvided(fs, "mesh-key") {
+		cfg.MeshKey = strings.TrimSpace(*flags.MeshKey)
 	}
 	if stringFlagProvided(fs, "ops") {
 		cfg.OpsAddr = strings.TrimSpace(*flags.OpsAddr)
@@ -421,8 +391,8 @@ func validateConfig(cfg *Config) error {
 	if cfg.Listen == "" {
 		return fmt.Errorf("listen address is required")
 	}
-	if cfg.Mesh && len(cfg.Peers) == 0 {
-		return fmt.Errorf("mesh requires at least one peer")
+	if cfg.Mesh && cfg.MeshKey == "" {
+		return fmt.Errorf("mesh requires a shared key")
 	}
 	if cfg.CertFile != "" && cfg.KeyFile == "" {
 		return fmt.Errorf("certfile requires keyfile")
@@ -435,6 +405,9 @@ func validateConfig(cfg *Config) error {
 	}
 	if _, err := strconv.Atoi(strings.TrimPrefix(cfg.OpsAddr, ":")); strings.HasPrefix(cfg.OpsAddr, ":") && err != nil {
 		return fmt.Errorf("ops must use a valid port")
+	}
+	if !isLoopbackOpsAddress(cfg.OpsAddr) {
+		return fmt.Errorf("ops must bind to loopback only")
 	}
 	if _, err := strconv.Atoi(strings.TrimPrefix(cfg.Health, ":")); strings.HasPrefix(cfg.Health, ":") && err != nil {
 		return fmt.Errorf("health must use a valid port")
@@ -453,7 +426,7 @@ func startDERP(cfg *Config, state *runtimeState) error {
 
 	server := derp.NewServer(privateKey, log.Printf)
 	if cfg.Mesh {
-		server.SetMeshKey(strings.Join(cfg.Peers, ","))
+		server.SetMeshKey(cfg.MeshKey)
 	}
 	publishDERPMetrics(server)
 
@@ -584,32 +557,31 @@ func handleOpsWithExecutor(executor actionExecutor) http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeJSON(w, http.StatusMethodNotAllowed, ActionResult{Error: "POST required", Result: "error"})
-		return
-	}
-	action := r.URL.Query().Get("action")
-	if !allowedAction(action) {
-		writeJSON(w, http.StatusBadRequest, ActionResult{Action: action, Result: "error", Error: "unknown action"})
-		return
-	}
-	if err := executor(action); err != nil {
-		status := http.StatusBadGateway
-		if errors.Is(err, exec.ErrNotFound) {
-			status = http.StatusServiceUnavailable
+		if r.Method != http.MethodPost {
+			writeJSON(w, http.StatusMethodNotAllowed, ActionResult{Error: "POST required", Result: "error"})
+			return
 		}
-		writeJSON(w, status, ActionResult{Action: action, Result: "error", Error: err.Error()})
-		return
-	}
+		action := r.URL.Query().Get("action")
+		if !allowedAction(action) {
+			writeJSON(w, http.StatusBadRequest, ActionResult{Action: action, Result: "error", Error: "unknown action"})
+			return
+		}
+		if err := executor(action); err != nil {
+			status := http.StatusBadGateway
+			if errors.Is(err, exec.ErrNotFound) {
+				status = http.StatusServiceUnavailable
+			}
+			writeJSON(w, status, ActionResult{Action: action, Result: "error", Error: err.Error()})
+			return
+		}
 
-	writeJSON(w, http.StatusOK, ActionResult{Action: action, Result: "ok"})
-}
+		writeJSON(w, http.StatusOK, ActionResult{Action: action, Result: "ok"})
+	}
 }
 
 func handleOps(w http.ResponseWriter, r *http.Request) {
 	handleOpsWithExecutor(execServiceAction)(w, r)
 }
-
 
 func statusFromConfig(cfg *Config, state *runtimeState) Status {
 	running := true
@@ -619,7 +591,7 @@ func statusFromConfig(cfg *Config, state *runtimeState) Status {
 	}
 	metricsAddr := cfg.OpsAddr
 	if metricsAddr == "" {
-		metricsAddr = ":9911"
+		metricsAddr = "127.0.0.1:9911"
 	}
 	healthAddr := cfg.Health
 	if healthAddr == "" {
