@@ -1,0 +1,27 @@
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go build artifacts
+*.test
+*.out
+go-tailscale-derp/src/derp.exe
+
+# OpenWrt build artifacts
+*.ipk
+*.apk
+feeds/
+staging_dir/
+build_dir/
+tmp/
+logs/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
