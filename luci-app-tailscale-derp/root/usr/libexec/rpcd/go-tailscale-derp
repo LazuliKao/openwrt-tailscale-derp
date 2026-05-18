@@ -1,0 +1,110 @@
+#!/bin/sh
+
+. /usr/share/libubox/jshn.sh
+
+CONFIG_NAME=go-tailscale-derp
+DEFAULT_OPS_ADDR=:9911
+
+ops_addr() {
+    local configured
+
+    configured="$(uci -q get ${CONFIG_NAME}.ops.metrics)"
+    [ -n "$configured" ] || configured="$DEFAULT_OPS_ADDR"
+
+    case "$configured" in
+        :*)
+            echo "http://127.0.0.1${configured}"
+            ;;
+        http://*|https://*)
+            echo "$configured"
+            ;;
+        *)
+            echo "http://${configured}"
+            ;;
+    esac
+}
+
+fetch_json() {
+    local url="$1"
+    local method="${2:-GET}"
+
+    if [ "$method" = "POST" ]; then
+        wget -q -O - --post-data='' "$url" 2>/dev/null || {
+            echo '{"error":"backend unavailable"}'
+            return 1
+        }
+        return 0
+    fi
+
+    wget -q -O - "$url" 2>/dev/null || {
+        echo '{"error":"backend unavailable"}'
+        return 1
+    }
+}
+
+rpc_read() {
+    local base_url
+    base_url="$(ops_addr)"
+
+    case "$1" in
+        get_status)
+            fetch_json "${base_url}/status"
+            ;;
+        get_version)
+            fetch_json "${base_url}/version"
+            ;;
+        *)
+            echo '{"error":"unknown method"}'
+            exit 1
+            ;;
+    esac
+}
+
+rpc_write() {
+    local base_url
+    base_url="$(ops_addr)"
+
+    case "$1" in
+        start)
+            fetch_json "${base_url}/ops?action=start" POST
+            ;;
+        stop)
+            fetch_json "${base_url}/ops?action=stop" POST
+            ;;
+        restart)
+            fetch_json "${base_url}/ops?action=restart" POST
+            ;;
+        reload_config)
+            fetch_json "${base_url}/ops?action=reload" POST
+            ;;
+        *)
+            echo '{"error":"unknown method"}'
+            exit 1
+            ;;
+    esac
+}
+
+case "$1" in
+    list)
+        echo '{"get_status":{},"get_version":{},"start":{},"stop":{},"restart":{},"reload_config":{}}'
+        ;;
+    call)
+        method="$2"
+        case "$method" in
+            get_status|get_version)
+                rpc_read "$method"
+                ;;
+            start|stop|restart|reload_config)
+                rpc_write "$method"
+                ;;
+            *)
+                echo '{"error":"unknown method"}'
+                exit 1
+                ;;
+        esac
+        ;;
+    *)
+        echo '{"error":"unknown command"}'
+        exit 1
+        ;;
+esac
