@@ -2,13 +2,13 @@
 
 . /usr/share/libubox/jshn.sh
 
-CONFIG_NAME=go-tailscale-derp
+CONFIG_NAME=tailscale-derp
 DEFAULT_OPS_ADDR=127.0.0.1:9911
-SERVICE_SCRIPT=/etc/init.d/go-tailscale-derp
+SERVICE_SCRIPT=/etc/init.d/tailscale-derp
 
 is_loopback_ops_addr() {
     case "$1" in
-        :[0-9]*|127.0.0.1:[0-9]*|localhost:[0-9]*|\[::1\]:[0-9]*)
+        127.0.0.1:[0-9]*|localhost:[0-9]*|\[::1\]:[0-9]*)
             return 0
             ;;
         *)
