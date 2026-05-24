@@ -57,10 +57,10 @@ msgstr ""
 msgid "Enable DERP mesh mode"
 msgstr ""
 
-msgid "Mesh Peers"
+msgid "Mesh Shared Key"
 msgstr ""
 
-msgid "List of peer DERP server addresses"
+msgid "Shared mesh key passed to the DERP server when mesh mode is enabled"
 msgstr ""
 
 msgid "Operations"
@@ -81,7 +81,34 @@ msgstr ""
 msgid "Tailscale DERP Relay Status"
 msgstr ""
 
-msgid "Control"
+msgid "Tailscale DERP Status"
+msgstr ""
+
+msgid "DERP Server Status"
+msgstr ""
+
+msgid "Service Status"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "STUN Enabled"
+msgstr ""
+
+msgid "Mesh Enabled"
+msgstr ""
+
+msgid "Metrics Address"
+msgstr ""
+
+msgid "Health Address"
+msgstr ""
+
+msgid "Last Error"
+msgstr ""
+
+msgid "Service Actions"
 msgstr ""
 
 msgid "Start"
@@ -96,8 +123,11 @@ msgstr ""
 msgid "Reload Config"
 msgstr ""
 
-msgid "Not Running"
+msgid "Offline"
 msgstr ""
 
 msgid "Running"
+msgstr ""
+
+msgid "Stopped"
 msgstr ""

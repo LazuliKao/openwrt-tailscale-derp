@@ -1,0 +1,138 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: luci-app-tailscale-derp\n"
+"POT-Creation-Date: 2026-05-19 16:19+0800\n"
+"PO-Revision-Date: 2026-05-24 00:00+0800\n"
+"Last-Translator: DERP Relay Contributors\n"
+"Language-Team: Chinese Simplified\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Tailscale DERP Relay"
+msgstr "Tailscale DERP 中继"
+
+msgid "Configure the Tailscale DERP relay server."
+msgstr "配置 Tailscale DERP 中继服务器。"
+
+msgid "Global Settings"
+msgstr "全局设置"
+
+msgid "Enable Service"
+msgstr "启用服务"
+
+msgid "Start DERP service on boot"
+msgstr "开机启动 DERP 服务"
+
+msgid "Listen Address"
+msgstr "监听地址"
+
+msgid "Address and port for DERP/STUN (e.g. :3478)"
+msgstr "DERP/STUN 的地址和端口（例如 :3478）"
+
+msgid "Enable STUN"
+msgstr "启用 STUN"
+
+msgid "Enable STUN server on the same port"
+msgstr "在同一端口启用 STUN 服务器"
+
+msgid "TLS Settings"
+msgstr "TLS 设置"
+
+msgid "Certificate File"
+msgstr "证书文件"
+
+msgid "Path to TLS certificate (leave empty for auto)"
+msgstr "TLS 证书路径（留空则自动处理）"
+
+msgid "Key File"
+msgstr "密钥文件"
+
+msgid "Path to TLS private key (leave empty for auto)"
+msgstr "TLS 私钥路径（留空则自动处理）"
+
+msgid "Mesh Settings"
+msgstr "Mesh 设置"
+
+msgid "Enable Mesh"
+msgstr "启用 Mesh"
+
+msgid "Enable DERP mesh mode"
+msgstr "启用 DERP Mesh 模式"
+
+msgid "Mesh Shared Key"
+msgstr "Mesh 共享密钥"
+
+msgid "Shared mesh key passed to the DERP server when mesh mode is enabled"
+msgstr "启用 Mesh 模式时传递给 DERP 服务器的共享密钥"
+
+msgid "Operations"
+msgstr "运维"
+
+msgid "Metrics Port"
+msgstr "指标端口"
+
+msgid "Port for Prometheus metrics endpoint"
+msgstr "Prometheus 指标端点端口"
+
+msgid "Health Port"
+msgstr "健康检查端口"
+
+msgid "Port for health check endpoint"
+msgstr "健康检查端点端口"
+
+msgid "Tailscale DERP Relay Status"
+msgstr "Tailscale DERP 中继状态"
+
+msgid "Tailscale DERP Status"
+msgstr "Tailscale DERP 状态"
+
+msgid "DERP Server Status"
+msgstr "DERP 服务器状态"
+
+msgid "Service Status"
+msgstr "服务状态"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "STUN Enabled"
+msgstr "STUN 已启用"
+
+msgid "Mesh Enabled"
+msgstr "Mesh 已启用"
+
+msgid "Metrics Address"
+msgstr "指标地址"
+
+msgid "Health Address"
+msgstr "健康检查地址"
+
+msgid "Last Error"
+msgstr "最近错误"
+
+msgid "Service Actions"
+msgstr "服务操作"
+
+msgid "Start"
+msgstr "启动"
+
+msgid "Stop"
+msgstr "停止"
+
+msgid "Restart"
+msgstr "重启"
+
+msgid "Reload Config"
+msgstr "重新加载配置"
+
+msgid "Offline"
+msgstr "离线"
+
+msgid "Running"
+msgstr "运行中"
+
+msgid "Stopped"
+msgstr "已停止"
