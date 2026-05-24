@@ -1,0 +1,17 @@
+{
+  "name": "luci-app-tailscale-derp-frontend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rsbuild build",
+    "dev": "rsbuild dev",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "i18n:export": "luci-types -i ../htdocs --po ../po/zh_Hans/app.po --merge -p luci-app-tailscale-derp"
+  },
+  "devDependencies": {
+    "@lazulikao/luci-types": "github:LazuliKao/luci-types",
+    "@rsbuild/core": "^2.0.6",
+    "tsx": "^4.22.1",
+    "typescript": "^6.0.3"
+  }
+}

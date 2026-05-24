@@ -1,0 +1,7 @@
+packages:
+  - luci-app-tailscale-derp/frontend
+allowBuilds:
+  core-js: true
+  esbuild: true
+minimumReleaseAgeExclude:
+  - tsx@4.22.2

@@ -1,0 +1,10 @@
+{
+  "name": "openwrt-tailscale-derp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "frontend:build": "pnpm --dir luci-app-tailscale-derp/frontend build",
+    "frontend:dev": "pnpm --dir luci-app-tailscale-derp/frontend dev",
+    "frontend:typecheck": "pnpm --dir luci-app-tailscale-derp/frontend typecheck"
+  }
+}
