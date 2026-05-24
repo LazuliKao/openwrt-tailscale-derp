@@ -5,19 +5,21 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
-	"encoding/json"
-	"errors"
 	"expvar"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
+
+	"github.com/lk/openwrt-tailscale-derp/internal/httpjson"
+	opsapi "github.com/lk/openwrt-tailscale-derp/internal/ops"
+	"github.com/lk/openwrt-tailscale-derp/internal/service"
 
 	"tailscale.com/derp"
 	"tailscale.com/derp/derphttp"
@@ -27,7 +29,17 @@ import (
 
 var version = "dev"
 
-const defaultNodeKeyPath = "/var/lib/go-tailscale-derp/node.key"
+const (
+	defaultNodeKeyPath   = "/var/lib/tailscale-derp/node.key"
+	defaultListenAddr    = ":3478"
+	defaultOpsAddr       = "127.0.0.1:9911"
+	defaultHealthAddr    = ":9912"
+	serviceActionTimeout = 15 * time.Second
+	opsReadHeaderTimeout = 5 * time.Second
+	opsReadTimeout       = 15 * time.Second
+	opsWriteTimeout      = 15 * time.Second
+	opsIdleTimeout       = 30 * time.Second
+)
 
 type Config struct {
 	Enabled  bool
@@ -41,22 +53,9 @@ type Config struct {
 	Health   string
 }
 
-type Status struct {
-	Version string `json:"version"`
-	Running bool   `json:"running"`
-	Listen  string `json:"listen"`
-	STUN    bool   `json:"stun"`
-	Mesh    bool   `json:"mesh"`
-	Metrics string `json:"metrics"`
-	Health  string `json:"health"`
-	Error   string `json:"error,omitempty"`
-}
+type Status = opsapi.Status
 
-type ActionResult struct {
-	Action string `json:"action"`
-	Result string `json:"result"`
-	Error  string `json:"error,omitempty"`
-}
+type ActionResult = opsapi.ActionResult
 
 type runtimeState struct {
 	mu      sync.RWMutex
@@ -107,11 +106,11 @@ type uciConfig struct {
 	values map[string]map[string][]string
 }
 
-type actionExecutor func(action string) error
+type actionExecutor = opsapi.Executor
 
 var execServiceAction actionExecutor = runServiceAction
 
-const serviceScriptPath = "/etc/init.d/go-tailscale-derp"
+const serviceScriptPath = service.DefaultScriptPath
 
 func isLoopbackOpsAddress(value string) bool {
 	trimmed := strings.TrimSpace(value)
@@ -121,13 +120,12 @@ func isLoopbackOpsAddress(value string) bool {
 	}
 
 	if strings.HasPrefix(trimmed, ":") {
-		_, err := strconv.Atoi(strings.TrimPrefix(trimmed, ":"))
-		return err == nil
+		return false
 	}
 
 	for _, prefix := range []string{"127.0.0.1:", "localhost:", "[::1]:"} {
-		if strings.HasPrefix(trimmed, prefix) {
-			_, err := strconv.Atoi(strings.TrimPrefix(trimmed, prefix))
+		if port, ok := strings.CutPrefix(trimmed, prefix); ok {
+			_, err := strconv.Atoi(port)
 			return err == nil
 		}
 	}
@@ -136,7 +134,7 @@ func isLoopbackOpsAddress(value string) bool {
 }
 
 func newFlagSet(args []string) (*flag.FlagSet, *configFlags, error) {
-	fs := flag.NewFlagSet("go-tailscale-derp", flag.ContinueOnError)
+	fs := flag.NewFlagSet("tailscale-derp", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
 
 	flags := &configFlags{
@@ -164,7 +162,20 @@ func defaultConfigPath() string {
 		return path
 	}
 
-	return "/etc/config/go-tailscale-derp"
+	return "/etc/config/tailscale-derp"
+}
+
+func validateOptionalPortBinding(name, value string) error {
+	if !strings.HasPrefix(value, ":") {
+		return nil
+	}
+
+	port, _ := strings.CutPrefix(value, ":")
+	if _, err := strconv.Atoi(port); err != nil {
+		return fmt.Errorf("%s must use a valid port", name)
+	}
+
+	return nil
 }
 
 func parseBoolValue(value string) (bool, error) {
@@ -259,10 +270,10 @@ func buildConfig(args []string, openFile func(string) (*uciConfig, error)) (*Con
 
 	cfg := &Config{
 		Enabled: false,
-		Listen:  ":3478",
+		Listen:  defaultListenAddr,
 		STUN:    true,
-		OpsAddr: "127.0.0.1:9911",
-		Health:  ":9912",
+		OpsAddr: defaultOpsAddr,
+		Health:  defaultHealthAddr,
 	}
 
 	if flags.ConfigPath != nil && *flags.ConfigPath != "" {
@@ -400,17 +411,17 @@ func validateConfig(cfg *Config) error {
 	if cfg.KeyFile != "" && cfg.CertFile == "" {
 		return fmt.Errorf("keyfile requires certfile")
 	}
-	if _, err := strconv.Atoi(strings.TrimPrefix(cfg.Listen, ":")); strings.HasPrefix(cfg.Listen, ":") && err != nil {
-		return fmt.Errorf("listen must use a valid port")
+	if err := validateOptionalPortBinding("listen", cfg.Listen); err != nil {
+		return err
 	}
-	if _, err := strconv.Atoi(strings.TrimPrefix(cfg.OpsAddr, ":")); strings.HasPrefix(cfg.OpsAddr, ":") && err != nil {
-		return fmt.Errorf("ops must use a valid port")
+	if err := validateOptionalPortBinding("ops", cfg.OpsAddr); err != nil {
+		return err
 	}
 	if !isLoopbackOpsAddress(cfg.OpsAddr) {
 		return fmt.Errorf("ops must bind to loopback only")
 	}
-	if _, err := strconv.Atoi(strings.TrimPrefix(cfg.Health, ":")); strings.HasPrefix(cfg.Health, ":") && err != nil {
-		return fmt.Errorf("health must use a valid port")
+	if err := validateOptionalPortBinding("health", cfg.Health); err != nil {
+		return err
 	}
 	return nil
 }
@@ -517,38 +528,15 @@ func loadOrCreateNodeKey(path string) (key.NodePrivate, error) {
 }
 
 func allowedAction(action string) bool {
-	switch action {
-	case "start", "stop", "restart", "reload":
-		return true
-	default:
-		return false
-	}
+	return service.AllowedAction(action)
 }
 
 func runServiceAction(action string) error {
-	if !allowedAction(action) {
-		return fmt.Errorf("unknown action %q", action)
-	}
-
-	command := exec.Command(serviceScriptPath, action)
-	output, err := command.CombinedOutput()
-	if err != nil {
-		trimmed := strings.TrimSpace(string(output))
-		if trimmed == "" {
-			return fmt.Errorf("service action %s failed: %w", action, err)
-		}
-		return fmt.Errorf("service action %s failed: %s", action, trimmed)
-	}
-
-	return nil
+	return service.RunAction(action, serviceScriptPath, serviceActionTimeout)
 }
 
 func writeJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		http.Error(w, `{"error":"failed to encode response"}`, http.StatusInternalServerError)
-	}
+	httpjson.Write(w, status, payload)
 }
 
 func handleOpsWithExecutor(executor actionExecutor) http.HandlerFunc {
@@ -556,27 +544,7 @@ func handleOpsWithExecutor(executor actionExecutor) http.HandlerFunc {
 		executor = execServiceAction
 	}
 
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			writeJSON(w, http.StatusMethodNotAllowed, ActionResult{Error: "POST required", Result: "error"})
-			return
-		}
-		action := r.URL.Query().Get("action")
-		if !allowedAction(action) {
-			writeJSON(w, http.StatusBadRequest, ActionResult{Action: action, Result: "error", Error: "unknown action"})
-			return
-		}
-		if err := executor(action); err != nil {
-			status := http.StatusBadGateway
-			if errors.Is(err, exec.ErrNotFound) {
-				status = http.StatusServiceUnavailable
-			}
-			writeJSON(w, status, ActionResult{Action: action, Result: "error", Error: err.Error()})
-			return
-		}
-
-		writeJSON(w, http.StatusOK, ActionResult{Action: action, Result: "ok"})
-	}
+	return opsapi.HandleOpsWithExecutor(executor)
 }
 
 func handleOps(w http.ResponseWriter, r *http.Request) {
@@ -584,60 +552,63 @@ func handleOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func statusFromConfig(cfg *Config, state *runtimeState) Status {
-	running := true
-	errMsg := ""
+	var snapshot opsapi.Snapshot
 	if state != nil {
-		running, errMsg = state.snapshot()
-	}
-	metricsAddr := cfg.OpsAddr
-	if metricsAddr == "" {
-		metricsAddr = "127.0.0.1:9911"
-	}
-	healthAddr := cfg.Health
-	if healthAddr == "" {
-		healthAddr = ":9912"
+		snapshot = state.snapshot
 	}
 
-	return Status{
+	return opsapi.StatusFromConfig(opsConfig(cfg), snapshot)
+}
+
+func opsConfig(cfg *Config) opsapi.Config {
+	return opsapi.Config{
 		Version: version,
-		Running: running,
 		Listen:  cfg.Listen,
 		STUN:    cfg.STUN,
 		Mesh:    cfg.Mesh,
-		Metrics: metricsAddr,
-		Health:  healthAddr,
-		Error:   errMsg,
+		OpsAddr: cfg.OpsAddr,
+		Health:  cfg.Health,
 	}
 }
 
 func handleStatus(cfg *Config, state *runtimeState) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(statusFromConfig(cfg, state)); err != nil {
-			http.Error(w, `{"error":"failed to encode status"}`, http.StatusInternalServerError)
-		}
+	var snapshot opsapi.Snapshot
+	if state != nil {
+		snapshot = state.snapshot
 	}
+	return opsapi.HandleStatus(opsConfig(cfg), snapshot)
+}
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	opsapi.HandleHealth(w, r)
+}
+
+func handleVersion(w http.ResponseWriter, r *http.Request) {
+	opsapi.HandleVersion(version)(w, r)
 }
 
 func startOps(cfg *Config, state *runtimeState) error {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/status", handleStatus(cfg, state))
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"status":"ok"}`)
-	})
-	mux.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"version":"%s"}`, version)
-	})
-	mux.HandleFunc("/ops", handleOps)
 	log.Printf("Starting ops server on %s", cfg.OpsAddr)
-	return http.ListenAndServe(cfg.OpsAddr, mux)
+	var snapshot opsapi.Snapshot
+	if state != nil {
+		snapshot = state.snapshot
+	}
+
+	server := &http.Server{
+		Addr:              cfg.OpsAddr,
+		Handler:           opsapi.NewMux(opsConfig(cfg), snapshot, execServiceAction),
+		ReadHeaderTimeout: opsReadHeaderTimeout,
+		ReadTimeout:       opsReadTimeout,
+		WriteTimeout:      opsWriteTimeout,
+		IdleTimeout:       opsIdleTimeout,
+	}
+
+	return server.ListenAndServe()
 }
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Printf("go-tailscale-derp %s", version)
+	log.Printf("tailscale-derp %s", version)
 
 	cfg, err := loadConfig()
 	if err != nil {

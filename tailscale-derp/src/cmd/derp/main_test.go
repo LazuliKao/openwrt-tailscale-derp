@@ -316,6 +316,22 @@ func TestValidateConfig_LoopbackOpsAddressAllowed(t *testing.T) {
 	}
 }
 
+func TestValidateConfig_BareOpsPortRejected(t *testing.T) {
+	cfg := &Config{
+		Listen:  ":3478",
+		OpsAddr: ":9911",
+		Health:  ":9912",
+	}
+
+	err := validateConfig(cfg)
+	if err == nil {
+		t.Fatal("expected bare ops port to be rejected")
+	}
+	if !strings.Contains(err.Error(), "ops must bind to loopback only") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestValidateConfig_NonLoopbackOpsAddressRejected(t *testing.T) {
 	cfg := &Config{
 		Listen:  ":3478",

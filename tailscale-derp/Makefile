@@ -1,10 +1,8 @@
 include $(TOPDIR)/rules.mk
 
-PKG_NAME:=go-tailscale-derp
+PKG_NAME:=tailscale-derp
 PKG_VERSION:=0.1.0
 PKG_RELEASE:=1
-
-TAILSCALE_VERSION:=1.82.5
 
 PKG_SOURCE_PROTO:=git
 PKG_SOURCE_URL:=https://github.com/lk/openwrt-tailscale-derp.git
@@ -27,7 +25,7 @@ GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)
 include $(INCLUDE_DIR)/package.mk
 include ../../lang/golang/golang-package.mk
 
-define Package/go-tailscale-derp
+define Package/tailscale-derp
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Tailscale DERP Relay (Go daemon)
@@ -36,22 +34,22 @@ define Package/go-tailscale-derp
   DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle
 endef
 
-define Package/go-tailscale-derp/conffiles
-/etc/config/go-tailscale-derp
+define Package/tailscale-derp/conffiles
+/etc/config/tailscale-derp
 endef
 
-define Package/go-tailscale-derp/install
+define Package/tailscale-derp/install
 	$(call GoPackage/Package/Install/Bin,$(PKG_INSTALL_DIR))
 
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/go-tailscale-derp $(1)/usr/bin/
+	$(INSTALL_BIN) $(PKG_INSTALL_DIR)/usr/bin/tailscale-derp $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/config
-	$(INSTALL_CONF) ./files/go-tailscale-derp.config $(1)/etc/config/go-tailscale-derp
+	$(INSTALL_CONF) ./files/tailscale-derp.config $(1)/etc/config/tailscale-derp
 
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/go-tailscale-derp.init $(1)/etc/init.d/go-tailscale-derp
+	$(INSTALL_BIN) ./files/tailscale-derp.init $(1)/etc/init.d/tailscale-derp
 endef
 
-$(eval $(call GoBinPackage,go-tailscale-derp))
-$(eval $(call BuildPackage,go-tailscale-derp))
+$(eval $(call GoBinPackage,tailscale-derp))
+$(eval $(call BuildPackage,tailscale-derp))
