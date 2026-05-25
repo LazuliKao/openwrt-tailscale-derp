@@ -33,3 +33,10 @@ logs/
 *~
 /.sisyphus
 /.opencode
+/.antigravitycli
+
+# Secrets / Env files
+.env
+.env.local
+.env.keys
+

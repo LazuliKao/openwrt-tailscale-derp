@@ -6,9 +6,10 @@
     "build": "rsbuild build",
     "dev": "rsbuild dev",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "i18n:export": "luci-types -i ../htdocs --po ../po/zh_Hans/app.po --merge -p luci-app-tailscale-derp"
+    "i18n:export": "dotenvx run -- luci-types -i ../htdocs --po ../po/zh_Hans/tailscale-derp.po --merge -p luci-app-tailscale-derp --translate --batch-size 20 --prompt translate.md"
   },
   "devDependencies": {
+    "@dotenvx/dotenvx": "^1.33.0",
     "@lazulikao/luci-types": "github:LazuliKao/luci-types",
     "@rsbuild/core": "^2.0.6",
     "tsx": "^4.22.1",
