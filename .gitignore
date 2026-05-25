@@ -31,3 +31,5 @@ logs/
 *.swp
 *.swo
 *~
+/.sisyphus
+/.opencode
