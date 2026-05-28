@@ -2,6 +2,8 @@ packages:
   - luci-app-tailscale-derp/frontend
 allowBuilds:
   core-js: true
+  cpu-features: set this to true or false
   esbuild: true
+  ssh2: set this to true or false
 minimumReleaseAgeExclude:
   - tsx@4.22.2

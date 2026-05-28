@@ -112,7 +112,7 @@ function readPendingStatus() {
 ;// CONCATENATED MODULE: ./src/views/tailscale-derp.tsx
 
 
-let tailscale_derp_i = L.view, tailscale_derp_n = L.form, tailscale_derp_s = L.rpc, d = LuCI.ui, p = L.uci, c = tailscale_derp_s.declare({
+let tailscale_derp_l = L.view, tailscale_derp_n = L.form, tailscale_derp_s = L.rpc, d = LuCI.ui, c = L.uci, p = tailscale_derp_s.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
@@ -120,29 +120,29 @@ function m(e, t) {
     let a = this.section.formvalue(e, "enabled");
     return "1" !== a && !0 !== a || !!t || "Mesh key is required when mesh mode is enabled";
 }
-function tailscale_derp_u(e, t, a, r) {
-    let o = a.section.formvalue(e, r) || "";
-    return (!t || !!o) && (!!t || !o) || "Certificate and key must be provided together";
+function tailscale_derp_u(e, t, a, o) {
+    let r = a.section.formvalue(e, o) || "";
+    return (!t || !!r) && (!!t || !r) || "Certificate and key must be provided together";
 }
-const main = tailscale_derp_i.extend({
+const main = tailscale_derp_l.extend({
     map: null,
     load: ()=>Promise.all([
-            p.load("tailscale-derp")
+            c.load("tailscale-derp")
         ]),
-    handleSaveApply (o, l) {
-        let i = captureExpectedStatus(this.map);
+    handleSaveApply (r, i) {
+        let l = captureExpectedStatus(this.map);
         return this.super("handleSaveApply", [
-            o,
-            l
-        ]).then(()=>c()).then(()=>{
-            savePendingStatus(i), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
+            r,
+            i
+        ]).then(()=>p()).then(()=>{
+            savePendingStatus(l), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((t)=>{
             clearPendingStatus();
-            let r = t instanceof Error ? t.message : "unknown error";
+            let o = t instanceof Error ? t.message : "unknown error";
             throw d.addNotification(null, jsxs("p", {
                 children: [
                     "Failed to reload DERP configuration: ",
-                    r
+                    o
                 ]
             })), t;
         });
@@ -157,7 +157,7 @@ const main = tailscale_derp_i.extend({
             return tailscale_derp_u(e, t, this, "keyfile");
         }, (a = t.option(tailscale_derp_n.Value, "keyfile", "Key File", "Path to TLS private key (leave empty for auto)")).placeholder = "/etc/ssl/private/derp.key", a.rmempty = !0, a.validate = function(e, t) {
             return tailscale_derp_u(e, t, this, "certfile");
-        }, (t = e.section(tailscale_derp_n.TypedSection, "mesh", "Mesh Settings")).anonymous = !0, (a = t.option(tailscale_derp_n.Flag, "enabled", "Enable Mesh", "Enable DERP mesh mode")).default = "0", a.rmempty = !1, (a = t.option(tailscale_derp_n.Value, "key", "Mesh Shared Key", "Shared mesh key passed to the DERP server when mesh mode is enabled")).rmempty = !0, a.depends("enabled", "1"), a.password = !0, a.validate = m, (t = e.section(tailscale_derp_n.TypedSection, "ops", "Operations")).anonymous = !0, (a = t.option(tailscale_derp_n.Value, "metrics", "Metrics Port", "Port for Prometheus metrics endpoint")).default = "127.0.0.1:9911", a.rmempty = !1, a.placeholder = "127.0.0.1:9911", a.validate = (e, t)=>validateLoopbackSocketAddress("Metrics address", t), (a = t.option(tailscale_derp_n.Value, "health", "Health Port", "Port for health check endpoint")).default = ":9912", a.rmempty = !1, a.placeholder = ":9912", a.validate = (e, t)=>validateSocketAddress("Health address", t), e.render();
+        }, (t = e.section(tailscale_derp_n.TypedSection, "mesh", "Mesh Settings")).anonymous = !0, (a = t.option(tailscale_derp_n.Flag, "enabled", "Enable Mesh", "Enable DERP mesh mode")).default = "0", a.rmempty = !1, (a = t.option(tailscale_derp_n.Value, "key", "Mesh Shared Key", "Shared mesh key passed to the DERP server when mesh mode is enabled")).rmempty = !0, a.depends("enabled", "1"), a.password = !0, a.validate = m, (t = e.section(tailscale_derp_n.TypedSection, "verify", "Client Verification")).anonymous = !0, (a = t.option(tailscale_derp_n.DynamicList, "url", "Verify URLs", "Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)")).rmempty = !0, a.placeholder = "https://your-admission-controller/verify", (a = t.option(tailscale_derp_n.Flag, "fail_open", "Fail Open", "Allow clients to connect if all verify URLs are unreachable")).default = "0", a.rmempty = !1, (t = e.section(tailscale_derp_n.TypedSection, "ops", "Operations")).anonymous = !0, (a = t.option(tailscale_derp_n.Value, "metrics", "Metrics Port", "Port for Prometheus metrics endpoint")).default = "127.0.0.1:9911", a.rmempty = !1, a.placeholder = "127.0.0.1:9911", a.validate = (e, t)=>validateLoopbackSocketAddress("Metrics address", t), (a = t.option(tailscale_derp_n.Value, "health", "Health Port", "Port for health check endpoint")).default = ":9912", a.rmempty = !1, a.placeholder = ":9912", a.validate = (e, t)=>validateSocketAddress("Health address", t), e.render();
     }
 });
 

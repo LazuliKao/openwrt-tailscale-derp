@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"bufio"
 	"bytes"
 	"context"
@@ -26,9 +27,8 @@ import (
 	"tailscale.com/net/stunserver"
 	"tailscale.com/types/key"
 )
-
 var version = "dev"
-
+var getServerMetrics opsapi.MetricsFunc
 const (
 	defaultNodeKeyPath   = "/var/lib/tailscale-derp/node.key"
 	defaultListenAddr    = ":3478"
@@ -42,15 +42,17 @@ const (
 )
 
 type Config struct {
-	Enabled  bool
-	Listen   string
-	STUN     bool
-	CertFile string
-	KeyFile  string
-	Mesh     bool
-	MeshKey  string
-	OpsAddr  string
-	Health   string
+	VerifyClientURLs     []string
+	VerifyClientFailOpen bool
+	Enabled              bool
+	Listen               string
+	STUN                 bool
+	CertFile             string
+	KeyFile              string
+	Mesh                 bool
+	MeshKey              string
+	OpsAddr              string
+	Health               string
 }
 
 type Status = opsapi.Status
@@ -90,6 +92,8 @@ func (s *runtimeState) snapshot() (bool, string) {
 }
 
 type configFlags struct {
+	VerifyClientURLs     *string
+	VerifyClientFailOpen *bool
 	Enabled    *bool
 	Listen     *string
 	STUN       *bool
@@ -136,8 +140,9 @@ func isLoopbackOpsAddress(value string) bool {
 func newFlagSet(args []string) (*flag.FlagSet, *configFlags, error) {
 	fs := flag.NewFlagSet("tailscale-derp", flag.ContinueOnError)
 	fs.SetOutput(os.Stderr)
-
 	flags := &configFlags{
+		VerifyClientURLs:     fs.String("verify-client-urls", "", "comma-separated admission controller URLs for verifying clients"),
+		VerifyClientFailOpen: fs.Bool("verify-client-fail-open", false, "allow clients if admission controller is unreachable"),
 		Enabled:    fs.Bool("enabled", false, "enable DERP service"),
 		Listen:     fs.String("listen", "", "listen address"),
 		STUN:       fs.Bool("stun", false, "enable STUN"),
@@ -345,6 +350,24 @@ func applyUCIConfig(cfg *Config, parsed *uciConfig) error {
 	if value, ok := parsed.first("ops", "health"); ok && value != "" {
 		cfg.Health = value
 	}
+	var verifyURLs []string
+	for _, u := range parsed.get("verify", "url") {
+		for _, part := range strings.Split(u, ",") {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				verifyURLs = append(verifyURLs, trimmed)
+			}
+		}
+	}
+	cfg.VerifyClientURLs = verifyURLs
+
+	if value, ok := parsed.first("verify", "fail_open"); ok {
+		parsedBool, err := parseBoolValue(value)
+		if err != nil {
+			return fmt.Errorf("verify.fail_open: %w", err)
+		}
+		cfg.VerifyClientFailOpen = parsedBool
+	}
 
 	return nil
 }
@@ -362,6 +385,17 @@ func (u *uciConfig) first(section, key string) (string, bool) {
 		return "", false
 	}
 	return values[0], true
+}
+
+func (u *uciConfig) get(section, key string) []string {
+	if u == nil {
+		return nil
+	}
+	sectionValues, ok := u.values[section]
+	if !ok {
+		return nil
+	}
+	return sectionValues[key]
 }
 
 func applyFlagOverrides(cfg *Config, fs *flag.FlagSet, flags *configFlags) {
@@ -391,6 +425,17 @@ func applyFlagOverrides(cfg *Config, fs *flag.FlagSet, flags *configFlags) {
 	}
 	if stringFlagProvided(fs, "health") {
 		cfg.Health = strings.TrimSpace(*flags.HealthAddr)
+	}
+	if stringFlagProvided(fs, "verify-client-urls") {
+		for _, part := range strings.Split(*flags.VerifyClientURLs, ",") {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" {
+				cfg.VerifyClientURLs = append(cfg.VerifyClientURLs, trimmed)
+			}
+		}
+	}
+	if boolFlagProvided(fs, "verify-client-fail-open") {
+		cfg.VerifyClientFailOpen = *flags.VerifyClientFailOpen
 	}
 }
 
@@ -439,8 +484,26 @@ func startDERP(cfg *Config, state *runtimeState) error {
 	if cfg.Mesh {
 		server.SetMeshKey(cfg.MeshKey)
 	}
-	publishDERPMetrics(server)
-
+	if len(cfg.VerifyClientURLs) > 0 {
+		server.SetVerifyClient(true)
+		opsAddr := cfg.OpsAddr
+		if opsAddr == "" {
+			opsAddr = defaultOpsAddr
+		}
+		if strings.HasPrefix(opsAddr, ":") {
+			opsAddr = "127.0.0.1" + opsAddr
+		}
+		admissionURL := fmt.Sprintf("http://%s/verify", opsAddr)
+		server.SetVerifyClientURL(admissionURL)
+		if cfg.VerifyClientFailOpen {
+			server.SetVerifyClientURLFailOpen(true)
+		}
+		log.Printf("Verify-client enabled with %d URL(s), admission controller at %s (fail-open: %v)", len(cfg.VerifyClientURLs), admissionURL, cfg.VerifyClientFailOpen)
+	}
+	serverExpVar := publishDERPMetrics(server)
+	getServerMetrics = func() json.RawMessage {
+		return json.RawMessage(serverExpVar.String())
+	}
 	if cfg.STUN {
 		stun := stunserver.New(context.Background())
 		go func() {
@@ -492,11 +555,14 @@ func startDERP(cfg *Config, state *runtimeState) error {
 	return err
 }
 
-func publishDERPMetrics(server *derp.Server) {
+func publishDERPMetrics(server *derp.Server) expvar.Var {
+	ev := server.ExpVar()
 	if expvar.Get("derp") == nil {
-		expvar.Publish("derp", server.ExpVar())
+		expvar.Publish("derp", ev)
 	}
+	return ev
 }
+
 
 func loadOrCreateNodeKey(path string) (key.NodePrivate, error) {
 	raw, err := os.ReadFile(path)
@@ -557,34 +623,27 @@ func statusFromConfig(cfg *Config, state *runtimeState) Status {
 		snapshot = state.snapshot
 	}
 
-	return opsapi.StatusFromConfig(opsConfig(cfg), snapshot)
+	return opsapi.StatusFromConfig(opsConfig(cfg), snapshot, nil)
 }
 
 func opsConfig(cfg *Config) opsapi.Config {
 	return opsapi.Config{
-		Version: version,
-		Listen:  cfg.Listen,
-		STUN:    cfg.STUN,
-		Mesh:    cfg.Mesh,
-		OpsAddr: cfg.OpsAddr,
-		Health:  cfg.Health,
+		VerifyClientURLs:     cfg.VerifyClientURLs,
+		VerifyClientFailOpen: cfg.VerifyClientFailOpen,
+		Version:         version,
+		Listen:          cfg.Listen,
+		STUN:            cfg.STUN,
+		Mesh:            cfg.Mesh,
+		OpsAddr:         cfg.OpsAddr,
+		Health:          cfg.Health,
 	}
 }
-
 func handleStatus(cfg *Config, state *runtimeState) http.HandlerFunc {
 	var snapshot opsapi.Snapshot
 	if state != nil {
 		snapshot = state.snapshot
 	}
-	return opsapi.HandleStatus(opsConfig(cfg), snapshot)
-}
-
-func handleHealth(w http.ResponseWriter, r *http.Request) {
-	opsapi.HandleHealth(w, r)
-}
-
-func handleVersion(w http.ResponseWriter, r *http.Request) {
-	opsapi.HandleVersion(version)(w, r)
+	return opsapi.HandleStatus(opsConfig(cfg), snapshot, nil)
 }
 
 func startOps(cfg *Config, state *runtimeState) error {
@@ -593,16 +652,14 @@ func startOps(cfg *Config, state *runtimeState) error {
 	if state != nil {
 		snapshot = state.snapshot
 	}
-
 	server := &http.Server{
 		Addr:              cfg.OpsAddr,
-		Handler:           opsapi.NewMux(opsConfig(cfg), snapshot, execServiceAction),
+		Handler:           opsapi.NewMux(opsConfig(cfg), snapshot, execServiceAction, getServerMetrics),
 		ReadHeaderTimeout: opsReadHeaderTimeout,
 		ReadTimeout:       opsReadTimeout,
 		WriteTimeout:      opsWriteTimeout,
 		IdleTimeout:       opsIdleTimeout,
 	}
-
 	return server.ListenAndServe()
 }
 

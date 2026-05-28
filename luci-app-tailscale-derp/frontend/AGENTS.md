@@ -111,3 +111,5 @@ Global types from `@lazulikao/luci-types`:
 - NEVER use `style={{}}` → use `style=""`
 - NEVER edit `htdocs/` directly → build output
 - NEVER add React-specific patterns (hooks, context, etc.)
+- NEVER use `document.getElementById`, `document.querySelector`, or any DOM traversal API → JSX returns `HTMLElement` directly, store the reference
+- NEVER add `id` attributes just to look up elements later → pass JSX element references directly instead

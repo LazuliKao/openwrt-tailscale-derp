@@ -112,73 +112,68 @@ function readPendingStatus() {
 ;// CONCATENATED MODULE: ./src/views/tailscale-derp-status.tsx
 
 
-let tailscale_derp_status_l = L.view, tailscale_derp_status_a = L.rpc, tailscale_derp_status_s = LuCI.ui, c = L.Poll, tailscale_derp_status_i = {
-    start: tailscale_derp_status_a.declare({
+let tailscale_derp_status_r = L.view, tailscale_derp_status_s = L.rpc, i = LuCI.ui, c = L.Poll, tailscale_derp_status_a = {
+    start: tailscale_derp_status_s.declare({
         object: "luci.tailscale-derp",
         method: "start"
     }),
-    stop: tailscale_derp_status_a.declare({
+    stop: tailscale_derp_status_s.declare({
         object: "luci.tailscale-derp",
         method: "stop"
     }),
-    restart: tailscale_derp_status_a.declare({
+    restart: tailscale_derp_status_s.declare({
         object: "luci.tailscale-derp",
         method: "restart"
     }),
-    reload: tailscale_derp_status_a.declare({
+    reload: tailscale_derp_status_s.declare({
         object: "luci.tailscale-derp",
         method: "reload_config"
     })
-}, tailscale_derp_status_o = tailscale_derp_status_a.declare({
+}, tailscale_derp_status_o = tailscale_derp_status_s.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
-}), tailscale_derp_status_d = tailscale_derp_status_a.declare({
+}), tailscale_derp_status_d = tailscale_derp_status_s.declare({
     object: "luci.tailscale-derp",
     method: "get_version"
 });
-function tailscale_derp_status_u(e) {
+function h(t) {
+    return t < 1024 ? `${t} B` : t < 1048576 ? `${(t / 1024).toFixed(1)} KB` : t < 1073741824 ? `${(t / 1048576).toFixed(1)} MB` : `${(t / 1073741824).toFixed(1)} GB`;
+}
+function tailscale_derp_status_u(t) {
     return {
-        running: !!e.running,
-        listen: e.listen || "Not configured",
-        stun: e.stun ? "Yes" : "No",
-        mesh: e.mesh ? "Yes" : "No",
-        metrics: e.metrics || "127.0.0.1:9911",
-        health: e.health || ":9912",
-        error: e.error || ""
+        verifyClients: t.verifyClients?.length ? t.verifyClients.join(", ") : "Disabled",
+        running: !!t.running,
+        listen: t.listen || "N/A",
+        stun: t.stun ? "Yes" : "No",
+        mesh: t.mesh ? "Yes" : "No",
+        metrics: t.metrics || "N/A",
+        health: t.health || "N/A",
+        error: t.error || "",
+        clients: t.clients ?? 0,
+        accepts: t.accepts ?? 0,
+        bytesRecv: t.bytesRecv ?? 0,
+        bytesSent: t.bytesSent ?? 0
     };
 }
-function tailscale_derp_status_h(e, t) {
-    let r = document.getElementById(e);
-    r && (r.textContent = t);
+function tailscale_derp_status_b(t) {
+    if (!t) return "";
+    if (/^:\d+$/.test(t)) return `0.0.0.0${t}`;
+    let e = t.match(/^\[::\]:(\d+)$/);
+    return e ? `0.0.0.0:${e[1]}` : t;
 }
-function tailscale_derp_status_p(e, t) {
-    let r = document.getElementById("ops-result");
-    r && (r.style.color = "error" === e ? "#c00" : "#090", r.textContent = t);
-}
-function tailscale_derp_status_m(e) {
-    document.querySelectorAll("[data-derp-action]").forEach((t)=>{
-        t.disabled = e;
-    });
-}
-function tailscale_derp_status_b(e) {
-    if (!e) return "";
-    if (/^:\d+$/.test(e)) return `0.0.0.0${e}`;
-    let t = e.match(/^\[::\]:(\d+)$/);
-    return t ? `0.0.0.0:${t[1]}` : e;
-}
-function v(e, t) {
-    let r = readPendingStatus();
-    return r ? !r.savedAt || Date.now() - r.savedAt > 300000 ? {
+function v(t, e) {
+    let n = readPendingStatus();
+    return n ? !n.savedAt || Date.now() - n.savedAt > 300000 ? {
         color: "#c60",
         text: "Saved configuration status expired before it could be confirmed.",
         clear: !0
-    } : e && r && (!1 === r.enabled ? "" !== e.error || !1 === e.running : !0 === e.running && tailscale_derp_status_b(e.listen) === tailscale_derp_status_b(r.listen) && e.stun === (r.stun ? "Yes" : "No") && e.mesh === (r.mesh ? "Yes" : "No") && e.metrics === r.metrics && e.health === r.health) ? {
+    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && tailscale_derp_status_b(t.listen) === tailscale_derp_status_b(n.listen) && t.stun === (n.stun ? "Yes" : "No") && t.mesh === (n.mesh ? "Yes" : "No") && t.metrics === n.metrics && t.health === n.health) ? {
         color: "#090",
         text: "Saved configuration is now active.",
         clear: !0
     } : {
         color: "#c60",
-        text: t ? `Waiting for saved configuration to become active: ${t}` : "Waiting for saved configuration to become active...",
+        text: e ? `Waiting for saved configuration to become active: ${e}` : "Waiting for saved configuration to become active...",
         clear: !1
     } : {
         color: "#666",
@@ -186,26 +181,26 @@ function v(e, t) {
         clear: !1
     };
 }
-function tailscale_derp_status_f(e, t) {
-    let n = document.getElementById("derp-sync"), l = v(e, t);
-    n && (l.clear && clearPendingStatus(), n.style.color = l.color, n.textContent = l.text);
-}
-function g() {
+function tailscale_derp_status_E(t) {
     return Promise.all([
         tailscale_derp_status_o(),
         tailscale_derp_status_d()
-    ]).then(([e, t])=>{
-        let r;
-        tailscale_derp_status_h("derp-status", (r = tailscale_derp_status_u(e || {})).running ? "Running" : "Stopped"), tailscale_derp_status_h("derp-version", (t || {}).version || "Unknown"), tailscale_derp_status_h("derp-listen", r.listen), tailscale_derp_status_h("derp-stun", r.stun), tailscale_derp_status_h("derp-mesh", r.mesh), tailscale_derp_status_h("derp-metrics", r.metrics), tailscale_derp_status_h("derp-health", r.health), tailscale_derp_status_h("derp-error", r.error || "None"), tailscale_derp_status_f(r, r.error);
+    ]).then(([e, l])=>{
+        let r = tailscale_derp_status_u(e || {});
+        t.statusEl.textContent = r.running ? "Running" : "Stopped", t.versionEl.textContent = r.error ? "Unavailable" : l?.version || "Unknown", t.listenEl.textContent = r.error ? "Unavailable" : r.listen, t.stunEl.textContent = r.error ? "Unknown" : r.stun, t.meshEl.textContent = r.error ? "Unknown" : r.mesh, t.verifyClientsEl.textContent = r.error ? "Unknown" : r.verifyClients, t.metricsEl.textContent = r.error ? "Unavailable" : r.metrics, t.healthEl.textContent = r.error ? "Unavailable" : r.health, t.errorEl.textContent = r.error || "None", t.clientsEl.textContent = `${r.clients} connected (${r.accepts} total accepted)`, t.trafficEl.textContent = `\u{2193} ${h(r.bytesRecv)} / \u{2191} ${h(r.bytesSent)}`;
+        let s = v(r, r.error);
+        s.clear && clearPendingStatus(), t.syncEl.style.color = s.color, t.syncEl.textContent = s.text;
     }).catch((e)=>{
-        var t;
-        t = e instanceof Error ? e.message : "Status backend unavailable", tailscale_derp_status_h("derp-status", _("Offline")), tailscale_derp_status_h("derp-version", "Unavailable"), tailscale_derp_status_h("derp-listen", "Unavailable"), tailscale_derp_status_h("derp-stun", "Unknown"), tailscale_derp_status_h("derp-mesh", "Unknown"), tailscale_derp_status_h("derp-metrics", "Unavailable"), tailscale_derp_status_h("derp-health", "Unavailable"), tailscale_derp_status_h("derp-error", t || "Status backend unavailable"), tailscale_derp_status_f(null, t || "Status backend unavailable");
+        let l = e instanceof Error ? e.message : "Status backend unavailable";
+        t.statusEl.textContent = _("Offline"), t.versionEl.textContent = "Unavailable", t.listenEl.textContent = "Unavailable", t.stunEl.textContent = "Unknown", t.meshEl.textContent = "Unknown", t.verifyClientsEl.textContent = "Unknown", t.metricsEl.textContent = "Unavailable", t.healthEl.textContent = "Unavailable", t.errorEl.textContent = l || "Status backend unavailable", t.clientsEl.textContent = "0 connected (0 total accepted)", t.trafficEl.textContent = "\u2193 0 B / \u2191 0 B";
+        let r = v(null, l || "Status backend unavailable");
+        r.clear && clearPendingStatus(), t.syncEl.style.color = r.color, t.syncEl.textContent = r.text;
     });
 }
-const main = tailscale_derp_status_l.extend({
-    handleAction (e) {
-        let t = function(e) {
-            switch(e){
+const main = tailscale_derp_status_r.extend({
+    handleAction (t) {
+        let e = function(t) {
+            switch(t){
                 case "start":
                     return "Start";
                 case "stop":
@@ -215,215 +210,248 @@ const main = tailscale_derp_status_l.extend({
                 case "reload":
                     return "Reload";
             }
-        }(e);
-        if ("stop" === e || "restart" === e) {
-            let r = `Are you sure you want to ${e} the DERP service?`;
-            if (!window.confirm(r)) return tailscale_derp_status_p("error", `${t} cancelled.`), Promise.resolve();
+        }(t);
+        if ("stop" === t || "restart" === t) {
+            let n = `Are you sure you want to ${t} the DERP service?`;
+            if (!window.confirm(n)) return this.resultEl.style.color = "#c00", this.resultEl.textContent = `${e} cancelled.`, Promise.resolve();
         }
-        return tailscale_derp_status_m(!0), tailscale_derp_status_p("success", `${t} in progress...`), tailscale_derp_status_i[e]().then((e)=>{
-            let r = e || {}, n = r.result || "ok", l = r.error;
-            if ("ok" !== n || l) throw Error(l || `${t} failed`);
-            return tailscale_derp_status_p("success", `${t} completed successfully.`), g();
-        }).catch((e)=>{
-            let r = e instanceof Error ? e.message : "unknown error";
-            return tailscale_derp_status_p("error", `${t} failed: ${r}`), g();
+        for (let t of this.actionButtons)t.disabled = !0;
+        return this.resultEl.style.color = "#090", this.resultEl.textContent = `${e} in progress...`, tailscale_derp_status_a[t]().then((t)=>{
+            let n = t || {}, l = n.result || "ok", r = n.error;
+            if ("ok" !== l || r) throw Error(r || `${e} failed`);
+            return this.resultEl.style.color = "#090", this.resultEl.textContent = `${e} completed successfully.`, tailscale_derp_status_E(this);
+        }).catch((t)=>{
+            let n = t instanceof Error ? t.message : "unknown error";
+            return this.resultEl.style.color = "#c00", this.resultEl.textContent = `${e} failed: ${n}`, tailscale_derp_status_E(this);
         }).finally(()=>{
-            tailscale_derp_status_m(!1);
+            for (let t of this.actionButtons)t.disabled = !1;
         });
     },
     load: ()=>Promise.all([
-            tailscale_derp_status_o().catch((e)=>({
-                    error: e instanceof Error ? e.message : "Status backend unavailable"
+            tailscale_derp_status_o().catch((t)=>({
+                    error: t instanceof Error ? t.message : "Status backend unavailable"
                 })),
             tailscale_derp_status_d().catch(()=>({
                     version: "Unavailable"
                 }))
         ]),
-    render (n) {
-        let l = n[0] || {}, a = n[1] || {}, i = tailscale_derp_status_u(l), o = i.error ? "Offline" : i.running ? "Running" : "Stopped", d = i.error ? "Unavailable" : a.version || "Unknown", h = i.error ? "Unavailable" : i.listen, p = i.error ? "Unknown" : i.stun, m = i.error ? "Unknown" : i.mesh, b = i.error ? "Unavailable" : i.metrics, f = i.error ? "Unavailable" : i.health, S = i.error || "None", k = v(i, i.error);
-        k.clear && clearPendingStatus();
-        let y = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "start"), x = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "stop"), U = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "restart"), w = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "reload"), A = jsxs("table", {
-            class: "table",
-            children: [
-                jsxs("tr", {
-                    class: "tr",
-                    children: [
-                        jsx("td", {
-                            class: "td",
-                            children: "Service Status"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            id: "derp-status",
-                            children: o
-                        })
-                    ]
-                }),
-                jsxs("tr", {
-                    class: "tr",
-                    children: [
-                        jsx("td", {
-                            class: "td",
-                            children: "Version"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            id: "derp-version",
-                            children: d
-                        })
-                    ]
-                }),
-                jsxs("tr", {
-                    class: "tr",
-                    children: [
-                        jsx("td", {
-                            class: "td",
-                            children: "Listen Address"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            id: "derp-listen",
-                            children: h
-                        })
-                    ]
-                }),
-                jsxs("tr", {
-                    class: "tr",
-                    children: [
-                        jsx("td", {
-                            class: "td",
-                            children: "STUN Enabled"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            id: "derp-stun",
-                            children: p
-                        })
-                    ]
-                }),
-                jsxs("tr", {
-                    class: "tr",
-                    children: [
-                        jsx("td", {
-                            class: "td",
-                            children: "Mesh Enabled"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            id: "derp-mesh",
-                            children: m
-                        })
-                    ]
-                }),
-                jsxs("tr", {
-                    class: "tr",
-                    children: [
-                        jsx("td", {
-                            class: "td",
-                            children: "Metrics Address"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            id: "derp-metrics",
-                            children: b
-                        })
-                    ]
-                }),
-                jsxs("tr", {
-                    class: "tr",
-                    children: [
-                        jsx("td", {
-                            class: "td",
-                            children: "Health Address"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            id: "derp-health",
-                            children: f
-                        })
-                    ]
-                }),
-                jsxs("tr", {
-                    class: "tr",
-                    children: [
-                        jsx("td", {
-                            class: "td",
-                            children: "Last Error"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            id: "derp-error",
-                            children: S
-                        })
-                    ]
-                })
-            ]
-        }), E = jsxs("div", {
-            class: "cbi-section",
-            children: [
-                jsx("h3", {
-                    children: "DERP Server Status"
-                }),
-                jsx("div", {
-                    id: "derp-sync",
-                    style: `margin-bottom: 0.75em; color: ${k.color};`,
-                    children: k.text
-                }),
-                A
-            ]
-        }), $ = jsxs("div", {
-            class: "cbi-section",
-            style: "margin-top: 1em;",
-            children: [
-                jsx("h3", {
-                    children: "Service Actions"
-                }),
-                jsxs("div", {
-                    class: "cbi-section-node",
-                    children: [
-                        jsx("button", {
-                            class: "cbi-button cbi-button-action",
-                            "data-derp-action": "start",
-                            onClick: y,
-                            children: "Start"
-                        }),
-                        " ",
-                        jsx("button", {
-                            class: "cbi-button cbi-button-negative",
-                            "data-derp-action": "stop",
-                            onClick: x,
-                            children: "Stop"
-                        }),
-                        " ",
-                        jsx("button", {
-                            class: "cbi-button cbi-button-action",
-                            "data-derp-action": "restart",
-                            onClick: U,
-                            children: "Restart"
-                        }),
-                        " ",
-                        jsx("button", {
-                            class: "cbi-button cbi-button-action",
-                            "data-derp-action": "reload",
-                            onClick: w,
-                            children: "Reload Config"
-                        })
-                    ]
-                }),
-                jsx("div", {
-                    id: "ops-result",
-                    style: "margin-top: 0.75em; min-height: 1.2em; color: #090;",
-                    children: "No action executed yet."
-                })
-            ]
+    render (l) {
+        let r = l[0] || {}, s = l[1] || {}, a = tailscale_derp_status_u(r), o = v(a, a.error);
+        o.clear && clearPendingStatus();
+        let d = i.createHandlerFn(this, "handleAction", "start"), b = i.createHandlerFn(this, "handleAction", "stop"), f = i.createHandlerFn(this, "handleAction", "restart"), m = i.createHandlerFn(this, "handleAction", "reload"), x = jsx("td", {
+            class: "td",
+            children: a.running ? "Running" : "Stopped"
+        }), C = jsx("td", {
+            class: "td",
+            children: a.error ? "Unavailable" : s.version || "Unknown"
+        }), y = jsx("td", {
+            class: "td",
+            children: a.error ? "Unavailable" : a.listen
+        }), p = jsx("td", {
+            class: "td",
+            children: a.error ? "Unknown" : a.stun
+        }), g = jsx("td", {
+            class: "td",
+            children: a.error ? "Unknown" : a.mesh
+        }), S = jsx("td", {
+            class: "td",
+            children: a.error ? "Unknown" : a.verifyClients
+        }), U = jsx("td", {
+            class: "td",
+            children: a.error ? "Unavailable" : a.metrics
+        }), $ = jsx("td", {
+            class: "td",
+            children: a.error ? "Unavailable" : a.health
+        }), k = jsx("td", {
+            class: "td",
+            children: a.error || "None"
+        }), w = jsx("td", {
+            class: "td",
+            children: `${a.clients} connected (${a.accepts} total accepted)`
+        }), A = jsx("td", {
+            class: "td",
+            children: `\u{2193} ${h(a.bytesRecv)} / \u{2191} ${h(a.bytesSent)}`
+        }), R = jsx("div", {
+            style: `margin-bottom: 0.75em; color: ${o.color};`,
+            children: o.text
+        }), N = jsx("div", {
+            style: "margin-top: 0.75em; min-height: 1.2em; color: #090;",
+            children: "No action executed yet."
         });
-        return c.add(()=>g(), 5), jsxs("div", {
+        this.statusEl = x, this.versionEl = C, this.listenEl = y, this.stunEl = p, this.meshEl = g, this.verifyClientsEl = S, this.metricsEl = U, this.healthEl = $, this.errorEl = k, this.clientsEl = w, this.trafficEl = A, this.syncEl = R, this.resultEl = N;
+        let j = jsx("button", {
+            class: "cbi-button cbi-button-action",
+            onClick: d,
+            children: "Start"
+        }), B = jsx("button", {
+            class: "cbi-button cbi-button-negative",
+            onClick: b,
+            children: "Stop"
+        }), F = jsx("button", {
+            class: "cbi-button cbi-button-action",
+            onClick: f,
+            children: "Restart"
+        }), P = jsx("button", {
+            class: "cbi-button cbi-button-action",
+            onClick: m,
+            children: "Reload Config"
+        });
+        return this.actionButtons = [
+            j,
+            B,
+            F,
+            P
+        ], c.add(()=>tailscale_derp_status_E(this), 5), jsxs("div", {
             children: [
                 jsx("h2", {
                     children: "Tailscale DERP Status"
                 }),
-                E,
-                $
+                jsxs("div", {
+                    class: "cbi-section",
+                    children: [
+                        jsx("h3", {
+                            children: "DERP Server Status"
+                        }),
+                        R,
+                        jsxs("table", {
+                            class: "table",
+                            children: [
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Service Status"
+                                        }),
+                                        x
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Version"
+                                        }),
+                                        C
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Connected Clients"
+                                        }),
+                                        w
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Traffic"
+                                        }),
+                                        A
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Listen Address"
+                                        }),
+                                        y
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "STUN Enabled"
+                                        }),
+                                        p
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Mesh Enabled"
+                                        }),
+                                        g
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Verify Clients"
+                                        }),
+                                        S
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Metrics Address"
+                                        }),
+                                        U
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Health Address"
+                                        }),
+                                        $
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: "Last Error"
+                                        }),
+                                        k
+                                    ]
+                                })
+                            ]
+                        })
+                    ]
+                }),
+                jsxs("div", {
+                    class: "cbi-section",
+                    style: "margin-top: 1em;",
+                    children: [
+                        jsx("h3", {
+                            children: "Service Actions"
+                        }),
+                        jsxs("div", {
+                            class: "cbi-section-node",
+                            children: [
+                                j,
+                                " ",
+                                B,
+                                " ",
+                                F,
+                                " ",
+                                P
+                            ]
+                        }),
+                        N
+                    ]
+                })
             ]
         });
     },

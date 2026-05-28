@@ -78,6 +78,9 @@ rpc_read() {
         get_version)
             fetch_json "${base_url}/version"
             ;;
+        get_clients)
+            fetch_json "${base_url}/clients"
+            ;;
         *)
             echo '{"error":"unknown method"}'
             exit 1
@@ -108,12 +111,12 @@ rpc_write() {
 
 case "$1" in
     list)
-        echo '{"get_status":{},"get_version":{},"start":{},"stop":{},"restart":{},"reload_config":{}}'
+        echo '{"get_status":{},"get_version":{},"get_clients":{},"start":{},"stop":{},"restart":{},"reload_config":{}}'
         ;;
     call)
         method="$2"
         case "$method" in
-            get_status|get_version)
+            get_status|get_version|get_clients)
                 rpc_read "$method"
                 ;;
             start|stop|restart|reload_config)

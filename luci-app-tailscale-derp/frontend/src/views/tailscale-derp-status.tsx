@@ -17,6 +17,7 @@ type ActionResponse = {
 };
 
 type StatusResponse = {
+	verifyClients?: string[];
 	running?: boolean;
 	listen?: string;
 	stun?: boolean;
@@ -24,6 +25,10 @@ type StatusResponse = {
 	metrics?: string;
 	health?: string;
 	error?: string;
+	clients?: number;
+	accepts?: number;
+	bytesRecv?: number;
+	bytesSent?: number;
 };
 
 type VersionResponse = {
@@ -31,6 +36,7 @@ type VersionResponse = {
 };
 
 type NormalizedStatus = {
+	verifyClients: string;
 	running: boolean;
 	listen: string;
 	stun: string;
@@ -38,6 +44,10 @@ type NormalizedStatus = {
 	metrics: string;
 	health: string;
 	error: string;
+	clients: number;
+	accepts: number;
+	bytesRecv: number;
+	bytesSent: number;
 };
 
 type SyncState = {
@@ -71,46 +81,36 @@ const callStatus = rpc.declare<StatusResponse>({
 	object: "luci.tailscale-derp",
 	method: "get_status",
 });
+
 const callVersion = rpc.declare<VersionResponse>({
 	object: "luci.tailscale-derp",
 	method: "get_version",
 });
 
+function formatBytes(n: number): string {
+	if (n < 1024) return `${n} B`;
+	if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+	if (n < 1024 * 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+	return `${(n / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+}
+
 function normalizeStatus(data: StatusResponse): NormalizedStatus {
 	return {
-		running: Boolean(data.running),
-		listen: data.listen || "Not configured",
+		verifyClients: data.verifyClients?.length
+			? data.verifyClients.join(", ")
+			: "Disabled",
+		running: !!data.running,
+		listen: data.listen || "N/A",
 		stun: data.stun ? "Yes" : "No",
 		mesh: data.mesh ? "Yes" : "No",
-		metrics: data.metrics || "127.0.0.1:9911",
-		health: data.health || ":9912",
+		metrics: data.metrics || "N/A",
+		health: data.health || "N/A",
 		error: data.error || "",
+		clients: data.clients ?? 0,
+		accepts: data.accepts ?? 0,
+		bytesRecv: data.bytesRecv ?? 0,
+		bytesSent: data.bytesSent ?? 0,
 	};
-}
-
-function setText(id: string, value: string): void {
-	const el = document.getElementById(id);
-	if (el) {
-		el.textContent = value;
-	}
-}
-
-function setActionResult(kind: "error" | "success", message: string): void {
-	const el = document.getElementById("ops-result");
-	if (!el) {
-		return;
-	}
-
-	el.style.color = kind === "error" ? "#c00" : "#090";
-	el.textContent = message;
-}
-
-function setActionButtonsDisabled(disabled: boolean): void {
-	const buttons =
-		document.querySelectorAll<HTMLButtonElement>("[data-derp-action]");
-	buttons.forEach((button) => {
-		button.disabled = disabled;
-	});
 }
 
 function actionLabel(action: ActionName): string {
@@ -132,18 +132,6 @@ function shouldConfirm(action: ActionName): boolean {
 
 function invokeAction(action: ActionName): Promise<ActionResponse> {
 	return actionCalls[action]();
-}
-
-function renderOfflineState(message: string): void {
-	setText("derp-status", _("Offline"));
-	setText("derp-version", "Unavailable");
-	setText("derp-listen", "Unavailable");
-	setText("derp-stun", "Unknown");
-	setText("derp-mesh", "Unknown");
-	setText("derp-metrics", "Unavailable");
-	setText("derp-health", "Unavailable");
-	setText("derp-error", message || "Status backend unavailable");
-	renderSyncState(null, message || "Status backend unavailable");
 }
 
 function normalizeAddress(value: string): string {
@@ -230,53 +218,84 @@ function getSyncState(
 	};
 }
 
-function renderSyncState(
-	normalized: NormalizedStatus | null,
-	backendMessage: string,
-): void {
-	const el = document.getElementById("derp-sync");
-	const state = getSyncState(normalized, backendMessage);
+type StatusView = {
+	statusEl: HTMLElement;
+	versionEl: HTMLElement;
+	listenEl: HTMLElement;
+	stunEl: HTMLElement;
+	meshEl: HTMLElement;
+	verifyClientsEl: HTMLElement;
+	metricsEl: HTMLElement;
+	healthEl: HTMLElement;
+	errorEl: HTMLElement;
+	clientsEl: HTMLElement;
+	trafficEl: HTMLElement;
+	syncEl: HTMLElement;
+	resultEl: HTMLElement;
+	actionButtons: HTMLButtonElement[];
+	handleAction: (action: ActionName) => Promise<void>;
+};
 
-	if (!el) {
-		return;
-	}
-
-	if (state.clear) {
-		clearPendingStatus();
-	}
-
-	el.style.color = state.color;
-	el.textContent = state.text;
-}
-
-function renderStatus(status: StatusResponse, version: VersionResponse): void {
-	const normalized = normalizeStatus(status || {});
-	setText("derp-status", normalized.running ? "Running" : "Stopped");
-	setText("derp-version", version.version || "Unknown");
-	setText("derp-listen", normalized.listen);
-	setText("derp-stun", normalized.stun);
-	setText("derp-mesh", normalized.mesh);
-	setText("derp-metrics", normalized.metrics);
-	setText("derp-health", normalized.health);
-	setText("derp-error", normalized.error || "None");
-	renderSyncState(normalized, normalized.error);
-}
-
-function pollStatus(): Promise<void> {
+function pollStatus(view: StatusView): Promise<void> {
 	return Promise.all([callStatus(), callVersion()])
 		.then(([status, version]) => {
-			renderStatus(status || {}, version || {});
+			const normalized = normalizeStatus(status || {});
+			view.statusEl.textContent = normalized.running ? "Running" : "Stopped";
+			view.versionEl.textContent = normalized.error
+				? "Unavailable"
+				: version?.version || "Unknown";
+			view.listenEl.textContent = normalized.error
+				? "Unavailable"
+				: normalized.listen;
+			view.stunEl.textContent = normalized.error
+				? "Unknown"
+				: normalized.stun;
+			view.meshEl.textContent = normalized.error
+				? "Unknown"
+				: normalized.mesh;
+			view.verifyClientsEl.textContent = normalized.error
+				? "Unknown"
+				: normalized.verifyClients;
+			view.metricsEl.textContent = normalized.error
+				? "Unavailable"
+				: normalized.metrics;
+			view.healthEl.textContent = normalized.error
+				? "Unavailable"
+				: normalized.health;
+			view.errorEl.textContent = normalized.error || "None";
+			view.clientsEl.textContent = `${normalized.clients} connected (${normalized.accepts} total accepted)`;
+			view.trafficEl.textContent = `↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`;
+
+			const syncState = getSyncState(normalized, normalized.error);
+			if (syncState.clear) {
+				clearPendingStatus();
+			}
+			view.syncEl.style.color = syncState.color;
+			view.syncEl.textContent = syncState.text;
 		})
 		.catch((err: unknown) => {
 			const message =
 				err instanceof Error ? err.message : "Status backend unavailable";
-			renderOfflineState(message);
+			view.statusEl.textContent = _("Offline");
+			view.versionEl.textContent = "Unavailable";
+			view.listenEl.textContent = "Unavailable";
+			view.stunEl.textContent = "Unknown";
+			view.meshEl.textContent = "Unknown";
+			view.verifyClientsEl.textContent = "Unknown";
+			view.metricsEl.textContent = "Unavailable";
+			view.healthEl.textContent = "Unavailable";
+			view.errorEl.textContent = message || "Status backend unavailable";
+			view.clientsEl.textContent = "0 connected (0 total accepted)";
+			view.trafficEl.textContent = "↓ 0 B / ↑ 0 B";
+
+			const syncState = getSyncState(null, message || "Status backend unavailable");
+			if (syncState.clear) {
+				clearPendingStatus();
+			}
+			view.syncEl.style.color = syncState.color;
+			view.syncEl.textContent = syncState.text;
 		});
 }
-
-type StatusView = {
-	handleAction: (action: ActionName) => Promise<void>;
-};
 
 export const main = view.extend({
 	handleAction(this: StatusView, action: ActionName) {
@@ -285,13 +304,17 @@ export const main = view.extend({
 		if (shouldConfirm(action)) {
 			const message = `Are you sure you want to ${action} the DERP service?`;
 			if (!window.confirm(message)) {
-				setActionResult("error", `${label} cancelled.`);
+				this.resultEl.style.color = "#c00";
+				this.resultEl.textContent = `${label} cancelled.`;
 				return Promise.resolve();
 			}
 		}
 
-		setActionButtonsDisabled(true);
-		setActionResult("success", `${label} in progress...`);
+		for (const btn of this.actionButtons) {
+			btn.disabled = true;
+		}
+		this.resultEl.style.color = "#090";
+		this.resultEl.textContent = `${label} in progress...`;
 
 		return invokeAction(action)
 			.then((result) => {
@@ -303,16 +326,20 @@ export const main = view.extend({
 					throw new Error(errorMessage || `${label} failed`);
 				}
 
-				setActionResult("success", `${label} completed successfully.`);
-				return pollStatus();
+				this.resultEl.style.color = "#090";
+				this.resultEl.textContent = `${label} completed successfully.`;
+				return pollStatus(this);
 			})
 			.catch((err: unknown) => {
 				const message = err instanceof Error ? err.message : "unknown error";
-				setActionResult("error", `${label} failed: ${message}`);
-				return pollStatus();
+				this.resultEl.style.color = "#c00";
+				this.resultEl.textContent = `${label} failed: ${message}`;
+				return pollStatus(this);
 			})
 			.finally(() => {
-				setActionButtonsDisabled(false);
+				for (const btn of this.actionButtons) {
+					btn.disabled = false;
+				}
 			});
 	},
 
@@ -330,22 +357,6 @@ export const main = view.extend({
 		const status = data[0] || {};
 		const version = data[1] || {};
 		const normalized = normalizeStatus(status);
-		const initialState = normalized.error
-			? "Offline"
-			: normalized.running
-				? "Running"
-				: "Stopped";
-		const initialVersion = normalized.error
-			? "Unavailable"
-			: version.version || "Unknown";
-		const initialListen = normalized.error ? "Unavailable" : normalized.listen;
-		const initialStun = normalized.error ? "Unknown" : normalized.stun;
-		const initialMesh = normalized.error ? "Unknown" : normalized.mesh;
-		const initialMetrics = normalized.error
-			? "Unavailable"
-			: normalized.metrics;
-		const initialHealth = normalized.error ? "Unavailable" : normalized.health;
-		const initialError = normalized.error || "None";
 		const initialSyncState = getSyncState(normalized, normalized.error);
 
 		if (initialSyncState.clear) {
@@ -357,108 +368,147 @@ export const main = view.extend({
 		const handleRestart = ui.createHandlerFn(this, "handleAction", "restart");
 		const handleReload = ui.createHandlerFn(this, "handleAction", "reload");
 
-		const statusTable = (
-			<table class="table">
-				<tr class="tr">
-					<td class="td">Service Status</td>
-					<td class="td" id="derp-status">{initialState}</td>
-				</tr>
-				<tr class="tr">
-					<td class="td">Version</td>
-					<td class="td" id="derp-version">{initialVersion}</td>
-				</tr>
-				<tr class="tr">
-					<td class="td">Listen Address</td>
-					<td class="td" id="derp-listen">{initialListen}</td>
-				</tr>
-				<tr class="tr">
-					<td class="td">STUN Enabled</td>
-					<td class="td" id="derp-stun">{initialStun}</td>
-				</tr>
-				<tr class="tr">
-					<td class="td">Mesh Enabled</td>
-					<td class="td" id="derp-mesh">{initialMesh}</td>
-				</tr>
-				<tr class="tr">
-					<td class="td">Metrics Address</td>
-					<td class="td" id="derp-metrics">{initialMetrics}</td>
-				</tr>
-				<tr class="tr">
-					<td class="td">Health Address</td>
-					<td class="td" id="derp-health">{initialHealth}</td>
-				</tr>
-				<tr class="tr">
-					<td class="td">Last Error</td>
-					<td class="td" id="derp-error">{initialError}</td>
-				</tr>
-			</table>
-		);
+		const statusEl = <td class="td">{normalized.running ? "Running" : "Stopped"}</td>;
+		const versionEl = <td class="td">{normalized.error ? "Unavailable" : version.version || "Unknown"}</td>;
+		const listenEl = <td class="td">{normalized.error ? "Unavailable" : normalized.listen}</td>;
+		const stunEl = <td class="td">{normalized.error ? "Unknown" : normalized.stun}</td>;
+		const meshEl = <td class="td">{normalized.error ? "Unknown" : normalized.mesh}</td>;
+		const verifyClientsEl = <td class="td">{normalized.error ? "Unknown" : normalized.verifyClients}</td>;
+		const metricsEl = <td class="td">{normalized.error ? "Unavailable" : normalized.metrics}</td>;
+		const healthEl = <td class="td">{normalized.error ? "Unavailable" : normalized.health}</td>;
+		const errorEl = <td class="td">{normalized.error || "None"}</td>;
+		const clientsEl = <td class="td">{`${normalized.clients} connected (${normalized.accepts} total accepted)`}</td>;
+		const trafficEl = <td class="td">{`↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`}</td>;
 
-		const card = (
-			<div class="cbi-section">
-				<h3>DERP Server Status</h3>
-				<div
-					id="derp-sync"
-					style={`margin-bottom: 0.75em; color: ${initialSyncState.color};`}
-				>
-					{initialSyncState.text}
-				</div>
-				{statusTable}
+		const syncEl = (
+			<div style={`margin-bottom: 0.75em; color: ${initialSyncState.color};`}>
+				{initialSyncState.text}
 			</div>
 		);
 
-		const actions = (
-			<div class="cbi-section" style="margin-top: 1em;">
-				<h3>Service Actions</h3>
-				<div class="cbi-section-node">
-					<button
-						class="cbi-button cbi-button-action"
-						data-derp-action="start"
-						onClick={handleStart}
-					>
-						Start
-					</button>
-					{" "}
-					<button
-						class="cbi-button cbi-button-negative"
-						data-derp-action="stop"
-						onClick={handleStop}
-					>
-						Stop
-					</button>
-					{" "}
-					<button
-						class="cbi-button cbi-button-action"
-						data-derp-action="restart"
-						onClick={handleRestart}
-					>
-						Restart
-					</button>
-					{" "}
-					<button
-						class="cbi-button cbi-button-action"
-						data-derp-action="reload"
-						onClick={handleReload}
-					>
-						Reload Config
-					</button>
-				</div>
-				<div
-					id="ops-result"
-					style="margin-top: 0.75em; min-height: 1.2em; color: #090;"
-				>
-					No action executed yet.
-				</div>
+		const resultEl = (
+			<div style="margin-top: 0.75em; min-height: 1.2em; color: #090;">
+				No action executed yet.
 			</div>
 		);
 
-		poll.add(() => pollStatus(), 5);
+		this.statusEl = statusEl;
+		this.versionEl = versionEl;
+		this.listenEl = listenEl;
+		this.stunEl = stunEl;
+		this.meshEl = meshEl;
+		this.verifyClientsEl = verifyClientsEl;
+		this.metricsEl = metricsEl;
+		this.healthEl = healthEl;
+		this.errorEl = errorEl;
+		this.clientsEl = clientsEl;
+		this.trafficEl = trafficEl;
+		this.syncEl = syncEl;
+		this.resultEl = resultEl;
+
+		const btnStart = (
+			<button
+				class="cbi-button cbi-button-action"
+				onClick={handleStart}
+			>
+				Start
+			</button>
+		);
+		const btnStop = (
+			<button
+				class="cbi-button cbi-button-negative"
+				onClick={handleStop}
+			>
+				Stop
+			</button>
+		);
+		const btnRestart = (
+			<button
+				class="cbi-button cbi-button-action"
+				onClick={handleRestart}
+			>
+				Restart
+			</button>
+		);
+		const btnReload = (
+			<button
+				class="cbi-button cbi-button-action"
+				onClick={handleReload}
+			>
+				Reload Config
+			</button>
+		);
+
+		this.actionButtons = [btnStart, btnStop, btnRestart, btnReload];
+
+		poll.add(() => pollStatus(this), 5);
 
 		return (
 			<div>
 				<h2>Tailscale DERP Status</h2>
-				{card}
-				{actions}
+				<div class="cbi-section">
+					<h3>DERP Server Status</h3>
+					{syncEl}
+					<table class="table">
+						<tr class="tr">
+							<td class="td">Service Status</td>
+							{statusEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Version</td>
+							{versionEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Connected Clients</td>
+							{clientsEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Traffic</td>
+							{trafficEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Listen Address</td>
+							{listenEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">STUN Enabled</td>
+							{stunEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Mesh Enabled</td>
+							{meshEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Verify Clients</td>
+							{verifyClientsEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Metrics Address</td>
+							{metricsEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Health Address</td>
+							{healthEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">Last Error</td>
+							{errorEl}
+						</tr>
+					</table>
+				</div>
+				<div class="cbi-section" style="margin-top: 1em;">
+					<h3>Service Actions</h3>
+					<div class="cbi-section-node">
+						{btnStart}
+						{" "}
+						{btnStop}
+						{" "}
+						{btnRestart}
+						{" "}
+						{btnReload}
+					</div>
+					{resultEl}
+				</div>
 			</div>
 		);
 	},

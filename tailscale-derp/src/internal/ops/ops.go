@@ -1,32 +1,46 @@
 package ops
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os/exec"
+	"time"
 
 	"github.com/lk/openwrt-tailscale-derp/internal/httpjson"
 	"github.com/lk/openwrt-tailscale-derp/internal/service"
 )
 
+const verifyTimeout = 5 * time.Second
+
 type Config struct {
-	Version string
-	Listen  string
-	STUN    bool
-	Mesh    bool
-	OpsAddr string
-	Health  string
+	VerifyClientURLs     []string
+	VerifyClientFailOpen bool
+	Version              string
+	Listen               string
+	STUN                 bool
+	Mesh                 bool
+	OpsAddr              string
+	Health               string
 }
 
 type Status struct {
-	Version string `json:"version"`
-	Running bool   `json:"running"`
-	Listen  string `json:"listen"`
-	STUN    bool   `json:"stun"`
-	Mesh    bool   `json:"mesh"`
-	Metrics string `json:"metrics"`
-	Health  string `json:"health"`
-	Error   string `json:"error,omitempty"`
+	VerifyClients []string `json:"verifyClients,omitempty"`
+	Running       bool     `json:"running"`
+	Version       string   `json:"version"`
+	Listen        string   `json:"listen"`
+	STUN          bool     `json:"stun"`
+	Mesh          bool     `json:"mesh"`
+	Metrics       string   `json:"metrics"`
+	Health        string   `json:"health"`
+	Error         string   `json:"error,omitempty"`
+	Clients       int      `json:"clients"`
+	Accepts       int64    `json:"accepts"`
+	BytesRecv     int64    `json:"bytesRecv"`
+	BytesSent     int64    `json:"bytesSent"`
 }
 
 type ActionResult struct {
@@ -38,7 +52,10 @@ type ActionResult struct {
 type Executor func(action string) error
 type Snapshot func() (bool, string)
 
-func StatusFromConfig(cfg Config, snapshot Snapshot) Status {
+// MetricsFunc returns DERP server expvar metrics as raw JSON.
+type MetricsFunc func() json.RawMessage
+
+func StatusFromConfig(cfg Config, snapshot Snapshot, mf MetricsFunc) Status {
 	running := true
 	errMsg := ""
 	if snapshot != nil {
@@ -53,16 +70,51 @@ func StatusFromConfig(cfg Config, snapshot Snapshot) Status {
 		healthAddr = ":9912"
 	}
 
-	return Status{
-		Version: cfg.Version,
-		Running: running,
-		Listen:  cfg.Listen,
-		STUN:    cfg.STUN,
-		Mesh:    cfg.Mesh,
-		Metrics: metricsAddr,
-		Health:  healthAddr,
-		Error:   errMsg,
+	s := Status{
+		VerifyClients: cfg.VerifyClientURLs,
+		Running:       running,
+		Version:       cfg.Version,
+		Listen:        cfg.Listen,
+		STUN:          cfg.STUN,
+		Mesh:          cfg.Mesh,
+		Metrics:       metricsAddr,
+		Health:        healthAddr,
+		Error:         errMsg,
 	}
+
+	if mf != nil {
+		if raw := mf(); len(raw) > 0 {
+			var m map[string]json.RawMessage
+			if json.Unmarshal(raw, &m) == nil {
+				s.Clients = extractInt(m, "gauge_clients_local")
+				s.Accepts = extractInt64(m, "accepts")
+				s.BytesRecv = extractInt64(m, "bytes_received")
+				s.BytesSent = extractInt64(m, "bytes_sent")
+			}
+		}
+	}
+
+	return s
+}
+
+func extractInt(m map[string]json.RawMessage, key string) int {
+	raw, ok := m[key]
+	if !ok {
+		return 0
+	}
+	var v int
+	json.Unmarshal(raw, &v)
+	return v
+}
+
+func extractInt64(m map[string]json.RawMessage, key string) int64 {
+	raw, ok := m[key]
+	if !ok {
+		return 0
+	}
+	var v int64
+	json.Unmarshal(raw, &v)
+	return v
 }
 
 func HandleOpsWithExecutor(executor Executor) http.HandlerFunc {
@@ -89,14 +141,14 @@ func HandleOpsWithExecutor(executor Executor) http.HandlerFunc {
 	}
 }
 
-func HandleStatus(cfg Config, snapshot Snapshot) http.HandlerFunc {
+func HandleStatus(cfg Config, snapshot Snapshot, mf MetricsFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			httpjson.Write(w, http.StatusMethodNotAllowed, map[string]string{"error": "GET required"})
 			return
 		}
 
-		httpjson.Write(w, http.StatusOK, StatusFromConfig(cfg, snapshot))
+		httpjson.Write(w, http.StatusOK, StatusFromConfig(cfg, snapshot, mf))
 	}
 }
 
@@ -120,11 +172,117 @@ func HandleVersion(version string) http.HandlerFunc {
 	}
 }
 
-func NewMux(cfg Config, snapshot Snapshot, executor Executor) http.Handler {
+// HandleVerify implements a multi-URL admission controller.
+// It accepts POST requests with ?key=<node-public-key>.
+// Returns 200 if any URL accepts, 403 if any explicitly rejects.
+// Falls back to fail-open policy on network errors.
+func HandleVerify(urls []string, failOpen bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			httpjson.Write(w, http.StatusMethodNotAllowed, map[string]string{"error": "POST required"})
+			return
+		}
+
+		clientKey := r.URL.Query().Get("key")
+		if clientKey == "" {
+			httpjson.Write(w, http.StatusBadRequest, map[string]string{"error": "key parameter required"})
+			return
+		}
+
+		if len(urls) == 0 {
+			httpjson.Write(w, http.StatusOK, map[string]string{"result": "accepted", "reason": "no verify URLs configured"})
+			return
+		}
+
+		var lastErr error
+		for _, verifyURL := range urls {
+			err := checkVerifyURL(verifyURL, clientKey)
+			if err == nil {
+				httpjson.Write(w, http.StatusOK, map[string]string{"result": "accepted"})
+				return
+			}
+			if err != errVerifyNetwork {
+				httpjson.Write(w, http.StatusForbidden, map[string]string{"result": "rejected", "error": err.Error()})
+				return
+			}
+			lastErr = err
+		}
+
+		if failOpen {
+			httpjson.Write(w, http.StatusOK, map[string]string{"result": "accepted", "reason": "fail-open"})
+			return
+		}
+
+		httpjson.Write(w, http.StatusForbidden, map[string]string{
+			"result": "rejected",
+			"error":  fmt.Sprintf("all verify URLs unreachable: %v", lastErr),
+		})
+	}
+}
+
+var errVerifyNetwork = fmt.Errorf("network error")
+
+func checkVerifyURL(baseURL, clientKey string) error {
+	u, err := url.Parse(baseURL)
+	if err != nil {
+		return errVerifyNetwork
+	}
+	q := u.Query()
+	q.Set("key", clientKey)
+	u.RawQuery = q.Encode()
+
+	client := &http.Client{Timeout: verifyTimeout}
+	resp, err := client.Get(u.String())
+	if err != nil {
+		return errVerifyNetwork
+	}
+	defer resp.Body.Close()
+	io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return nil
+	}
+	if resp.StatusCode >= 500 {
+		return errVerifyNetwork
+	}
+	return fmt.Errorf("rejected with status %d", resp.StatusCode)
+}
+
+// HandleClients returns raw DERP server metrics.
+func HandleClients(mf MetricsFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			httpjson.Write(w, http.StatusMethodNotAllowed, map[string]string{"error": "GET required"})
+			return
+		}
+
+		if mf == nil {
+			httpjson.Write(w, http.StatusServiceUnavailable, map[string]string{"error": "DERP server not ready"})
+			return
+		}
+
+		raw := mf()
+		if len(raw) == 0 {
+			httpjson.Write(w, http.StatusOK, map[string]any{})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(raw)
+	}
+}
+
+func NewMux(cfg Config, snapshot Snapshot, executor Executor, mf MetricsFunc) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/status", HandleStatus(cfg, snapshot))
+	mux.HandleFunc("/status", HandleStatus(cfg, snapshot, mf))
 	mux.HandleFunc("/health", HandleHealth)
 	mux.HandleFunc("/version", HandleVersion(cfg.Version))
 	mux.HandleFunc("/ops", HandleOpsWithExecutor(executor))
+
+	if len(cfg.VerifyClientURLs) > 0 {
+		mux.HandleFunc("/verify", HandleVerify(cfg.VerifyClientURLs, cfg.VerifyClientFailOpen))
+	}
+
+	mux.HandleFunc("/clients", HandleClients(mf))
 	return mux
 }

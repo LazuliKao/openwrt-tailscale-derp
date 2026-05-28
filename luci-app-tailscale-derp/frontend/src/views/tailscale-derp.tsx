@@ -115,6 +115,16 @@ export const main = view.extend({
     o.password = true;
     o.validate = validateMeshKey;
 
+    s = m.section(form.TypedSection, "verify", "Client Verification");
+    s.anonymous = true;
+
+    o = s.option(form.DynamicList, "url", "Verify URLs", "Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)");
+    o.rmempty = true;
+    o.placeholder = "https://your-admission-controller/verify";
+
+    o = s.option(form.Flag, "fail_open", "Fail Open", "Allow clients to connect if all verify URLs are unreachable");
+    o.default = "0";
+    o.rmempty = false;
     s = m.section(form.TypedSection, "ops", "Operations");
     s.anonymous = true;
 
