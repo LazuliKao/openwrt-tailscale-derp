@@ -14,8 +14,8 @@ const luciRequires = `'use strict';
 export default defineConfig({
   source: {
     entry: {
-      "tailscale-derp": "./src/views/tailscale-derp.ts",
-      "tailscale-derp-status": "./src/views/tailscale-derp-status.ts"
+      "tailscale-derp": "./src/views/tailscale-derp.tsx",
+      "tailscale-derp-status": "./src/views/tailscale-derp-status.tsx"
     },
     tsconfigPath: "./tsconfig.json"
   },
@@ -63,7 +63,7 @@ export default defineConfig({
         transform: {
           react: {
             runtime: "automatic",
-            importSource: "src/utils/jsx-factory",
+            importSource: "@lazulikao/luci-types",
             development: false
           },
           optimizer: {

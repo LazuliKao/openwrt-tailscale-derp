@@ -11,6 +11,47 @@
 
 // UNUSED EXPORTS: main
 
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
+const Fragment = Symbol.for("jsx.fragment");
+function jsx_factory_e(e, t) {
+    let { children: n, ...r } = t || {}, o = function e(t, n = []) {
+        for (let r of t)null != r && "boolean" != typeof r && (Array.isArray(r) ? e(r, n) : n.push(r));
+        return n;
+    }(null == n ? [] : Array.isArray(n) ? n : [
+        n
+    ]);
+    if (e === Fragment) {
+        let e = document.createDocumentFragment();
+        return e.append(...o), e;
+    }
+    if ("function" == typeof e) return e({
+        ...r,
+        children: o
+    });
+    let l = {}, f = {
+        ...r
+    };
+    for (let [e, t] of Object.entries(f))e.startsWith("on") && "function" == typeof t ? (l[e] = t, delete f[e]) : "boolean" == typeof t && (t ? f[e] = e : delete f[e]);
+    let u = Object.keys(f).length > 0 ? o.length > 1 ? E(e, f, o) : E(e, f, o[0]) : o.length > 1 ? E(e, {}, o) : E(e, {}, o[0]);
+    for (let [e, t] of Object.entries(l)){
+        let n = e.slice(2).toLowerCase();
+        u.addEventListener(n, t);
+    }
+    return u;
+}
+function jsx(t, n) {
+    return jsx_factory_e(t, n);
+}
+function jsxs(t, n) {
+    return jsx_factory_e(t, n);
+}
+function jsxDEV(t, n) {
+    return jsx_factory_e(t, n);
+}
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
+
+
 ;// CONCATENATED MODULE: ./src/shared/config.ts
 const pendingStatusStorageKey = "tailscale-derp.pendingStatus";
 function isSocketAddress(t) {
@@ -68,33 +109,34 @@ function readPendingStatus() {
     }
 }
 
-;// CONCATENATED MODULE: ./src/views/tailscale-derp-status.ts
+;// CONCATENATED MODULE: ./src/views/tailscale-derp-status.tsx
 
-let tailscale_derp_status_r = L.view, tailscale_derp_status_n = L.rpc, tailscale_derp_status_a = LuCI.ui, tailscale_derp_status_s = L.Poll, tailscale_derp_status_l = {
-    start: tailscale_derp_status_n.declare({
+
+let tailscale_derp_status_l = L.view, tailscale_derp_status_a = L.rpc, tailscale_derp_status_s = LuCI.ui, c = L.Poll, tailscale_derp_status_i = {
+    start: tailscale_derp_status_a.declare({
         object: "luci.tailscale-derp",
         method: "start"
     }),
-    stop: tailscale_derp_status_n.declare({
+    stop: tailscale_derp_status_a.declare({
         object: "luci.tailscale-derp",
         method: "stop"
     }),
-    restart: tailscale_derp_status_n.declare({
+    restart: tailscale_derp_status_a.declare({
         object: "luci.tailscale-derp",
         method: "restart"
     }),
-    reload: tailscale_derp_status_n.declare({
+    reload: tailscale_derp_status_a.declare({
         object: "luci.tailscale-derp",
         method: "reload_config"
     })
-}, tailscale_derp_status_o = tailscale_derp_status_n.declare({
+}, tailscale_derp_status_o = tailscale_derp_status_a.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
-}), tailscale_derp_status_c = tailscale_derp_status_n.declare({
+}), tailscale_derp_status_d = tailscale_derp_status_a.declare({
     object: "luci.tailscale-derp",
     method: "get_version"
 });
-function i(e) {
+function tailscale_derp_status_u(e) {
     return {
         running: !!e.running,
         listen: e.listen || "Not configured",
@@ -105,38 +147,38 @@ function i(e) {
         error: e.error || ""
     };
 }
-function tailscale_derp_status_d(e, t) {
+function tailscale_derp_status_h(e, t) {
     let r = document.getElementById(e);
     r && (r.textContent = t);
 }
-function tailscale_derp_status_u(e, t) {
+function tailscale_derp_status_p(e, t) {
     let r = document.getElementById("ops-result");
     r && (r.style.color = "error" === e ? "#c00" : "#090", r.textContent = t);
 }
-function tailscale_derp_status_h(e) {
+function tailscale_derp_status_m(e) {
     document.querySelectorAll("[data-derp-action]").forEach((t)=>{
         t.disabled = e;
     });
 }
-function tailscale_derp_status_p(e) {
+function tailscale_derp_status_b(e) {
     if (!e) return "";
     if (/^:\d+$/.test(e)) return `0.0.0.0${e}`;
     let t = e.match(/^\[::\]:(\d+)$/);
     return t ? `0.0.0.0:${t[1]}` : e;
 }
-function b(e, r) {
-    let n = readPendingStatus();
-    return n ? !n.savedAt || Date.now() - n.savedAt > 300000 ? {
+function v(e, t) {
+    let r = readPendingStatus();
+    return r ? !r.savedAt || Date.now() - r.savedAt > 300000 ? {
         color: "#c60",
         text: "Saved configuration status expired before it could be confirmed.",
         clear: !0
-    } : e && n && (!1 === n.enabled ? "" !== e.error || !1 === e.running : !0 === e.running && tailscale_derp_status_p(e.listen) === tailscale_derp_status_p(n.listen) && e.stun === (n.stun ? "Yes" : "No") && e.mesh === (n.mesh ? "Yes" : "No") && e.metrics === n.metrics && e.health === n.health) ? {
+    } : e && r && (!1 === r.enabled ? "" !== e.error || !1 === e.running : !0 === e.running && tailscale_derp_status_b(e.listen) === tailscale_derp_status_b(r.listen) && e.stun === (r.stun ? "Yes" : "No") && e.mesh === (r.mesh ? "Yes" : "No") && e.metrics === r.metrics && e.health === r.health) ? {
         color: "#090",
         text: "Saved configuration is now active.",
         clear: !0
     } : {
         color: "#c60",
-        text: r ? `Waiting for saved configuration to become active: ${r}` : "Waiting for saved configuration to become active...",
+        text: t ? `Waiting for saved configuration to become active: ${t}` : "Waiting for saved configuration to become active...",
         clear: !1
     } : {
         color: "#666",
@@ -144,23 +186,23 @@ function b(e, r) {
         clear: !1
     };
 }
-function tailscale_derp_status_m(t, r) {
-    let n = document.getElementById("derp-sync"), a = b(t, r);
-    n && (a.clear && clearPendingStatus(), n.style.color = a.color, n.textContent = a.text);
+function tailscale_derp_status_f(e, t) {
+    let n = document.getElementById("derp-sync"), l = v(e, t);
+    n && (l.clear && clearPendingStatus(), n.style.color = l.color, n.textContent = l.text);
 }
-function v() {
+function g() {
     return Promise.all([
         tailscale_derp_status_o(),
-        tailscale_derp_status_c()
+        tailscale_derp_status_d()
     ]).then(([e, t])=>{
         let r;
-        tailscale_derp_status_d("derp-status", (r = i(e || {})).running ? "Running" : "Stopped"), tailscale_derp_status_d("derp-version", (t || {}).version || "Unknown"), tailscale_derp_status_d("derp-listen", r.listen), tailscale_derp_status_d("derp-stun", r.stun), tailscale_derp_status_d("derp-mesh", r.mesh), tailscale_derp_status_d("derp-metrics", r.metrics), tailscale_derp_status_d("derp-health", r.health), tailscale_derp_status_d("derp-error", r.error || "None"), tailscale_derp_status_m(r, r.error);
+        tailscale_derp_status_h("derp-status", (r = tailscale_derp_status_u(e || {})).running ? "Running" : "Stopped"), tailscale_derp_status_h("derp-version", (t || {}).version || "Unknown"), tailscale_derp_status_h("derp-listen", r.listen), tailscale_derp_status_h("derp-stun", r.stun), tailscale_derp_status_h("derp-mesh", r.mesh), tailscale_derp_status_h("derp-metrics", r.metrics), tailscale_derp_status_h("derp-health", r.health), tailscale_derp_status_h("derp-error", r.error || "None"), tailscale_derp_status_f(r, r.error);
     }).catch((e)=>{
         var t;
-        t = e instanceof Error ? e.message : "Status backend unavailable", tailscale_derp_status_d("derp-status", _("Offline")), tailscale_derp_status_d("derp-version", "Unavailable"), tailscale_derp_status_d("derp-listen", "Unavailable"), tailscale_derp_status_d("derp-stun", "Unknown"), tailscale_derp_status_d("derp-mesh", "Unknown"), tailscale_derp_status_d("derp-metrics", "Unavailable"), tailscale_derp_status_d("derp-health", "Unavailable"), tailscale_derp_status_d("derp-error", t || "Status backend unavailable"), tailscale_derp_status_m(null, t || "Status backend unavailable");
+        t = e instanceof Error ? e.message : "Status backend unavailable", tailscale_derp_status_h("derp-status", _("Offline")), tailscale_derp_status_h("derp-version", "Unavailable"), tailscale_derp_status_h("derp-listen", "Unavailable"), tailscale_derp_status_h("derp-stun", "Unknown"), tailscale_derp_status_h("derp-mesh", "Unknown"), tailscale_derp_status_h("derp-metrics", "Unavailable"), tailscale_derp_status_h("derp-health", "Unavailable"), tailscale_derp_status_h("derp-error", t || "Status backend unavailable"), tailscale_derp_status_f(null, t || "Status backend unavailable");
     });
 }
-const main = tailscale_derp_status_r.extend({
+const main = tailscale_derp_status_l.extend({
     handleAction (e) {
         let t = function(e) {
             switch(e){
@@ -176,172 +218,214 @@ const main = tailscale_derp_status_r.extend({
         }(e);
         if ("stop" === e || "restart" === e) {
             let r = `Are you sure you want to ${e} the DERP service?`;
-            if (!window.confirm(r)) return tailscale_derp_status_u("error", `${t} cancelled.`), Promise.resolve();
+            if (!window.confirm(r)) return tailscale_derp_status_p("error", `${t} cancelled.`), Promise.resolve();
         }
-        return tailscale_derp_status_h(!0), tailscale_derp_status_u("success", `${t} in progress...`), tailscale_derp_status_l[e]().then((e)=>{
-            let r = e || {}, n = r.result || "ok", a = r.error;
-            if ("ok" !== n || a) throw Error(a || `${t} failed`);
-            return tailscale_derp_status_u("success", `${t} completed successfully.`), v();
+        return tailscale_derp_status_m(!0), tailscale_derp_status_p("success", `${t} in progress...`), tailscale_derp_status_i[e]().then((e)=>{
+            let r = e || {}, n = r.result || "ok", l = r.error;
+            if ("ok" !== n || l) throw Error(l || `${t} failed`);
+            return tailscale_derp_status_p("success", `${t} completed successfully.`), g();
         }).catch((e)=>{
             let r = e instanceof Error ? e.message : "unknown error";
-            return tailscale_derp_status_u("error", `${t} failed: ${r}`), v();
+            return tailscale_derp_status_p("error", `${t} failed: ${r}`), g();
         }).finally(()=>{
-            tailscale_derp_status_h(!1);
+            tailscale_derp_status_m(!1);
         });
     },
     load: ()=>Promise.all([
             tailscale_derp_status_o().catch((e)=>({
                     error: e instanceof Error ? e.message : "Status backend unavailable"
                 })),
-            tailscale_derp_status_c().catch(()=>({
+            tailscale_derp_status_d().catch(()=>({
                     version: "Unavailable"
                 }))
         ]),
-    render (t) {
-        let r = t[0] || {}, n = t[1] || {}, l = i(r), o = l.error ? "Offline" : l.running ? "Running" : "Stopped", c = l.error ? "Unavailable" : n.version || "Unknown", d = l.error ? "Unavailable" : l.listen, u = l.error ? "Unknown" : l.stun, h = l.error ? "Unknown" : l.mesh, p = l.error ? "Unavailable" : l.metrics, m = l.error ? "Unavailable" : l.health, f = l.error || "None", g = b(l, l.error);
-        g.clear && clearPendingStatus();
-        let S = E("table", {
-            class: "table"
-        }, [
-            E("tr", {
-                class: "tr"
-            }, [
-                E("td", {
-                    class: "td"
-                }, "Service Status"),
-                E("td", {
-                    class: "td",
-                    id: "derp-status"
-                }, o)
-            ]),
-            E("tr", {
-                class: "tr"
-            }, [
-                E("td", {
-                    class: "td"
-                }, "Version"),
-                E("td", {
-                    class: "td",
-                    id: "derp-version"
-                }, c)
-            ]),
-            E("tr", {
-                class: "tr"
-            }, [
-                E("td", {
-                    class: "td"
-                }, "Listen Address"),
-                E("td", {
-                    class: "td",
-                    id: "derp-listen"
-                }, d)
-            ]),
-            E("tr", {
-                class: "tr"
-            }, [
-                E("td", {
-                    class: "td"
-                }, "STUN Enabled"),
-                E("td", {
-                    class: "td",
-                    id: "derp-stun"
-                }, u)
-            ]),
-            E("tr", {
-                class: "tr"
-            }, [
-                E("td", {
-                    class: "td"
-                }, "Mesh Enabled"),
-                E("td", {
-                    class: "td",
-                    id: "derp-mesh"
-                }, h)
-            ]),
-            E("tr", {
-                class: "tr"
-            }, [
-                E("td", {
-                    class: "td"
-                }, "Metrics Address"),
-                E("td", {
-                    class: "td",
-                    id: "derp-metrics"
-                }, p)
-            ]),
-            E("tr", {
-                class: "tr"
-            }, [
-                E("td", {
-                    class: "td"
-                }, "Health Address"),
-                E("td", {
-                    class: "td",
-                    id: "derp-health"
-                }, m)
-            ]),
-            E("tr", {
-                class: "tr"
-            }, [
-                E("td", {
-                    class: "td"
-                }, "Last Error"),
-                E("td", {
-                    class: "td",
-                    id: "derp-error"
-                }, f)
-            ])
-        ]), k = E("div", {
-            class: "cbi-section"
-        }, [
-            E("h3", {}, "DERP Server Status"),
-            E("div", {
-                id: "derp-sync",
-                style: `margin-bottom: 0.75em; color: ${g.color};`
-            }, g.text),
-            S
-        ]), y = E("div", {
+    render (n) {
+        let l = n[0] || {}, a = n[1] || {}, i = tailscale_derp_status_u(l), o = i.error ? "Offline" : i.running ? "Running" : "Stopped", d = i.error ? "Unavailable" : a.version || "Unknown", h = i.error ? "Unavailable" : i.listen, p = i.error ? "Unknown" : i.stun, m = i.error ? "Unknown" : i.mesh, b = i.error ? "Unavailable" : i.metrics, f = i.error ? "Unavailable" : i.health, S = i.error || "None", k = v(i, i.error);
+        k.clear && clearPendingStatus();
+        let y = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "start"), x = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "stop"), U = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "restart"), w = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "reload"), A = jsxs("table", {
+            class: "table",
+            children: [
+                jsxs("tr", {
+                    class: "tr",
+                    children: [
+                        jsx("td", {
+                            class: "td",
+                            children: "Service Status"
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            id: "derp-status",
+                            children: o
+                        })
+                    ]
+                }),
+                jsxs("tr", {
+                    class: "tr",
+                    children: [
+                        jsx("td", {
+                            class: "td",
+                            children: "Version"
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            id: "derp-version",
+                            children: d
+                        })
+                    ]
+                }),
+                jsxs("tr", {
+                    class: "tr",
+                    children: [
+                        jsx("td", {
+                            class: "td",
+                            children: "Listen Address"
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            id: "derp-listen",
+                            children: h
+                        })
+                    ]
+                }),
+                jsxs("tr", {
+                    class: "tr",
+                    children: [
+                        jsx("td", {
+                            class: "td",
+                            children: "STUN Enabled"
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            id: "derp-stun",
+                            children: p
+                        })
+                    ]
+                }),
+                jsxs("tr", {
+                    class: "tr",
+                    children: [
+                        jsx("td", {
+                            class: "td",
+                            children: "Mesh Enabled"
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            id: "derp-mesh",
+                            children: m
+                        })
+                    ]
+                }),
+                jsxs("tr", {
+                    class: "tr",
+                    children: [
+                        jsx("td", {
+                            class: "td",
+                            children: "Metrics Address"
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            id: "derp-metrics",
+                            children: b
+                        })
+                    ]
+                }),
+                jsxs("tr", {
+                    class: "tr",
+                    children: [
+                        jsx("td", {
+                            class: "td",
+                            children: "Health Address"
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            id: "derp-health",
+                            children: f
+                        })
+                    ]
+                }),
+                jsxs("tr", {
+                    class: "tr",
+                    children: [
+                        jsx("td", {
+                            class: "td",
+                            children: "Last Error"
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            id: "derp-error",
+                            children: S
+                        })
+                    ]
+                })
+            ]
+        }), E = jsxs("div", {
             class: "cbi-section",
-            style: "margin-top: 1em;"
-        }, [
-            E("h3", {}, "Service Actions"),
-            E("div", {
-                class: "cbi-section-node"
-            }, [
-                E("button", {
-                    class: "cbi-button cbi-button-action",
-                    "data-derp-action": "start",
-                    click: tailscale_derp_status_a.createHandlerFn(this, "handleAction", "start")
-                }, "Start"),
-                " ",
-                E("button", {
-                    class: "cbi-button cbi-button-negative",
-                    "data-derp-action": "stop",
-                    click: tailscale_derp_status_a.createHandlerFn(this, "handleAction", "stop")
-                }, "Stop"),
-                " ",
-                E("button", {
-                    class: "cbi-button cbi-button-action",
-                    "data-derp-action": "restart",
-                    click: tailscale_derp_status_a.createHandlerFn(this, "handleAction", "restart")
-                }, "Restart"),
-                " ",
-                E("button", {
-                    class: "cbi-button cbi-button-action",
-                    "data-derp-action": "reload",
-                    click: tailscale_derp_status_a.createHandlerFn(this, "handleAction", "reload")
-                }, "Reload Config")
-            ]),
-            E("div", {
-                id: "ops-result",
-                style: "margin-top: 0.75em; min-height: 1.2em; color: #090;"
-            }, "No action executed yet.")
-        ]);
-        return tailscale_derp_status_s.add(()=>v(), 5), E("div", {}, [
-            E("h2", {}, "Tailscale DERP Status"),
-            k,
-            y
-        ]);
+            children: [
+                jsx("h3", {
+                    children: "DERP Server Status"
+                }),
+                jsx("div", {
+                    id: "derp-sync",
+                    style: `margin-bottom: 0.75em; color: ${k.color};`,
+                    children: k.text
+                }),
+                A
+            ]
+        }), $ = jsxs("div", {
+            class: "cbi-section",
+            style: "margin-top: 1em;",
+            children: [
+                jsx("h3", {
+                    children: "Service Actions"
+                }),
+                jsxs("div", {
+                    class: "cbi-section-node",
+                    children: [
+                        jsx("button", {
+                            class: "cbi-button cbi-button-action",
+                            "data-derp-action": "start",
+                            onClick: y,
+                            children: "Start"
+                        }),
+                        " ",
+                        jsx("button", {
+                            class: "cbi-button cbi-button-negative",
+                            "data-derp-action": "stop",
+                            onClick: x,
+                            children: "Stop"
+                        }),
+                        " ",
+                        jsx("button", {
+                            class: "cbi-button cbi-button-action",
+                            "data-derp-action": "restart",
+                            onClick: U,
+                            children: "Restart"
+                        }),
+                        " ",
+                        jsx("button", {
+                            class: "cbi-button cbi-button-action",
+                            "data-derp-action": "reload",
+                            onClick: w,
+                            children: "Reload Config"
+                        })
+                    ]
+                }),
+                jsx("div", {
+                    id: "ops-result",
+                    style: "margin-top: 0.75em; min-height: 1.2em; color: #090;",
+                    children: "No action executed yet."
+                })
+            ]
+        });
+        return c.add(()=>g(), 5), jsxs("div", {
+            children: [
+                jsx("h2", {
+                    children: "Tailscale DERP Status"
+                }),
+                E,
+                $
+            ]
+        });
     },
     handleSave: null,
     handleSaveApply: null,
