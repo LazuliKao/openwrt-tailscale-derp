@@ -5,7 +5,7 @@ PKG_VERSION:=0.1.0
 PKG_RELEASE:=1
 
 PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/lk/openwrt-tailscale-derp.git
+PKG_SOURCE_URL:=https://github.com/LazuliKao/openwrt-tailscale-derp.git
 PKG_SOURCE_VERSION:=HEAD
 
 PKG_MAINTAINER:=DERP Relay Contributors
@@ -16,7 +16,7 @@ PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
 
-GO_PKG:=github.com/lk/openwrt-tailscale-derp
+GO_PKG:=github.com/LazuliKao/openwrt-tailscale-derp
 GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)
 
 # The upstream DERP dependency must stay pinned in src/go.mod.
@@ -30,7 +30,7 @@ define Package/tailscale-derp
   CATEGORY:=Network
   TITLE:=Tailscale DERP Relay (Go daemon)
   SUBMENU:=VPN
-  URL:=https://github.com/lk/openwrt-tailscale-derp
+  URL:=https://github.com/LazuliKao/openwrt-tailscale-derp
   DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle
 endef
 
