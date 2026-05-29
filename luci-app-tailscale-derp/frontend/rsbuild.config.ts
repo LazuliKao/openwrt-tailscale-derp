@@ -15,7 +15,8 @@ export default defineConfig({
   source: {
     entry: {
       "tailscale-derp": "./src/views/tailscale-derp.tsx",
-      "tailscale-derp-status": "./src/views/tailscale-derp-status.tsx"
+      "tailscale-derp-status": "./src/views/tailscale-derp-status.tsx",
+      "tailscale-derp-peers": "./src/views/tailscale-derp-peers.tsx"
     },
     tsconfigPath: "./tsconfig.json"
   },
