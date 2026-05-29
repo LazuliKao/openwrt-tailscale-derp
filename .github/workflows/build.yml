@@ -1,0 +1,165 @@
+name: "Build OpenWrt Package"
+
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+
+env:
+  TZ: Asia/Shanghai
+  package_name: "luci-app-tailscale-derp tailscale-derp"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }}-${{ matrix.ver }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # x86_64
+          - platform: x86_64
+            url_sdk: https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-sdk-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+            ver: "ipk"
+          - platform: x86_64
+            url_sdk: https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-sdk-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+            ver: "apk"
+            
+          # aarch64_generic (Rockchip)
+          - platform: aarch64_generic
+            url_sdk: https://downloads.openwrt.org/snapshots/targets/rockchip/armv8/openwrt-sdk-rockchip-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+            ver: "ipk"
+          - platform: aarch64_generic
+            url_sdk: https://downloads.openwrt.org/snapshots/targets/rockchip/armv8/openwrt-sdk-rockchip-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+            ver: "apk"
+
+          # mipsel_24kc (MediaTek MT7621)
+          - platform: mipsel_24kc
+            url_sdk: https://downloads.openwrt.org/snapshots/targets/ramips/rt288x/openwrt-sdk-ramips-rt288x_gcc-14.2.0_musl.Linux-x86_64.tar.zst
+            ver: "ipk"
+          - platform: mipsel_24kc
+            url_sdk: https://downloads.openwrt.org/snapshots/targets/ramips/rt288x/openwrt-sdk-ramips-rt288x_gcc-14.2.0_musl.Linux-x86_64.tar.zst
+            ver: "apk"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+
+      - name: Install dependencies
+        run: |
+          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /usr/local/lib/android
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential \
+            bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib \
+            g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev \
+            libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev \
+            libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano \
+            ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils \
+            python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs \
+            upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
+          
+          # Install Node.js for frontend build
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          sudo npm install -g pnpm
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+
+      - name: Download SDK
+        run: |
+          wget ${{ matrix.url_sdk }}
+          file_name=$(echo ${{matrix.url_sdk}} | awk -F/ '{print $NF}')
+          mkdir sdk
+          if [[ $file_name == *.tar.xz ]]; then
+            tar -xJf $file_name -C ./sdk --strip-components=1
+          elif [[ $file_name == *.tar.zst ]]; then
+            tar --zstd -x -f $file_name -C ./sdk --strip-components=1
+          else
+            echo "Unsupported file format: $file_name"
+            exit 1
+          fi
+
+      - name: SSH connection to Actions
+        uses: mxschmitt/action-tmate@v3.13
+        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+
+      - name: Setup Feeds
+        run: |
+          cd sdk
+          ver=${{ matrix.ver }}
+          if [ "$ver" == "ipk" ]; then
+            config_apk_line=$(grep -n "USE_APK" Config-build.in | awk -F ':' '{print $1}')
+            [ -n "$config_apk_line" ] && sed -n $(expr ${config_apk_line} + 2)p Config-build.in | grep "default y" >/dev/null ; [ $? == 0 ] && sed -i "$(expr ${config_apk_line} + 2)s/y/n/" Config-build.in
+          fi
+
+          # Update feeds to github source
+          sed -i \
+              -e 's|git\.openwrt\.org/feed|github.com/openwrt|g' \
+              -e 's|git\.openwrt\.org/project|github.com/openwrt|g' \
+              -e 's|git\.openwrt\.org/openwrt|github.com/openwrt|g' \
+              "feeds.conf.default"
+
+          # Add our package feed (local checkout)
+          # We need to make the local checkout available. 
+          # Alternatively, we can add the git URL directly, but for testing local changes, we link the local dir.
+          # However, OpenWrt feeds usually expect git URLs or paths.
+          # Let's add the repo itself as a feed.
+          echo "src-git tailscale_derp https://github.com/${{ github.repository }}.git;${{ github.ref_name }}" >> feeds.conf.default
+          
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+
+      - name: Configure Package
+        run: |
+          cd sdk
+          echo "CONFIG_ALL_NONSHARED=n" > .config
+          echo "CONFIG_ALL_KMODS=n" >> .config
+          echo "CONFIG_ALL=n" >> .config
+          echo "CONFIG_AUTOREMOVE=n" >> .config
+          echo "CONFIG_SIGNED_PACKAGES=n" >> .config
+          echo "CONFIG_PACKAGE_luci-app-tailscale-derp=m" >> .config
+          echo "CONFIG_PACKAGE_tailscale-derp=m" >> .config
+          make defconfig
+
+      - name: Compile Package
+        id: compile
+        run: |
+          cd sdk
+          # Build both packages
+          make package/tailscale-derp/{clean,compile} -j$(nproc) V=s || make package/tailscale-derp/{clean,compile} -j1 V=s
+          make package/luci-app-tailscale-derp/{clean,compile} -j$(nproc) V=s || make package/luci-app-tailscale-derp/{clean,compile} -j1 V=s
+          
+          mkdir -p upload
+          # Find and copy the built packages
+          find bin/packages/ -name "tailscale-derp*" -exec cp {} upload/ \;
+          find bin/packages/ -name "luci-app-tailscale-derp*" -exec cp {} upload/ \;
+          find bin/targets/ -name "tailscale-derp*" -exec cp {} upload/ \; 2>/dev/null || true
+          
+          echo "status=success" >> $GITHUB_OUTPUT
+          echo "FIRMWARE=$PWD/upload" >> $GITHUB_ENV
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        if: steps.compile.outputs.status == 'success'
+        with:
+          name: packages-${{ matrix.platform }}-${{ matrix.ver }}
+          path: ${{ env.FIRMWARE }}/*
+
+      - name: Release
+        if: steps.compile.outputs.status == 'success' && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.FIRMWARE }}/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
