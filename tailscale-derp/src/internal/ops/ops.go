@@ -12,6 +12,7 @@ import (
 
 	"github.com/lk/openwrt-tailscale-derp/internal/httpjson"
 	"github.com/lk/openwrt-tailscale-derp/internal/service"
+	"github.com/lk/openwrt-tailscale-derp/internal/tracker"
 )
 
 const verifyTimeout = 5 * time.Second
@@ -176,7 +177,7 @@ func HandleVersion(version string) http.HandlerFunc {
 // It accepts POST requests with ?key=<node-public-key>.
 // Returns 200 if any URL accepts, 403 if any explicitly rejects.
 // Falls back to fail-open policy on network errors.
-func HandleVerify(urls []string, failOpen bool) http.HandlerFunc {
+func HandleVerify(urls []string, failOpen bool, t *tracker.PeerTracker) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			httpjson.Write(w, http.StatusMethodNotAllowed, map[string]string{"error": "POST required"})
@@ -190,6 +191,9 @@ func HandleVerify(urls []string, failOpen bool) http.HandlerFunc {
 		}
 
 		if len(urls) == 0 {
+			if t != nil {
+				t.Add(clientKey, r.RemoteAddr)
+			}
 			httpjson.Write(w, http.StatusOK, map[string]string{"result": "accepted", "reason": "no verify URLs configured"})
 			return
 		}
@@ -198,6 +202,9 @@ func HandleVerify(urls []string, failOpen bool) http.HandlerFunc {
 		for _, verifyURL := range urls {
 			err := checkVerifyURL(verifyURL, clientKey)
 			if err == nil {
+				if t != nil {
+					t.Add(clientKey, r.RemoteAddr)
+				}
 				httpjson.Write(w, http.StatusOK, map[string]string{"result": "accepted"})
 				return
 			}
@@ -209,6 +216,9 @@ func HandleVerify(urls []string, failOpen bool) http.HandlerFunc {
 		}
 
 		if failOpen {
+			if t != nil {
+				t.Add(clientKey, r.RemoteAddr)
+			}
 			httpjson.Write(w, http.StatusOK, map[string]string{"result": "accepted", "reason": "fail-open"})
 			return
 		}
@@ -272,15 +282,28 @@ func HandleClients(mf MetricsFunc) http.HandlerFunc {
 	}
 }
 
-func NewMux(cfg Config, snapshot Snapshot, executor Executor, mf MetricsFunc) http.Handler {
+// HandlePeers returns the list of tracked connected peers.
+func HandlePeers(t *tracker.PeerTracker) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			httpjson.Write(w, http.StatusMethodNotAllowed, map[string]string{"error": "GET required"})
+			return
+		}
+		httpjson.Write(w, http.StatusOK, t.GetAll())
+	}
+}
+
+func NewMux(cfg Config, snapshot Snapshot, executor Executor, mf MetricsFunc, t *tracker.PeerTracker) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/status", HandleStatus(cfg, snapshot, mf))
 	mux.HandleFunc("/health", HandleHealth)
 	mux.HandleFunc("/version", HandleVersion(cfg.Version))
 	mux.HandleFunc("/ops", HandleOpsWithExecutor(executor))
 
-	if len(cfg.VerifyClientURLs) > 0 {
-		mux.HandleFunc("/verify", HandleVerify(cfg.VerifyClientURLs, cfg.VerifyClientFailOpen))
+	mux.HandleFunc("/verify", HandleVerify(cfg.VerifyClientURLs, cfg.VerifyClientFailOpen, t))
+
+	if t != nil {
+		mux.HandleFunc("/peers", HandlePeers(t))
 	}
 
 	mux.HandleFunc("/clients", HandleClients(mf))

@@ -21,6 +21,7 @@ import (
 	"github.com/lk/openwrt-tailscale-derp/internal/httpjson"
 	opsapi "github.com/lk/openwrt-tailscale-derp/internal/ops"
 	"github.com/lk/openwrt-tailscale-derp/internal/service"
+	"github.com/lk/openwrt-tailscale-derp/internal/tracker"
 
 	"tailscale.com/derp"
 	"tailscale.com/derp/derphttp"
@@ -484,22 +485,20 @@ func startDERP(cfg *Config, state *runtimeState) error {
 	if cfg.Mesh {
 		server.SetMeshKey(cfg.MeshKey)
 	}
-	if len(cfg.VerifyClientURLs) > 0 {
-		server.SetVerifyClient(true)
-		opsAddr := cfg.OpsAddr
-		if opsAddr == "" {
-			opsAddr = defaultOpsAddr
-		}
-		if strings.HasPrefix(opsAddr, ":") {
-			opsAddr = "127.0.0.1" + opsAddr
-		}
-		admissionURL := fmt.Sprintf("http://%s/verify", opsAddr)
-		server.SetVerifyClientURL(admissionURL)
-		if cfg.VerifyClientFailOpen {
-			server.SetVerifyClientURLFailOpen(true)
-		}
-		log.Printf("Verify-client enabled with %d URL(s), admission controller at %s (fail-open: %v)", len(cfg.VerifyClientURLs), admissionURL, cfg.VerifyClientFailOpen)
+	server.SetVerifyClient(true)
+	opsAddr := cfg.OpsAddr
+	if opsAddr == "" {
+		opsAddr = defaultOpsAddr
 	}
+	if strings.HasPrefix(opsAddr, ":") {
+		opsAddr = "127.0.0.1" + opsAddr
+	}
+	admissionURL := fmt.Sprintf("http://%s/verify", opsAddr)
+	server.SetVerifyClientURL(admissionURL)
+	if cfg.VerifyClientFailOpen {
+		server.SetVerifyClientURLFailOpen(true)
+	}
+	log.Printf("Verify-client always enabled for peer tracking, admission controller at %s (fail-open: %v, external URLs: %d)", admissionURL, cfg.VerifyClientFailOpen, len(cfg.VerifyClientURLs))
 	serverExpVar := publishDERPMetrics(server)
 	getServerMetrics = func() json.RawMessage {
 		return json.RawMessage(serverExpVar.String())
@@ -652,9 +651,10 @@ func startOps(cfg *Config, state *runtimeState) error {
 	if state != nil {
 		snapshot = state.snapshot
 	}
+	t := tracker.NewPeerTracker()
 	server := &http.Server{
 		Addr:              cfg.OpsAddr,
-		Handler:           opsapi.NewMux(opsConfig(cfg), snapshot, execServiceAction, getServerMetrics),
+		Handler:           opsapi.NewMux(opsConfig(cfg), snapshot, execServiceAction, getServerMetrics, t),
 		ReadHeaderTimeout: opsReadHeaderTimeout,
 		ReadTimeout:       opsReadTimeout,
 		WriteTimeout:      opsWriteTimeout,
