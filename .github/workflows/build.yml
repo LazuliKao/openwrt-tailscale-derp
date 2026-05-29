@@ -110,11 +110,10 @@ jobs:
               -e 's|git\.openwrt\.org/openwrt|github.com/openwrt|g' \
               "feeds.conf.default"
 
-          # Add our package feed (local checkout)
-          # We need to make the local checkout available. 
-          # Alternatively, we can add the git URL directly, but for testing local changes, we link the local dir.
-          # However, OpenWrt feeds usually expect git URLs or paths.
-          # Let's add the repo itself as a feed.
+          # Configure git to use GITHUB_TOKEN for HTTPS (needed for private/semi-private repos)
+          git config --global url."https://x-access-token:${{ github.token }}@github.com/".insteadOf "https://github.com/"
+          
+          # Add our package feed
           echo "src-git tailscale_derp https://github.com/${{ github.repository }}.git;${{ github.ref_name }}" >> feeds.conf.default
           
           ./scripts/feeds update -a
