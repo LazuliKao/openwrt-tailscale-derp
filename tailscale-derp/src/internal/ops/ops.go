@@ -10,9 +10,9 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/lk/openwrt-tailscale-derp/internal/httpjson"
-	"github.com/lk/openwrt-tailscale-derp/internal/service"
-	"github.com/lk/openwrt-tailscale-derp/internal/tracker"
+	"github.com/LazuliKao/openwrt-tailscale-derp/internal/httpjson"
+	"github.com/LazuliKao/openwrt-tailscale-derp/internal/service"
+	"github.com/LazuliKao/openwrt-tailscale-derp/internal/tracker"
 )
 
 const verifyTimeout = 5 * time.Second

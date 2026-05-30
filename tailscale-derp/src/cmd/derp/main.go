@@ -18,10 +18,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lk/openwrt-tailscale-derp/internal/httpjson"
-	opsapi "github.com/lk/openwrt-tailscale-derp/internal/ops"
-	"github.com/lk/openwrt-tailscale-derp/internal/service"
-	"github.com/lk/openwrt-tailscale-derp/internal/tracker"
+	"github.com/LazuliKao/openwrt-tailscale-derp/internal/httpjson"
+	opsapi "github.com/LazuliKao/openwrt-tailscale-derp/internal/ops"
+	"github.com/LazuliKao/openwrt-tailscale-derp/internal/service"
+	"github.com/LazuliKao/openwrt-tailscale-derp/internal/tracker"
 
 	"tailscale.com/derp"
 	"tailscale.com/derp/derphttp"

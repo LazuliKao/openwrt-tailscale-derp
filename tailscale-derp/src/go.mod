@@ -1,4 +1,4 @@
-module github.com/lk/openwrt-tailscale-derp
+module github.com/LazuliKao/openwrt-tailscale-derp
 
 go 1.24.0
 

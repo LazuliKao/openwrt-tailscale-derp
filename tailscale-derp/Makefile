@@ -4,9 +4,9 @@ PKG_NAME:=tailscale-derp
 PKG_VERSION:=0.1.0
 PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=git
-PKG_SOURCE_URL:=https://github.com/LazuliKao/openwrt-tailscale-derp.git
-PKG_SOURCE_VERSION:=HEAD
+PKG_SOURCE_PROTO:=none
+PKG_SOURCE:=
+PKG_MIRROR_HASH:=skip
 
 PKG_MAINTAINER:=DERP Relay Contributors
 PKG_LICENSE:=MIT
@@ -24,6 +24,10 @@ GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
+
+define Build/Prepare
+	$(CP) ./src/. $(PKG_BUILD_DIR)/
+endef
 
 define Package/tailscale-derp
   SECTION:=net
