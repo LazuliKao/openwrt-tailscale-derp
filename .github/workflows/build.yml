@@ -103,6 +103,11 @@ jobs:
           
           # Add our package feed
           echo "src-git tailscale_derp https://github.com/${{ github.repository }}.git;${{ github.ref_name }}" >> feeds.conf.default
+
+          # Ensure luci feed is available (for luci.mk)
+          if ! grep -q "src-git luci" feeds.conf.default; then
+            echo "src-git luci https://github.com/openwrt/luci.git;openwrt-24.10" >> feeds.conf.default
+          fi
           
           ./scripts/feeds update -a
           ./scripts/feeds install -a
