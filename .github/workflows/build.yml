@@ -27,28 +27,16 @@ jobs:
         include:
           # x86_64
           - platform: x86_64
-            url_sdk: https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-sdk-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.7/targets/x86/64/openwrt-sdk-24.10.7-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
             ver: "ipk"
-          - platform: x86_64
-            url_sdk: https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-sdk-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst
-            ver: "apk"
-            
           # aarch64_generic (Rockchip)
           - platform: aarch64_generic
-            url_sdk: https://downloads.openwrt.org/snapshots/targets/rockchip/armv8/openwrt-sdk-rockchip-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.7/targets/rockchip/armv8/openwrt-sdk-24.10.7-rockchip-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst
             ver: "ipk"
-          - platform: aarch64_generic
-            url_sdk: https://downloads.openwrt.org/snapshots/targets/rockchip/armv8/openwrt-sdk-rockchip-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst
-            ver: "apk"
-
           # mipsel_24kc (MediaTek MT7621)
           - platform: mipsel_24kc
-            url_sdk: https://downloads.openwrt.org/snapshots/targets/ramips/rt288x/openwrt-sdk-ramips-rt288x_gcc-14.2.0_musl.Linux-x86_64.tar.zst
+            url_sdk: https://downloads.openwrt.org/releases/24.10.7/targets/ramips/mt7621/openwrt-sdk-24.10.7-ramips-mt7621_gcc-13.3.0_musl.Linux-x86_64.tar.zst
             ver: "ipk"
-          - platform: mipsel_24kc
-            url_sdk: https://downloads.openwrt.org/snapshots/targets/ramips/rt288x/openwrt-sdk-ramips-rt288x_gcc-14.2.0_musl.Linux-x86_64.tar.zst
-            ver: "apk"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
