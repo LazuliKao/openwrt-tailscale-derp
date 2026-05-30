@@ -24,6 +24,9 @@ GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/package.mk
 include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
+# Override GOTOOLCHAIN: SDK ships Go 1.23.x but tailscale.com requires Go 1.24+
+# Shell last-wins semantics: "auto" appended after "local" wins in the recipe
+GO_PKG_BUILD_VARS += GOTOOLCHAIN=auto
 
 define Build/Prepare
 	$(CP) ./src/. $(PKG_BUILD_DIR)/
