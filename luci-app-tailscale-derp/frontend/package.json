@@ -1,5 +1,5 @@
 {
-  "name": "luci-app-tailscale-derp-frontend",
+  "name": "@tailscale-derp/luci-ui",
   "private": true,
   "type": "module",
   "scripts": {
@@ -9,9 +9,11 @@
     "i18n:export": "dotenvx run -- luci-types -i ../htdocs --po ../po/zh_Hans/tailscale-derp.po --merge -p luci-app-tailscale-derp --translate --batch-size 20 --prompt translate.md"
   },
   "devDependencies": {
-    "@dotenvx/dotenvx": "^1.33.0",
     "@lazulikao/luci-types": "github:LazuliKao/luci-types",
-    "@rsbuild/core": "^2.0.6",
+    "@biomejs/biome": "^2.4.15",
+    "@dotenvx/dotenvx": "^1.59.1",
+    "@rsbuild/core": "^2.0.7",
+    "@types/node": "^20.19.29",
     "tsx": "^4.22.1",
     "typescript": "^6.0.3"
   }

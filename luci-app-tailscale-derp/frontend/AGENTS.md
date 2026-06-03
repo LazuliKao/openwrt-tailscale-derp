@@ -21,6 +21,7 @@ frontend/
 **CRITICAL**: This project uses LuCI's JSX runtime, NOT React.
 
 ### Configuration
+
 - `tsconfig.json`: `"jsx": "react-jsx"`, `"jsxImportSource": "@lazulikao/luci-types"`
 - `rsbuild.config.ts`: `transform.react.runtime: "automatic"`, `importSource: "@lazulikao/luci-types"`
 
@@ -35,12 +36,15 @@ frontend/
 | Fragment | `<React.Fragment>` or `<>` | `<>` (uses Symbol.for("jsx.fragment")) |
 
 ### JSX Type Definitions
+
 Located in `@lazulikao/luci-types/jsx.d.ts`:
+
 - `JSX.Element` = `HTMLElement`
 - `JSX.IntrinsicElements` = typed HTML elements (div, button, table, etc.)
 - `BaseProps`: `children`, `class`, `id`, `name`, `style`
 
 ### Event Handling Pattern
+
 ```tsx
 // Pre-bind handlers to preserve `this` context
 const handleClick = ui.createHandlerFn(this, "handleAction", "start");
@@ -52,7 +56,7 @@ const handleClick = ui.createHandlerFn(this, "handleAction", "start");
 ## VIEW PATTERN
 
 ```tsx
-import { someUtil } from "src/shared/config";
+import { someUtil } from "@/shared/config";
 
 type ViewContext = { map: LuCI.form.CBIMap | null };
 
@@ -79,13 +83,15 @@ export const main = L.view.extend({
 ## BUILD CONFIGURATION
 
 ### rsbuild.config.ts
+
 - Entry: `src/views/*.tsx` → `../htdocs/luci-static/resources/view/*.js`
 - Output: Single-file LuCI modules (no splitChunks)
-- Banner: Prepends `'use strict'; 'require view'; ...` 
+- Banner: Prepends `'use strict'; 'require view'; ...`
 - Footer: Appends `return main;`
 - SWC: TypeScript + JSX automatic runtime
 
 ### Key Constraints
+
 - NEVER enable `splitChunks` or `runtimeChunk` → breaks LuCI module loading
 - NEVER minify → LuCI needs readable error messages
 - Output must be ASCII → `charset: "ascii"`
@@ -94,12 +100,14 @@ export const main = L.view.extend({
 ## TYPES
 
 Global types from `@lazulikao/luci-types`:
+
 - `L` - LuCI global (view, form, rpc, uci, Poll)
 - `LuCI` - LuCI namespace (ui, form types)
 - `E()` - DOM element factory (used internally by JSX)
 - `_()` - i18n translation function
 
 ### Form Types
+
 - `LuCI.form.CBIMap` - Form map
 - `LuCI.form.CBIAbstractValue` - Base option type
 - `LuCI.form.CBIAbstractSection` - Base section type

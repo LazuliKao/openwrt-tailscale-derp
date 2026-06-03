@@ -21,6 +21,7 @@ import (
 	"github.com/LazuliKao/openwrt-tailscale-derp/internal/httpjson"
 	opsapi "github.com/LazuliKao/openwrt-tailscale-derp/internal/ops"
 	"github.com/LazuliKao/openwrt-tailscale-derp/internal/service"
+	"github.com/LazuliKao/openwrt-tailscale-derp/internal/traffic"
 	"github.com/LazuliKao/openwrt-tailscale-derp/internal/tracker"
 
 	"tailscale.com/derp"
@@ -35,6 +36,8 @@ const (
 	defaultListenAddr    = ":3478"
 	defaultOpsAddr       = "127.0.0.1:9911"
 	defaultHealthAddr    = ":9912"
+	defaultTrafficPath   = "/tmp/tailscale-derp-traffic.json"
+	defaultTrafficInterval = 60
 	serviceActionTimeout = 15 * time.Second
 	opsReadHeaderTimeout = 5 * time.Second
 	opsReadTimeout       = 15 * time.Second
@@ -54,6 +57,9 @@ type Config struct {
 	MeshKey              string
 	OpsAddr              string
 	Health               string
+	TrafficPersist       bool
+	TrafficPath          string
+	TrafficInterval      int
 }
 
 type Status = opsapi.Status
@@ -104,6 +110,9 @@ type configFlags struct {
 	MeshKey    *string
 	OpsAddr    *string
 	HealthAddr *string
+	TrafficPersist  *bool
+	TrafficPath     *string
+	TrafficInterval *int
 	ConfigPath *string
 }
 
@@ -153,6 +162,9 @@ func newFlagSet(args []string) (*flag.FlagSet, *configFlags, error) {
 		MeshKey:    fs.String("mesh-key", "", "shared mesh key"),
 		OpsAddr:    fs.String("ops", "", "ops server address"),
 		HealthAddr: fs.String("health", "", "health server address"),
+		TrafficPersist:  fs.Bool("traffic-persist", false, "enable traffic statistics persistence"),
+		TrafficPath:     fs.String("traffic-path", "", "path to traffic statistics file"),
+		TrafficInterval: fs.Int("traffic-interval", 0, "traffic save interval in seconds"),
 		ConfigPath: fs.String("config", defaultConfigPath(), "UCI config path"),
 	}
 
@@ -280,6 +292,8 @@ func buildConfig(args []string, openFile func(string) (*uciConfig, error)) (*Con
 		STUN:    true,
 		OpsAddr: defaultOpsAddr,
 		Health:  defaultHealthAddr,
+		TrafficPath: defaultTrafficPath,
+		TrafficInterval: defaultTrafficInterval,
 	}
 
 	if flags.ConfigPath != nil && *flags.ConfigPath != "" {
@@ -296,6 +310,12 @@ func buildConfig(args []string, openFile func(string) (*uciConfig, error)) (*Con
 	}
 
 	applyFlagOverrides(cfg, fs, flags)
+	if strings.TrimSpace(cfg.TrafficPath) == "" {
+		cfg.TrafficPath = defaultTrafficPath
+	}
+	if cfg.TrafficInterval <= 0 {
+		cfg.TrafficInterval = defaultTrafficInterval
+	}
 	return cfg, nil
 }
 
@@ -351,6 +371,27 @@ func applyUCIConfig(cfg *Config, parsed *uciConfig) error {
 	if value, ok := parsed.first("ops", "health"); ok && value != "" {
 		cfg.Health = value
 	}
+
+	if value, ok := parsed.first("traffic", "persist"); ok {
+		parsedBool, err := parseBoolValue(value)
+		if err != nil {
+			return fmt.Errorf("traffic.persist: %w", err)
+		}
+		cfg.TrafficPersist = parsedBool
+	}
+
+	if value, ok := parsed.first("traffic", "path"); ok && value != "" {
+		cfg.TrafficPath = value
+	}
+
+	if value, ok := parsed.first("traffic", "interval"); ok && value != "" {
+		parsedInt, err := strconv.Atoi(value)
+		if err != nil {
+			return fmt.Errorf("traffic.interval: %w", err)
+		}
+		cfg.TrafficInterval = parsedInt
+	}
+
 	var verifyURLs []string
 	for _, u := range parsed.get("verify", "url") {
 		for _, part := range strings.Split(u, ",") {
@@ -427,6 +468,15 @@ func applyFlagOverrides(cfg *Config, fs *flag.FlagSet, flags *configFlags) {
 	if stringFlagProvided(fs, "health") {
 		cfg.Health = strings.TrimSpace(*flags.HealthAddr)
 	}
+	if boolFlagProvided(fs, "traffic-persist") {
+		cfg.TrafficPersist = *flags.TrafficPersist
+	}
+	if stringFlagProvided(fs, "traffic-path") {
+		cfg.TrafficPath = strings.TrimSpace(*flags.TrafficPath)
+	}
+	if stringFlagProvided(fs, "traffic-interval") {
+		cfg.TrafficInterval = *flags.TrafficInterval
+	}
 	if stringFlagProvided(fs, "verify-client-urls") {
 		for _, part := range strings.Split(*flags.VerifyClientURLs, ",") {
 			trimmed := strings.TrimSpace(part)
@@ -472,7 +522,7 @@ func validateConfig(cfg *Config) error {
 	return nil
 }
 
-func startDERP(cfg *Config, state *runtimeState) error {
+func startDERP(cfg *Config, state *runtimeState, persister *traffic.Persister) error {
 	privateKey, err := loadOrCreateNodeKey(defaultNodeKeyPath)
 	if err != nil {
 		if state != nil {
@@ -502,6 +552,22 @@ func startDERP(cfg *Config, state *runtimeState) error {
 	serverExpVar := publishDERPMetrics(server)
 	getServerMetrics = func() json.RawMessage {
 		return json.RawMessage(serverExpVar.String())
+	}
+	if persister != nil {
+		if err := persister.Load(); err != nil {
+			if state != nil {
+				state.setError(err)
+			}
+			return fmt.Errorf("load traffic stats: %w", err)
+		}
+		trafficCtx, cancelTraffic := context.WithCancel(context.Background())
+		defer cancelTraffic()
+		defer func() {
+			if err := persister.Save(); err != nil {
+				log.Printf("Traffic stats final save failed: %v", err)
+			}
+		}()
+		persister.Start(trafficCtx)
 	}
 	if cfg.STUN {
 		stun := stunserver.New(context.Background())
@@ -604,6 +670,46 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	httpjson.Write(w, status, payload)
 }
 
+func extractMetricInt64(m map[string]json.RawMessage, key string) int64 {
+	raw, ok := m[key]
+	if !ok {
+		return 0
+	}
+
+	var v int64
+	json.Unmarshal(raw, &v)
+	return v
+}
+
+func trafficSessionMetrics() (int64, int64, int64) {
+	if getServerMetrics == nil {
+		return 0, 0, 0
+	}
+
+	raw := getServerMetrics()
+	if len(raw) == 0 {
+		return 0, 0, 0
+	}
+
+	var metrics map[string]json.RawMessage
+	if err := json.Unmarshal(raw, &metrics); err != nil {
+		return 0, 0, 0
+	}
+
+	return extractMetricInt64(metrics, "bytes_received"), extractMetricInt64(metrics, "bytes_sent"), extractMetricInt64(metrics, "accepts")
+}
+
+func trafficTotalsFunc(persister *traffic.Persister) opsapi.TrafficFunc {
+	if persister == nil {
+		return nil
+	}
+
+	return func() *traffic.Stats {
+		total := persister.Total()
+		return &total
+	}
+}
+
 func handleOpsWithExecutor(executor actionExecutor) http.HandlerFunc {
 	if executor == nil {
 		executor = execServiceAction
@@ -617,12 +723,16 @@ func handleOps(w http.ResponseWriter, r *http.Request) {
 }
 
 func statusFromConfig(cfg *Config, state *runtimeState) Status {
+	return statusFromConfigWithTraffic(cfg, state, nil)
+}
+
+func statusFromConfigWithTraffic(cfg *Config, state *runtimeState, persister *traffic.Persister) Status {
 	var snapshot opsapi.Snapshot
 	if state != nil {
 		snapshot = state.snapshot
 	}
 
-	return opsapi.StatusFromConfig(opsConfig(cfg), snapshot, nil)
+	return opsapi.StatusFromConfig(opsConfig(cfg), snapshot, nil, trafficTotalsFunc(persister))
 }
 
 func opsConfig(cfg *Config) opsapi.Config {
@@ -635,17 +745,24 @@ func opsConfig(cfg *Config) opsapi.Config {
 		Mesh:            cfg.Mesh,
 		OpsAddr:         cfg.OpsAddr,
 		Health:          cfg.Health,
+		TrafficPersist:  cfg.TrafficPersist,
+		TrafficPath:     cfg.TrafficPath,
+		TrafficInterval: cfg.TrafficInterval,
 	}
 }
 func handleStatus(cfg *Config, state *runtimeState) http.HandlerFunc {
+	return handleStatusWithTraffic(cfg, state, nil)
+}
+
+func handleStatusWithTraffic(cfg *Config, state *runtimeState, persister *traffic.Persister) http.HandlerFunc {
 	var snapshot opsapi.Snapshot
 	if state != nil {
 		snapshot = state.snapshot
 	}
-	return opsapi.HandleStatus(opsConfig(cfg), snapshot, nil)
+	return opsapi.HandleStatus(opsConfig(cfg), snapshot, nil, trafficTotalsFunc(persister))
 }
 
-func startOps(cfg *Config, state *runtimeState) error {
+func startOps(cfg *Config, state *runtimeState, persister *traffic.Persister) error {
 	log.Printf("Starting ops server on %s", cfg.OpsAddr)
 	var snapshot opsapi.Snapshot
 	if state != nil {
@@ -654,7 +771,7 @@ func startOps(cfg *Config, state *runtimeState) error {
 	t := tracker.NewPeerTracker()
 	server := &http.Server{
 		Addr:              cfg.OpsAddr,
-		Handler:           opsapi.NewMux(opsConfig(cfg), snapshot, execServiceAction, getServerMetrics, t),
+		Handler:           opsapi.NewMux(opsConfig(cfg), snapshot, execServiceAction, getServerMetrics, t, trafficTotalsFunc(persister)),
 		ReadHeaderTimeout: opsReadHeaderTimeout,
 		ReadTimeout:       opsReadTimeout,
 		WriteTimeout:      opsWriteTimeout,
@@ -677,19 +794,24 @@ func main() {
 	}
 
 	state := &runtimeState{}
+	var persister *traffic.Persister
 
 	if !cfg.Enabled {
 		log.Println("Service disabled")
 		os.Exit(0)
 	}
 
+	if cfg.TrafficPersist {
+		persister = traffic.New(true, cfg.TrafficPath, time.Duration(cfg.TrafficInterval)*time.Second, trafficSessionMetrics)
+	}
+
 	go func() {
-		if err := startOps(cfg, state); err != nil {
+		if err := startOps(cfg, state, persister); err != nil {
 			log.Fatalf("Ops server failed: %v", err)
 		}
 	}()
 
-	if err := startDERP(cfg, state); err != nil {
+	if err := startDERP(cfg, state, persister); err != nil {
 		log.Fatalf("DERP server failed: %v", err)
 	}
 }

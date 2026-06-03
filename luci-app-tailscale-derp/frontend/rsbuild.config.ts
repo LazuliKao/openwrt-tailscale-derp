@@ -21,9 +21,7 @@ export default defineConfig({
     tsconfigPath: "./tsconfig.json"
   },
   resolve: {
-    alias: {
-      src: "./src"
-    }
+      aliasStrategy: "prefer-tsconfig",
   },
   output: {
     module: true,
@@ -52,27 +50,26 @@ export default defineConfig({
     htmlPlugin: false,
     swc: {
       jsc: {
-        target: "es2020",
         parser: {
           syntax: "typescript",
-          tsx: true
+          tsx: true,
+          decorators: true,
         },
         minify: {
           compress: true,
-          mangle: {}
+          mangle: {},
         },
         transform: {
           react: {
             runtime: "automatic",
             importSource: "@lazulikao/luci-types",
-            development: false
+            useBuiltins: true,
           },
           optimizer: {
-            simplify: true
-          }
+            simplify: true,
+          },
         },
-        externalHelpers: true
-      }
+      },
     },
     rspack: (config) => {
       config.output = config.output || {};

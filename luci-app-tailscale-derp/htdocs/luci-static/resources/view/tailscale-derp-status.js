@@ -11,72 +11,193 @@
 
 // UNUSED EXPORTS: main
 
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_define_property.js
+function _define_property(obj, key, value) {
+    if (key in obj) {
+        Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
+    } else obj[key] = value;
+
+    return obj;
+}
+
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread.js
+
+
+function _object_spread(target) {
+    for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i] != null ? arguments[i] : {};
+        var ownKeys = Object.keys(source);
+
+        if (typeof Object.getOwnPropertySymbols === "function") {
+            ownKeys = ownKeys.concat(
+                Object.getOwnPropertySymbols(source).filter(function(sym) {
+                    return Object.getOwnPropertyDescriptor(source, sym).enumerable;
+                })
+            );
+        }
+
+        ownKeys.forEach(function(key) {
+            _define_property(target, key, source[key]);
+        });
+    }
+
+    return target;
+}
+
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread_props.js
+function _object_spread_props_ownKeys(object, enumerableOnly) {
+    var keys = Object.keys(object);
+
+    if (Object.getOwnPropertySymbols) {
+        var symbols = Object.getOwnPropertySymbols(object);
+        if (enumerableOnly) {
+            symbols = symbols.filter(function(sym) {
+                return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+            });
+        }
+        keys.push.apply(keys, symbols);
+    }
+
+    return keys;
+}
+function _object_spread_props(target, source) {
+    source = source != null ? source : {};
+
+    if (Object.getOwnPropertyDescriptors) Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    else {
+        _object_spread_props_ownKeys(Object(source)).forEach(function(key) {
+            Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+        });
+    }
+
+    return target;
+}
+
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties_loose.js
+function _object_without_properties_loose(source, excluded) {
+    if (source == null) return {};
+
+    var target = {}, sourceKeys = Object.getOwnPropertyNames(source), key, i;
+    for (i = 0; i < sourceKeys.length; i++) {
+        key = sourceKeys[i];
+        if (excluded.indexOf(key) >= 0) continue;
+        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+        target[key] = source[key];
+    }
+
+    return target;
+}
+
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties.js
+
+
+function _object_without_properties(source, excluded) {
+    if (source == null) return {};
+
+    var target = {}, sourceKeys, key, i;
+    if (typeof Reflect !== "undefined" && Reflect.ownKeys) {
+        sourceKeys = Reflect.ownKeys(Object(source));
+        for (i = 0; i < sourceKeys.length; i++) {
+            key = sourceKeys[i];
+            if (excluded.indexOf(key) >= 0) continue;
+            if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+            target[key] = source[key];
+        }
+
+        return target;
+    }
+
+    target = _object_without_properties_loose(source, excluded);
+    if (Object.getOwnPropertySymbols) {
+        sourceKeys = Object.getOwnPropertySymbols(source);
+        for (i = 0; i < sourceKeys.length; i++) {
+            key = sourceKeys[i];
+            if (excluded.indexOf(key) >= 0) continue;
+            if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+            target[key] = source[key];
+        }
+    }
+
+    return target;
+}
+
+
+
 ;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
+
+
+
 const Fragment = Symbol.for("jsx.fragment");
-function jsx_factory_e(e, t) {
-    let { children: n, ...r } = t || {}, o = function e(t, n = []) {
-        for (let r of t)null != r && "boolean" != typeof r && (Array.isArray(r) ? e(r, n) : n.push(r));
-        return n;
-    }(null == n ? [] : Array.isArray(n) ? n : [
-        n
+function jsx_factory_o(o, n) {
+    let s = n || {}, { children: l } = s, f = _object_without_properties(s, [
+        "children"
+    ]), i = function e(t) {
+        let r = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : [];
+        for (let o of t)null != o && "boolean" != typeof o && (Array.isArray(o) ? e(o, r) : r.push(o));
+        return r;
+    }(null == l ? [] : Array.isArray(l) ? l : [
+        l
     ]);
-    if (e === Fragment) {
+    if (o === Fragment) {
         let e = document.createDocumentFragment();
-        return e.append(...o), e;
+        return e.append(...i), e;
     }
-    if ("function" == typeof e) return e({
-        ...r,
-        children: o
-    });
-    let l = {}, f = {
-        ...r
-    };
-    for (let [e, t] of Object.entries(f))e.startsWith("on") && "function" == typeof t ? (l[e] = t, delete f[e]) : "boolean" == typeof t && (t ? f[e] = e : delete f[e]);
-    let u = Object.keys(f).length > 0 ? o.length > 1 ? E(e, f, o) : E(e, f, o[0]) : o.length > 1 ? E(e, {}, o) : E(e, {}, o[0]);
-    for (let [e, t] of Object.entries(l)){
-        let n = e.slice(2).toLowerCase();
-        u.addEventListener(n, t);
+    if ("function" == typeof o) return o(_object_spread_props(_object_spread({}, f), {
+        children: i
+    }));
+    let c = {}, p = _object_spread({}, f);
+    for (let [e, t] of Object.entries(p))e.startsWith("on") && "function" == typeof t ? (c[e] = t, delete p[e]) : "boolean" == typeof t && (t ? p[e] = e : delete p[e]);
+    let a = Object.keys(p).length > 0 ? i.length > 1 ? E(o, p, i) : E(o, p, i[0]) : i.length > 1 ? E(o, {}, i) : E(o, {}, i[0]);
+    for (let [e, t] of Object.entries(c)){
+        let r = e.slice(2).toLowerCase();
+        a.addEventListener(r, t);
     }
-    return u;
+    return a;
 }
-function jsx(t, n) {
-    return jsx_factory_e(t, n);
+function jsx(e, t) {
+    return jsx_factory_o(e, t);
 }
-function jsxs(t, n) {
-    return jsx_factory_e(t, n);
+function jsxs(e, t) {
+    return jsx_factory_o(e, t);
 }
-function jsxDEV(t, n) {
-    return jsx_factory_e(t, n);
+function jsxDEV(e, t) {
+    return jsx_factory_o(e, t);
 }
 
 ;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
 ;// CONCATENATED MODULE: ./src/shared/config.ts
+
+
 const pendingStatusStorageKey = "tailscale-derp.pendingStatus";
 function isSocketAddress(t) {
     return /^(:\d+|[^\s:]+:\d+)$/.test(t);
 }
 function validateSocketAddress(t, e) {
-    return e ? !!isSocketAddress(e) || `${t} must be in :port or host:port format` : `${t} is required`;
+    return e ? !!isSocketAddress(e) || "".concat(t, " must be in :port or host:port format") : "".concat(t, " is required");
 }
 function isLoopbackSocketAddress(t) {
     return /^(127\.0\.0\.1:\d+|localhost:\d+|\[::1\]:\d+)$/.test(t);
 }
 function validateLoopbackSocketAddress(t, e) {
-    return e ? !!isLoopbackSocketAddress(e) || `${t} must stay on loopback (127.0.0.1:port, localhost:port, or [::1]:port)` : `${t} is required`;
+    return e ? !!isLoopbackSocketAddress(e) || "".concat(t, " must stay on loopback (127.0.0.1:port, localhost:port, or [::1]:port)") : "".concat(t, " is required");
 }
 function firstOption(t, e, o) {
-    let n = t.lookupOption(o, e);
-    return n ? n[0] : null;
+    let r = t.lookupOption(o, e);
+    return r ? r[0] : null;
 }
-function optionFormValue(t, e, o, n) {
-    let r = firstOption(t, e, o), s = r?.formvalue(e);
-    return null == s || "" === s ? n : String(s);
+function optionFormValue(t, e, o, r) {
+    let n = firstOption(t, e, o), s = null == n ? void 0 : n.formvalue(e);
+    return null == s || "" === s ? r : String(s);
 }
-function boolFormValue(t, e, o, n) {
-    let r = optionFormValue(t, e, o, n ? "1" : "0");
-    return "1" === r || "true" === r;
+function boolFormValue(t, e, o, r) {
+    let n = optionFormValue(t, e, o, r ? "1" : "0");
+    return "1" === n || "true" === n;
 }
 function captureExpectedStatus(t) {
     return {
@@ -88,13 +209,12 @@ function captureExpectedStatus(t) {
         health: optionFormValue(t, "ops", "health", ":9912")
     };
 }
-function savePendingStatus(t) {
+function savePendingStatus(o) {
     if (!window.sessionStorage) return;
-    let e = {
-        ...t,
+    let r = e(t({}, o), {
         savedAt: Date.now()
-    };
-    window.sessionStorage.setItem(pendingStatusStorageKey, JSON.stringify(e));
+    });
+    window.sessionStorage.setItem(pendingStatusStorageKey, JSON.stringify(r));
 }
 function clearPendingStatus() {
     window.sessionStorage && window.sessionStorage.removeItem(pendingStatusStorageKey);
@@ -104,7 +224,7 @@ function readPendingStatus() {
     try {
         let t = window.sessionStorage.getItem(pendingStatusStorageKey);
         return t ? JSON.parse(t) : null;
-    } catch  {
+    } catch (t) {
         return window.sessionStorage.removeItem(pendingStatusStorageKey), null;
     }
 }
@@ -112,207 +232,217 @@ function readPendingStatus() {
 ;// CONCATENATED MODULE: ./src/views/tailscale-derp-status.tsx
 
 
-let tailscale_derp_status_r = L.view, tailscale_derp_status_s = L.rpc, i = LuCI.ui, c = L.Poll, tailscale_derp_status_a = {
-    start: tailscale_derp_status_s.declare({
+let tailscale_derp_status_c = L.view, tailscale_derp_status_r = L.rpc, tailscale_derp_status_s = LuCI.ui, tailscale_derp_status_a = L.Poll, tailscale_derp_status_o = {
+    start: tailscale_derp_status_r.declare({
         object: "luci.tailscale-derp",
         method: "start"
     }),
-    stop: tailscale_derp_status_s.declare({
+    stop: tailscale_derp_status_r.declare({
         object: "luci.tailscale-derp",
         method: "stop"
     }),
-    restart: tailscale_derp_status_s.declare({
+    restart: tailscale_derp_status_r.declare({
         object: "luci.tailscale-derp",
         method: "restart"
     }),
-    reload: tailscale_derp_status_s.declare({
+    reload: tailscale_derp_status_r.declare({
         object: "luci.tailscale-derp",
         method: "reload_config"
     })
-}, tailscale_derp_status_o = tailscale_derp_status_s.declare({
+}, tailscale_derp_status_i = tailscale_derp_status_r.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
-}), tailscale_derp_status_d = tailscale_derp_status_s.declare({
+}), tailscale_derp_status_d = tailscale_derp_status_r.declare({
     object: "luci.tailscale-derp",
     method: "get_version"
 });
 function h(t) {
-    return t < 1024 ? `${t} B` : t < 1048576 ? `${(t / 1024).toFixed(1)} KB` : t < 1073741824 ? `${(t / 1048576).toFixed(1)} MB` : `${(t / 1073741824).toFixed(1)} GB`;
+    return t < 1024 ? "".concat(t, " B") : t < 1048576 ? "".concat((t / 1024).toFixed(1), " KB") : t < 1073741824 ? "".concat((t / 1048576).toFixed(1), " MB") : "".concat((t / 1073741824).toFixed(1), " GB");
 }
-function tailscale_derp_status_u(t) {
+function u(t) {
+    var e, n, l, c, r, s, a, o;
     return {
-        verifyClients: t.verifyClients?.length ? t.verifyClients.join(", ") : "Disabled",
+        verifyClients: (null == (o = t.verifyClients) ? void 0 : o.length) ? t.verifyClients.join(", ") : _("Disabled"),
         running: !!t.running,
-        listen: t.listen || "N/A",
-        stun: t.stun ? "Yes" : "No",
-        mesh: t.mesh ? "Yes" : "No",
-        metrics: t.metrics || "N/A",
-        health: t.health || "N/A",
+        listen: t.listen || _("N/A"),
+        stun: t.stun ? _("Yes") : _("No"),
+        mesh: t.mesh ? _("Yes") : _("No"),
+        metrics: t.metrics || _("N/A"),
+        health: t.health || _("N/A"),
         error: t.error || "",
-        clients: t.clients ?? 0,
-        accepts: t.accepts ?? 0,
-        bytesRecv: t.bytesRecv ?? 0,
-        bytesSent: t.bytesSent ?? 0
+        clients: null != (e = t.clients) ? e : 0,
+        accepts: null != (n = t.accepts) ? n : 0,
+        bytesRecv: null != (l = t.bytesRecv) ? l : 0,
+        bytesSent: null != (c = t.bytesSent) ? c : 0,
+        bytesRecvTotal: null != (r = t.bytesRecvTotal) ? r : 0,
+        bytesSentTotal: null != (s = t.bytesSentTotal) ? s : 0,
+        acceptsTotal: null != (a = t.acceptsTotal) ? a : 0,
+        trafficPersist: !!t.trafficPersist
     };
 }
 function tailscale_derp_status_b(t) {
     if (!t) return "";
-    if (/^:\d+$/.test(t)) return `0.0.0.0${t}`;
+    if (/^:\d+$/.test(t)) return "0.0.0.0".concat(t);
     let e = t.match(/^\[::\]:(\d+)$/);
-    return e ? `0.0.0.0:${e[1]}` : t;
+    return e ? "0.0.0.0:".concat(e[1]) : t;
 }
-function v(t, e) {
+function tailscale_derp_status_f(t, e) {
     let n = readPendingStatus();
     return n ? !n.savedAt || Date.now() - n.savedAt > 300000 ? {
         color: "#c60",
-        text: "Saved configuration status expired before it could be confirmed.",
+        text: _("Saved configuration status expired before it could be confirmed."),
         clear: !0
-    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && tailscale_derp_status_b(t.listen) === tailscale_derp_status_b(n.listen) && t.stun === (n.stun ? "Yes" : "No") && t.mesh === (n.mesh ? "Yes" : "No") && t.metrics === n.metrics && t.health === n.health) ? {
+    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && tailscale_derp_status_b(t.listen) === tailscale_derp_status_b(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.metrics === n.metrics && t.health === n.health) ? {
         color: "#090",
-        text: "Saved configuration is now active.",
+        text: _("Saved configuration is now active."),
         clear: !0
     } : {
         color: "#c60",
-        text: e ? `Waiting for saved configuration to become active: ${e}` : "Waiting for saved configuration to become active...",
+        text: e ? "".concat(_("Waiting for saved configuration to become active:"), " ").concat(e) : _("Waiting for saved configuration to become active..."),
         clear: !1
     } : {
         color: "#666",
-        text: "No configuration change pending.",
+        text: _("No configuration change pending."),
         clear: !1
     };
 }
-function tailscale_derp_status_E(t) {
+function v(t) {
     return Promise.all([
-        tailscale_derp_status_o(),
+        tailscale_derp_status_i(),
         tailscale_derp_status_d()
-    ]).then(([e, l])=>{
-        let r = tailscale_derp_status_u(e || {});
-        t.statusEl.textContent = r.running ? "Running" : "Stopped", t.versionEl.textContent = r.error ? "Unavailable" : l?.version || "Unknown", t.listenEl.textContent = r.error ? "Unavailable" : r.listen, t.stunEl.textContent = r.error ? "Unknown" : r.stun, t.meshEl.textContent = r.error ? "Unknown" : r.mesh, t.verifyClientsEl.textContent = r.error ? "Unknown" : r.verifyClients, t.metricsEl.textContent = r.error ? "Unavailable" : r.metrics, t.healthEl.textContent = r.error ? "Unavailable" : r.health, t.errorEl.textContent = r.error || "None", t.clientsEl.textContent = `${r.clients} connected (${r.accepts} total accepted)`, t.trafficEl.textContent = `\u{2193} ${h(r.bytesRecv)} / \u{2191} ${h(r.bytesSent)}`;
-        let s = v(r, r.error);
+    ]).then((e)=>{
+        let [l, c] = e, r = u(l || {});
+        t.statusEl.textContent = r.running ? _("Running") : _("Stopped"), t.versionEl.textContent = r.error ? _("Unavailable") : (null == c ? void 0 : c.version) || _("Unknown"), t.listenEl.textContent = r.error ? _("Unavailable") : r.listen, t.stunEl.textContent = r.error ? _("Unknown") : r.stun, t.meshEl.textContent = r.error ? _("Unknown") : r.mesh, t.verifyClientsEl.textContent = r.error ? _("Unknown") : r.verifyClients, t.metricsEl.textContent = r.error ? _("Unavailable") : r.metrics, t.healthEl.textContent = r.error ? _("Unavailable") : r.health, t.errorEl.textContent = r.error || _("None"), t.clientsEl.textContent = "".concat(r.clients, " ").concat(_("connected"), " (").concat(r.accepts, " ").concat(_("total accepted"), ")"), r.trafficPersist ? (t.trafficEl.textContent = "Session: \u2193 ".concat(h(r.bytesRecv), " / \u2191 ").concat(h(r.bytesSent)), t.trafficTotalEl.textContent = "Total: \u2193 ".concat(h(r.bytesRecvTotal), " / \u2191 ").concat(h(r.bytesSentTotal)), t.trafficTotalEl.style.display = "") : (t.trafficEl.textContent = "\u2193 ".concat(h(r.bytesRecv), " / \u2191 ").concat(h(r.bytesSent)), t.trafficTotalEl.style.display = "none");
+        let s = tailscale_derp_status_f(r, r.error);
         s.clear && clearPendingStatus(), t.syncEl.style.color = s.color, t.syncEl.textContent = s.text;
     }).catch((e)=>{
-        let l = e instanceof Error ? e.message : "Status backend unavailable";
-        t.statusEl.textContent = _("Offline"), t.versionEl.textContent = "Unavailable", t.listenEl.textContent = "Unavailable", t.stunEl.textContent = "Unknown", t.meshEl.textContent = "Unknown", t.verifyClientsEl.textContent = "Unknown", t.metricsEl.textContent = "Unavailable", t.healthEl.textContent = "Unavailable", t.errorEl.textContent = l || "Status backend unavailable", t.clientsEl.textContent = "0 connected (0 total accepted)", t.trafficEl.textContent = "\u2193 0 B / \u2191 0 B";
-        let r = v(null, l || "Status backend unavailable");
-        r.clear && clearPendingStatus(), t.syncEl.style.color = r.color, t.syncEl.textContent = r.text;
+        let l = e instanceof Error ? e.message : _("Status backend unavailable");
+        t.statusEl.textContent = _("Offline"), t.versionEl.textContent = _("Unavailable"), t.listenEl.textContent = _("Unavailable"), t.stunEl.textContent = _("Unknown"), t.meshEl.textContent = _("Unknown"), t.verifyClientsEl.textContent = _("Unknown"), t.metricsEl.textContent = _("Unavailable"), t.healthEl.textContent = _("Unavailable"), t.errorEl.textContent = l || _("Status backend unavailable"), t.clientsEl.textContent = "0 ".concat(_("connected"), " (0 ").concat(_("total accepted"), ")"), t.trafficEl.textContent = "\u2193 0 B / \u2191 0 B", t.trafficTotalEl.textContent = "", t.trafficTotalEl.style.display = "none";
+        let c = tailscale_derp_status_f(null, l || _("Status backend unavailable"));
+        c.clear && clearPendingStatus(), t.syncEl.style.color = c.color, t.syncEl.textContent = c.text;
     });
 }
-const main = tailscale_derp_status_r.extend({
+const main = tailscale_derp_status_c.extend({
     handleAction (t) {
         let e = function(t) {
             switch(t){
                 case "start":
-                    return "Start";
+                    return _("Start");
                 case "stop":
-                    return "Stop";
+                    return _("Stop");
                 case "restart":
-                    return "Restart";
+                    return _("Restart");
                 case "reload":
-                    return "Reload";
+                    return _("Reload");
             }
         }(t);
         if ("stop" === t || "restart" === t) {
-            let n = `Are you sure you want to ${t} the DERP service?`;
-            if (!window.confirm(n)) return this.resultEl.style.color = "#c00", this.resultEl.textContent = `${e} cancelled.`, Promise.resolve();
+            let n = "".concat(_("Are you sure you want to"), " ").concat(t, " ").concat(_("the DERP service?"));
+            if (!window.confirm(n)) return this.resultEl.style.color = "#c00", this.resultEl.textContent = "".concat(e, " ").concat(_("cancelled.")), Promise.resolve();
         }
         for (let t of this.actionButtons)t.disabled = !0;
-        return this.resultEl.style.color = "#090", this.resultEl.textContent = `${e} in progress...`, tailscale_derp_status_a[t]().then((t)=>{
-            let n = t || {}, l = n.result || "ok", r = n.error;
-            if ("ok" !== l || r) throw Error(r || `${e} failed`);
-            return this.resultEl.style.color = "#090", this.resultEl.textContent = `${e} completed successfully.`, tailscale_derp_status_E(this);
+        return this.resultEl.style.color = "#090", this.resultEl.textContent = "".concat(e, " ").concat(_("in progress...")), tailscale_derp_status_o[t]().then((t)=>{
+            let n = t || {}, l = n.result || "ok", c = n.error;
+            if ("ok" !== l || c) throw Error(c || "".concat(e, " ").concat(_("failed")));
+            return this.resultEl.style.color = "#090", this.resultEl.textContent = "".concat(e, " ").concat(_("completed successfully.")), v(this);
         }).catch((t)=>{
-            let n = t instanceof Error ? t.message : "unknown error";
-            return this.resultEl.style.color = "#c00", this.resultEl.textContent = `${e} failed: ${n}`, tailscale_derp_status_E(this);
+            let n = t instanceof Error ? t.message : _("unknown error");
+            return this.resultEl.style.color = "#c00", this.resultEl.textContent = "".concat(e, " ").concat(_("failed:"), " ").concat(n), v(this);
         }).finally(()=>{
             for (let t of this.actionButtons)t.disabled = !1;
         });
     },
     load: ()=>Promise.all([
-            tailscale_derp_status_o().catch((t)=>({
-                    error: t instanceof Error ? t.message : "Status backend unavailable"
+            tailscale_derp_status_i().catch((t)=>({
+                    error: t instanceof Error ? t.message : _("Status backend unavailable")
                 })),
             tailscale_derp_status_d().catch(()=>({
-                    version: "Unavailable"
+                    version: _("Unavailable")
                 }))
         ]),
     render (l) {
-        let r = l[0] || {}, s = l[1] || {}, a = tailscale_derp_status_u(r), o = v(a, a.error);
-        o.clear && clearPendingStatus();
-        let d = i.createHandlerFn(this, "handleAction", "start"), b = i.createHandlerFn(this, "handleAction", "stop"), f = i.createHandlerFn(this, "handleAction", "restart"), m = i.createHandlerFn(this, "handleAction", "reload"), x = jsx("td", {
+        let c = l[0] || {}, r = l[1] || {}, o = u(c), i = tailscale_derp_status_f(o, o.error);
+        i.clear && clearPendingStatus();
+        let d = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "start"), b = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "stop"), E = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "restart"), y = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "reload"), x = jsx("td", {
             class: "td",
-            children: a.running ? "Running" : "Stopped"
+            children: o.running ? _("Running") : _("Stopped")
+        }), m = jsx("td", {
+            class: "td",
+            children: o.error ? _("Unavailable") : r.version || _("Unknown")
         }), C = jsx("td", {
             class: "td",
-            children: a.error ? "Unavailable" : s.version || "Unknown"
-        }), y = jsx("td", {
-            class: "td",
-            children: a.error ? "Unavailable" : a.listen
+            children: o.error ? _("Unavailable") : o.listen
         }), p = jsx("td", {
             class: "td",
-            children: a.error ? "Unknown" : a.stun
-        }), g = jsx("td", {
-            class: "td",
-            children: a.error ? "Unknown" : a.mesh
+            children: o.error ? _("Unknown") : o.stun
         }), S = jsx("td", {
             class: "td",
-            children: a.error ? "Unknown" : a.verifyClients
+            children: o.error ? _("Unknown") : o.mesh
+        }), g = jsx("td", {
+            class: "td",
+            children: o.error ? _("Unknown") : o.verifyClients
         }), U = jsx("td", {
             class: "td",
-            children: a.error ? "Unavailable" : a.metrics
-        }), $ = jsx("td", {
-            class: "td",
-            children: a.error ? "Unavailable" : a.health
+            children: o.error ? _("Unavailable") : o.metrics
         }), k = jsx("td", {
             class: "td",
-            children: a.error || "None"
+            children: o.error ? _("Unavailable") : o.health
+        }), T = jsx("td", {
+            class: "td",
+            children: o.error || _("None")
         }), w = jsx("td", {
             class: "td",
-            children: `${a.clients} connected (${a.accepts} total accepted)`
+            children: "".concat(o.clients, " ").concat(_("connected"), " (").concat(o.accepts, " ").concat(_("total accepted"), ")")
+        }), R = jsx("td", {
+            class: "td",
+            children: "\u2193 ".concat(h(o.bytesRecv), " / \u2191 ").concat(h(o.bytesSent))
         }), A = jsx("td", {
             class: "td",
-            children: `\u{2193} ${h(a.bytesRecv)} / \u{2191} ${h(a.bytesSent)}`
-        }), R = jsx("div", {
-            style: `margin-bottom: 0.75em; color: ${o.color};`,
-            children: o.text
-        }), N = jsx("div", {
-            style: "margin-top: 0.75em; min-height: 1.2em; color: #090;",
-            children: "No action executed yet."
+            style: "display: none;"
         });
-        this.statusEl = x, this.versionEl = C, this.listenEl = y, this.stunEl = p, this.meshEl = g, this.verifyClientsEl = S, this.metricsEl = U, this.healthEl = $, this.errorEl = k, this.clientsEl = w, this.trafficEl = A, this.syncEl = R, this.resultEl = N;
+        o.trafficPersist && (R.textContent = "Session: \u2193 ".concat(h(o.bytesRecv), " / \u2191 ").concat(h(o.bytesSent)), A.textContent = "Total: \u2193 ".concat(h(o.bytesRecvTotal), " / \u2191 ").concat(h(o.bytesSentTotal)), A.style.display = "");
+        let N = jsx("div", {
+            style: "margin-bottom: 0.75em; color: ".concat(i.color, ";"),
+            children: i.text
+        }), P = jsx("div", {
+            style: "margin-top: 0.75em; min-height: 1.2em; color: #090;",
+            children: _("No action executed yet.")
+        });
+        this.statusEl = x, this.versionEl = m, this.listenEl = C, this.stunEl = p, this.meshEl = S, this.verifyClientsEl = g, this.metricsEl = U, this.healthEl = k, this.errorEl = T, this.clientsEl = w, this.trafficEl = R, this.trafficTotalEl = A, this.syncEl = N, this.resultEl = P;
         let j = jsx("button", {
             class: "cbi-button cbi-button-action",
-            onClick: d,
-            children: "Start"
+            onclick: d,
+            children: _("Start")
         }), B = jsx("button", {
             class: "cbi-button cbi-button-negative",
-            onClick: b,
-            children: "Stop"
+            onclick: b,
+            children: _("Stop")
         }), F = jsx("button", {
             class: "cbi-button cbi-button-action",
-            onClick: f,
-            children: "Restart"
-        }), P = jsx("button", {
+            onclick: E,
+            children: _("Restart")
+        }), D = jsx("button", {
             class: "cbi-button cbi-button-action",
-            onClick: m,
-            children: "Reload Config"
+            onclick: y,
+            children: _("Reload Config")
         });
         return this.actionButtons = [
             j,
             B,
             F,
-            P
-        ], c.add(()=>tailscale_derp_status_E(this), 5), jsxs("div", {
+            D
+        ], tailscale_derp_status_a.add(()=>v(this), 5), jsxs("div", {
             children: [
                 jsx("h2", {
-                    children: "Tailscale DERP Status"
+                    children: _("Tailscale DERP Status")
                 }),
                 jsxs("div", {
                     class: "cbi-section",
                     children: [
                         jsx("h3", {
-                            children: "DERP Server Status"
+                            children: _("DERP Server Status")
                         }),
-                        R,
+                        N,
                         jsxs("table", {
                             class: "table",
                             children: [
@@ -321,7 +451,7 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Service Status"
+                                            children: _("Service Status")
                                         }),
                                         x
                                     ]
@@ -331,9 +461,9 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Version"
+                                            children: _("Version")
                                         }),
-                                        C
+                                        m
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -341,7 +471,7 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Connected Clients"
+                                            children: _("Connected Clients")
                                         }),
                                         w
                                     ]
@@ -351,7 +481,17 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Traffic"
+                                            children: _("Traffic")
+                                        }),
+                                        R
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: _("Traffic (Total)")
                                         }),
                                         A
                                     ]
@@ -361,9 +501,9 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Listen Address"
+                                            children: _("Listen Address")
                                         }),
-                                        y
+                                        C
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -371,7 +511,7 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "STUN Enabled"
+                                            children: _("STUN Enabled")
                                         }),
                                         p
                                     ]
@@ -381,17 +521,7 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Mesh Enabled"
-                                        }),
-                                        g
-                                    ]
-                                }),
-                                jsxs("tr", {
-                                    class: "tr",
-                                    children: [
-                                        jsx("td", {
-                                            class: "td",
-                                            children: "Verify Clients"
+                                            children: _("Mesh Enabled")
                                         }),
                                         S
                                     ]
@@ -401,7 +531,17 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Metrics Address"
+                                            children: _("Verify Clients")
+                                        }),
+                                        g
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: _("Metrics Address")
                                         }),
                                         U
                                     ]
@@ -411,9 +551,9 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Health Address"
+                                            children: _("Health Address")
                                         }),
-                                        $
+                                        k
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -421,9 +561,9 @@ const main = tailscale_derp_status_r.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: "Last Error"
+                                            children: _("Last Error")
                                         }),
-                                        k
+                                        T
                                     ]
                                 })
                             ]
@@ -435,7 +575,7 @@ const main = tailscale_derp_status_r.extend({
                     style: "margin-top: 1em;",
                     children: [
                         jsx("h3", {
-                            children: "Service Actions"
+                            children: _("Service Actions")
                         }),
                         jsxs("div", {
                             class: "cbi-section-node",
@@ -446,10 +586,10 @@ const main = tailscale_derp_status_r.extend({
                                 " ",
                                 F,
                                 " ",
-                                P
+                                D
                             ]
                         }),
-                        N
+                        P
                     ]
                 })
             ]

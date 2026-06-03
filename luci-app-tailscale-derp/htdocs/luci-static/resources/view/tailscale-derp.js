@@ -11,72 +11,193 @@
 
 // UNUSED EXPORTS: main
 
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_define_property.js
+function _define_property(obj, key, value) {
+    if (key in obj) {
+        Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
+    } else obj[key] = value;
+
+    return obj;
+}
+
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread.js
+
+
+function _object_spread(target) {
+    for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i] != null ? arguments[i] : {};
+        var ownKeys = Object.keys(source);
+
+        if (typeof Object.getOwnPropertySymbols === "function") {
+            ownKeys = ownKeys.concat(
+                Object.getOwnPropertySymbols(source).filter(function(sym) {
+                    return Object.getOwnPropertyDescriptor(source, sym).enumerable;
+                })
+            );
+        }
+
+        ownKeys.forEach(function(key) {
+            _define_property(target, key, source[key]);
+        });
+    }
+
+    return target;
+}
+
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread_props.js
+function _object_spread_props_ownKeys(object, enumerableOnly) {
+    var keys = Object.keys(object);
+
+    if (Object.getOwnPropertySymbols) {
+        var symbols = Object.getOwnPropertySymbols(object);
+        if (enumerableOnly) {
+            symbols = symbols.filter(function(sym) {
+                return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+            });
+        }
+        keys.push.apply(keys, symbols);
+    }
+
+    return keys;
+}
+function _object_spread_props(target, source) {
+    source = source != null ? source : {};
+
+    if (Object.getOwnPropertyDescriptors) Object.defineProperties(target, Object.getOwnPropertyDescriptors(source));
+    else {
+        _object_spread_props_ownKeys(Object(source)).forEach(function(key) {
+            Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+        });
+    }
+
+    return target;
+}
+
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties_loose.js
+function _object_without_properties_loose(source, excluded) {
+    if (source == null) return {};
+
+    var target = {}, sourceKeys = Object.getOwnPropertyNames(source), key, i;
+    for (i = 0; i < sourceKeys.length; i++) {
+        key = sourceKeys[i];
+        if (excluded.indexOf(key) >= 0) continue;
+        if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+        target[key] = source[key];
+    }
+
+    return target;
+}
+
+
+;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties.js
+
+
+function _object_without_properties(source, excluded) {
+    if (source == null) return {};
+
+    var target = {}, sourceKeys, key, i;
+    if (typeof Reflect !== "undefined" && Reflect.ownKeys) {
+        sourceKeys = Reflect.ownKeys(Object(source));
+        for (i = 0; i < sourceKeys.length; i++) {
+            key = sourceKeys[i];
+            if (excluded.indexOf(key) >= 0) continue;
+            if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+            target[key] = source[key];
+        }
+
+        return target;
+    }
+
+    target = _object_without_properties_loose(source, excluded);
+    if (Object.getOwnPropertySymbols) {
+        sourceKeys = Object.getOwnPropertySymbols(source);
+        for (i = 0; i < sourceKeys.length; i++) {
+            key = sourceKeys[i];
+            if (excluded.indexOf(key) >= 0) continue;
+            if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+            target[key] = source[key];
+        }
+    }
+
+    return target;
+}
+
+
+
 ;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
+
+
+
 const Fragment = Symbol.for("jsx.fragment");
-function jsx_factory_e(e, t) {
-    let { children: n, ...r } = t || {}, o = function e(t, n = []) {
-        for (let r of t)null != r && "boolean" != typeof r && (Array.isArray(r) ? e(r, n) : n.push(r));
-        return n;
-    }(null == n ? [] : Array.isArray(n) ? n : [
-        n
+function jsx_factory_o(o, n) {
+    let s = n || {}, { children: l } = s, f = _object_without_properties(s, [
+        "children"
+    ]), i = function e(t) {
+        let r = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : [];
+        for (let o of t)null != o && "boolean" != typeof o && (Array.isArray(o) ? e(o, r) : r.push(o));
+        return r;
+    }(null == l ? [] : Array.isArray(l) ? l : [
+        l
     ]);
-    if (e === Fragment) {
+    if (o === Fragment) {
         let e = document.createDocumentFragment();
-        return e.append(...o), e;
+        return e.append(...i), e;
     }
-    if ("function" == typeof e) return e({
-        ...r,
-        children: o
-    });
-    let l = {}, f = {
-        ...r
-    };
-    for (let [e, t] of Object.entries(f))e.startsWith("on") && "function" == typeof t ? (l[e] = t, delete f[e]) : "boolean" == typeof t && (t ? f[e] = e : delete f[e]);
-    let u = Object.keys(f).length > 0 ? o.length > 1 ? E(e, f, o) : E(e, f, o[0]) : o.length > 1 ? E(e, {}, o) : E(e, {}, o[0]);
-    for (let [e, t] of Object.entries(l)){
-        let n = e.slice(2).toLowerCase();
-        u.addEventListener(n, t);
+    if ("function" == typeof o) return o(_object_spread_props(_object_spread({}, f), {
+        children: i
+    }));
+    let c = {}, p = _object_spread({}, f);
+    for (let [e, t] of Object.entries(p))e.startsWith("on") && "function" == typeof t ? (c[e] = t, delete p[e]) : "boolean" == typeof t && (t ? p[e] = e : delete p[e]);
+    let a = Object.keys(p).length > 0 ? i.length > 1 ? E(o, p, i) : E(o, p, i[0]) : i.length > 1 ? E(o, {}, i) : E(o, {}, i[0]);
+    for (let [e, t] of Object.entries(c)){
+        let r = e.slice(2).toLowerCase();
+        a.addEventListener(r, t);
     }
-    return u;
+    return a;
 }
-function jsx(t, n) {
-    return jsx_factory_e(t, n);
+function jsx(e, t) {
+    return jsx_factory_o(e, t);
 }
-function jsxs(t, n) {
-    return jsx_factory_e(t, n);
+function jsxs(e, t) {
+    return jsx_factory_o(e, t);
 }
-function jsxDEV(t, n) {
-    return jsx_factory_e(t, n);
+function jsxDEV(e, t) {
+    return jsx_factory_o(e, t);
 }
 
 ;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
 ;// CONCATENATED MODULE: ./src/shared/config.ts
+
+
 const pendingStatusStorageKey = "tailscale-derp.pendingStatus";
 function isSocketAddress(t) {
     return /^(:\d+|[^\s:]+:\d+)$/.test(t);
 }
 function validateSocketAddress(t, e) {
-    return e ? !!isSocketAddress(e) || `${t} must be in :port or host:port format` : `${t} is required`;
+    return e ? !!isSocketAddress(e) || "".concat(t, " must be in :port or host:port format") : "".concat(t, " is required");
 }
 function isLoopbackSocketAddress(t) {
     return /^(127\.0\.0\.1:\d+|localhost:\d+|\[::1\]:\d+)$/.test(t);
 }
 function validateLoopbackSocketAddress(t, e) {
-    return e ? !!isLoopbackSocketAddress(e) || `${t} must stay on loopback (127.0.0.1:port, localhost:port, or [::1]:port)` : `${t} is required`;
+    return e ? !!isLoopbackSocketAddress(e) || "".concat(t, " must stay on loopback (127.0.0.1:port, localhost:port, or [::1]:port)") : "".concat(t, " is required");
 }
 function firstOption(t, e, o) {
-    let n = t.lookupOption(o, e);
-    return n ? n[0] : null;
+    let r = t.lookupOption(o, e);
+    return r ? r[0] : null;
 }
-function optionFormValue(t, e, o, n) {
-    let r = firstOption(t, e, o), s = r?.formvalue(e);
-    return null == s || "" === s ? n : String(s);
+function optionFormValue(t, e, o, r) {
+    let n = firstOption(t, e, o), s = null == n ? void 0 : n.formvalue(e);
+    return null == s || "" === s ? r : String(s);
 }
-function boolFormValue(t, e, o, n) {
-    let r = optionFormValue(t, e, o, n ? "1" : "0");
-    return "1" === r || "true" === r;
+function boolFormValue(t, e, o, r) {
+    let n = optionFormValue(t, e, o, r ? "1" : "0");
+    return "1" === n || "true" === n;
 }
 function captureExpectedStatus(t) {
     return {
@@ -88,13 +209,12 @@ function captureExpectedStatus(t) {
         health: optionFormValue(t, "ops", "health", ":9912")
     };
 }
-function savePendingStatus(t) {
+function savePendingStatus(o) {
     if (!window.sessionStorage) return;
-    let e = {
-        ...t,
+    let r = _object_spread_props(_object_spread({}, o), {
         savedAt: Date.now()
-    };
-    window.sessionStorage.setItem(pendingStatusStorageKey, JSON.stringify(e));
+    });
+    window.sessionStorage.setItem(pendingStatusStorageKey, JSON.stringify(r));
 }
 function clearPendingStatus() {
     window.sessionStorage && window.sessionStorage.removeItem(pendingStatusStorageKey);
@@ -104,7 +224,7 @@ function readPendingStatus() {
     try {
         let t = window.sessionStorage.getItem(pendingStatusStorageKey);
         return t ? JSON.parse(t) : null;
-    } catch  {
+    } catch (t) {
         return window.sessionStorage.removeItem(pendingStatusStorageKey), null;
     }
 }
@@ -112,52 +232,53 @@ function readPendingStatus() {
 ;// CONCATENATED MODULE: ./src/views/tailscale-derp.tsx
 
 
-let tailscale_derp_l = L.view, tailscale_derp_n = L.form, tailscale_derp_s = L.rpc, d = LuCI.ui, c = L.uci, p = tailscale_derp_s.declare({
+let tailscale_derp_l = L.view, tailscale_derp_s = L.form, tailscale_derp_n = L.rpc, d = LuCI.ui, tailscale_derp_p = L.uci, tailscale_derp_c = tailscale_derp_n.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
 function m(e, t) {
     let a = this.section.formvalue(e, "enabled");
-    return "1" !== a && !0 !== a || !!t || "Mesh key is required when mesh mode is enabled";
+    return "1" !== a && !0 !== a || !!t || _("Mesh key is required when mesh mode is enabled");
 }
-function tailscale_derp_u(e, t, a, o) {
-    let r = a.section.formvalue(e, o) || "";
-    return (!t || !!r) && (!!t || !r) || "Certificate and key must be provided together";
+function tailscale_derp_f(e, t, a, i) {
+    let r = a.section.formvalue(e, i) || "";
+    return (!t || !!r) && (!!t || !r) || _("Certificate and key must be provided together");
 }
 const main = tailscale_derp_l.extend({
     map: null,
     load: ()=>Promise.all([
-            c.load("tailscale-derp")
+            tailscale_derp_p.load("tailscale-derp")
         ]),
-    handleSaveApply (r, i) {
+    handleSaveApply (r, o) {
         let l = captureExpectedStatus(this.map);
         return this.super("handleSaveApply", [
             r,
-            i
-        ]).then(()=>p()).then(()=>{
+            o
+        ]).then(()=>tailscale_derp_c()).then(()=>{
             savePendingStatus(l), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((t)=>{
             clearPendingStatus();
-            let o = t instanceof Error ? t.message : "unknown error";
+            let i = t instanceof Error ? t.message : "unknown error";
             throw d.addNotification(null, jsxs("p", {
                 children: [
-                    "Failed to reload DERP configuration: ",
-                    o
+                    _("Failed to reload DERP configuration:"),
+                    " ",
+                    i
                 ]
             })), t;
         });
     },
     render () {
-        let e = new tailscale_derp_n.Map("tailscale-derp", "Tailscale DERP Relay", "Configure the Tailscale DERP relay server.");
+        let e = new tailscale_derp_s.Map("tailscale-derp", _("Tailscale DERP Relay"), _("Configure the Tailscale DERP relay server."));
         this.map = e;
-        let t = e.section(tailscale_derp_n.TypedSection, "settings", "Global Settings");
+        let t = e.section(tailscale_derp_s.TypedSection, "settings", _("Global Settings"));
         t.anonymous = !0;
-        let a = t.option(tailscale_derp_n.Flag, "enabled", "Enable Service", "Start DERP service on boot");
-        return a.default = "0", a.rmempty = !1, (a = t.option(tailscale_derp_n.Value, "listen", "Listen Address", "Address and port for DERP/STUN (e.g. :3478)")).default = ":3478", a.rmempty = !1, a.placeholder = ":3478", a.validate = (e, t)=>validateSocketAddress("Listen address", t), (a = t.option(tailscale_derp_n.Flag, "stun", "Enable STUN", "Enable STUN server on the same port")).default = "1", a.rmempty = !1, (t = e.section(tailscale_derp_n.TypedSection, "tls", "TLS Settings")).anonymous = !0, (a = t.option(tailscale_derp_n.Value, "certfile", "Certificate File", "Path to TLS certificate (leave empty for auto)")).placeholder = "/etc/ssl/certs/derp.pem", a.rmempty = !0, a.validate = function(e, t) {
-            return tailscale_derp_u(e, t, this, "keyfile");
-        }, (a = t.option(tailscale_derp_n.Value, "keyfile", "Key File", "Path to TLS private key (leave empty for auto)")).placeholder = "/etc/ssl/private/derp.key", a.rmempty = !0, a.validate = function(e, t) {
-            return tailscale_derp_u(e, t, this, "certfile");
-        }, (t = e.section(tailscale_derp_n.TypedSection, "mesh", "Mesh Settings")).anonymous = !0, (a = t.option(tailscale_derp_n.Flag, "enabled", "Enable Mesh", "Enable DERP mesh mode")).default = "0", a.rmempty = !1, (a = t.option(tailscale_derp_n.Value, "key", "Mesh Shared Key", "Shared mesh key passed to the DERP server when mesh mode is enabled")).rmempty = !0, a.depends("enabled", "1"), a.password = !0, a.validate = m, (t = e.section(tailscale_derp_n.TypedSection, "verify", "Client Verification")).anonymous = !0, (a = t.option(tailscale_derp_n.DynamicList, "url", "Verify URLs", "Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)")).rmempty = !0, a.placeholder = "https://your-admission-controller/verify", (a = t.option(tailscale_derp_n.Flag, "fail_open", "Fail Open", "Allow clients to connect if all verify URLs are unreachable")).default = "0", a.rmempty = !1, (t = e.section(tailscale_derp_n.TypedSection, "ops", "Operations")).anonymous = !0, (a = t.option(tailscale_derp_n.Value, "metrics", "Metrics Port", "Port for Prometheus metrics endpoint")).default = "127.0.0.1:9911", a.rmempty = !1, a.placeholder = "127.0.0.1:9911", a.validate = (e, t)=>validateLoopbackSocketAddress("Metrics address", t), (a = t.option(tailscale_derp_n.Value, "health", "Health Port", "Port for health check endpoint")).default = ":9912", a.rmempty = !1, a.placeholder = ":9912", a.validate = (e, t)=>validateSocketAddress("Health address", t), e.render();
+        let a = t.option(tailscale_derp_s.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
+        return a.default = "0", a.rmempty = !1, (a = t.option(tailscale_derp_s.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", a.rmempty = !1, a.placeholder = ":3478", a.validate = (e, t)=>validateSocketAddress("Listen address", t), (a = t.option(tailscale_derp_s.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", a.rmempty = !1, (t = e.section(tailscale_derp_s.TypedSection, "tls", _("TLS Settings"))).anonymous = !0, (a = t.option(tailscale_derp_s.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"))).placeholder = "/etc/ssl/certs/derp.pem", a.rmempty = !0, a.validate = function(e, t) {
+            return tailscale_derp_f(e, t, this, "keyfile");
+        }, (a = t.option(tailscale_derp_s.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"))).placeholder = "/etc/ssl/private/derp.key", a.rmempty = !0, a.validate = function(e, t) {
+            return tailscale_derp_f(e, t, this, "certfile");
+        }, (t = e.section(tailscale_derp_s.TypedSection, "mesh", _("Mesh Settings"))).anonymous = !0, (a = t.option(tailscale_derp_s.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", a.rmempty = !1, (a = t.option(tailscale_derp_s.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, a.depends("enabled", "1"), a.password = !0, a.validate = m, (t = e.section(tailscale_derp_s.TypedSection, "verify", _("Client Verification"))).anonymous = !0, (a = t.option(tailscale_derp_s.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)"))).rmempty = !0, a.placeholder = "https://your-admission-controller/verify", (a = t.option(tailscale_derp_s.Flag, "fail_open", _("Fail Open"), _("Allow clients to connect if all verify URLs are unreachable"))).default = "0", a.rmempty = !1, (t = e.section(tailscale_derp_s.TypedSection, "ops", _("Operations"))).anonymous = !0, (a = t.option(tailscale_derp_s.Value, "metrics", _("Metrics Port"), _("Port for Prometheus metrics endpoint"))).default = "127.0.0.1:9911", a.rmempty = !1, a.placeholder = "127.0.0.1:9911", a.validate = (e, t)=>validateLoopbackSocketAddress("Metrics address", t), (a = t.option(tailscale_derp_s.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", a.rmempty = !1, a.placeholder = ":9912", a.validate = (e, t)=>validateSocketAddress("Health address", t), (t = e.section(tailscale_derp_s.TypedSection, "traffic", _("Traffic Statistics"))).anonymous = !0, (a = t.option(tailscale_derp_s.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", a.rmempty = !1, (a = t.option(tailscale_derp_s.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", a.rmempty = !0, a.placeholder = "/tmp/tailscale-derp-traffic.json", a.depends("persist", "1"), (a = t.option(tailscale_derp_s.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", a.rmempty = !0, a.placeholder = "60", a.depends("persist", "1"), e.render();
     }
 });
 

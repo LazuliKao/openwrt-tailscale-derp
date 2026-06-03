@@ -12,6 +12,7 @@ import (
 
 	"github.com/LazuliKao/openwrt-tailscale-derp/internal/httpjson"
 	"github.com/LazuliKao/openwrt-tailscale-derp/internal/service"
+	"github.com/LazuliKao/openwrt-tailscale-derp/internal/traffic"
 	"github.com/LazuliKao/openwrt-tailscale-derp/internal/tracker"
 )
 
@@ -26,6 +27,9 @@ type Config struct {
 	Mesh                 bool
 	OpsAddr              string
 	Health               string
+	TrafficPersist       bool
+	TrafficPath          string
+	TrafficInterval      int
 }
 
 type Status struct {
@@ -37,11 +41,17 @@ type Status struct {
 	Mesh          bool     `json:"mesh"`
 	Metrics       string   `json:"metrics"`
 	Health        string   `json:"health"`
+	TrafficPersist bool    `json:"trafficPersist"`
+	TrafficPath    string  `json:"trafficPath,omitempty"`
+	TrafficInterval int    `json:"trafficInterval,omitempty"`
 	Error         string   `json:"error,omitempty"`
 	Clients       int      `json:"clients"`
 	Accepts       int64    `json:"accepts"`
 	BytesRecv     int64    `json:"bytesRecv"`
 	BytesSent     int64    `json:"bytesSent"`
+	AcceptsTotal  int64    `json:"acceptsTotal,omitempty"`
+	BytesRecvTotal int64   `json:"bytesRecvTotal,omitempty"`
+	BytesSentTotal int64   `json:"bytesSentTotal,omitempty"`
 }
 
 type ActionResult struct {
@@ -56,7 +66,9 @@ type Snapshot func() (bool, string)
 // MetricsFunc returns DERP server expvar metrics as raw JSON.
 type MetricsFunc func() json.RawMessage
 
-func StatusFromConfig(cfg Config, snapshot Snapshot, mf MetricsFunc) Status {
+type TrafficFunc func() *traffic.Stats
+
+func StatusFromConfig(cfg Config, snapshot Snapshot, mf MetricsFunc, tf TrafficFunc) Status {
 	running := true
 	errMsg := ""
 	if snapshot != nil {
@@ -80,6 +92,9 @@ func StatusFromConfig(cfg Config, snapshot Snapshot, mf MetricsFunc) Status {
 		Mesh:          cfg.Mesh,
 		Metrics:       metricsAddr,
 		Health:        healthAddr,
+		TrafficPersist: cfg.TrafficPersist,
+		TrafficPath:    cfg.TrafficPath,
+		TrafficInterval: cfg.TrafficInterval,
 		Error:         errMsg,
 	}
 
@@ -92,6 +107,14 @@ func StatusFromConfig(cfg Config, snapshot Snapshot, mf MetricsFunc) Status {
 				s.BytesRecv = extractInt64(m, "bytes_received")
 				s.BytesSent = extractInt64(m, "bytes_sent")
 			}
+		}
+	}
+
+	if tf != nil {
+		if total := tf(); total != nil {
+			s.AcceptsTotal = total.Accepts
+			s.BytesRecvTotal = total.BytesRecv
+			s.BytesSentTotal = total.BytesSent
 		}
 	}
 
@@ -142,14 +165,14 @@ func HandleOpsWithExecutor(executor Executor) http.HandlerFunc {
 	}
 }
 
-func HandleStatus(cfg Config, snapshot Snapshot, mf MetricsFunc) http.HandlerFunc {
+func HandleStatus(cfg Config, snapshot Snapshot, mf MetricsFunc, tf TrafficFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			httpjson.Write(w, http.StatusMethodNotAllowed, map[string]string{"error": "GET required"})
 			return
 		}
 
-		httpjson.Write(w, http.StatusOK, StatusFromConfig(cfg, snapshot, mf))
+		httpjson.Write(w, http.StatusOK, StatusFromConfig(cfg, snapshot, mf, tf))
 	}
 }
 
@@ -293,9 +316,9 @@ func HandlePeers(t *tracker.PeerTracker) http.HandlerFunc {
 	}
 }
 
-func NewMux(cfg Config, snapshot Snapshot, executor Executor, mf MetricsFunc, t *tracker.PeerTracker) http.Handler {
+func NewMux(cfg Config, snapshot Snapshot, executor Executor, mf MetricsFunc, t *tracker.PeerTracker, tf TrafficFunc) http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/status", HandleStatus(cfg, snapshot, mf))
+	mux.HandleFunc("/status", HandleStatus(cfg, snapshot, mf, tf))
 	mux.HandleFunc("/health", HandleHealth)
 	mux.HandleFunc("/version", HandleVersion(cfg.Version))
 	mux.HandleFunc("/ops", HandleOpsWithExecutor(executor))

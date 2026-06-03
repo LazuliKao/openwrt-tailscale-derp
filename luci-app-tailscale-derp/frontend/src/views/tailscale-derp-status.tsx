@@ -2,7 +2,7 @@ import {
 	clearPendingStatus,
 	readPendingStatus,
 	type ExpectedStatus,
-} from "src/shared/config";
+} from "@/shared/config";
 
 type ActionName = "start" | "stop" | "restart" | "reload";
 const view = L.view;
@@ -29,6 +29,12 @@ type StatusResponse = {
 	accepts?: number;
 	bytesRecv?: number;
 	bytesSent?: number;
+	bytesRecvTotal?: number;
+	bytesSentTotal?: number;
+	acceptsTotal?: number;
+	trafficPersist?: boolean;
+	trafficPath?: string;
+	trafficInterval?: number;
 };
 
 type VersionResponse = {
@@ -48,6 +54,10 @@ type NormalizedStatus = {
 	accepts: number;
 	bytesRecv: number;
 	bytesSent: number;
+	bytesRecvTotal: number;
+	bytesSentTotal: number;
+	acceptsTotal: number;
+	trafficPersist: boolean;
 };
 
 type SyncState = {
@@ -98,31 +108,35 @@ function normalizeStatus(data: StatusResponse): NormalizedStatus {
 	return {
 		verifyClients: data.verifyClients?.length
 			? data.verifyClients.join(", ")
-			: "Disabled",
+			: _("Disabled"),
 		running: !!data.running,
-		listen: data.listen || "N/A",
-		stun: data.stun ? "Yes" : "No",
-		mesh: data.mesh ? "Yes" : "No",
-		metrics: data.metrics || "N/A",
-		health: data.health || "N/A",
+	listen: data.listen || _("N/A"),
+	stun: data.stun ? _("Yes") : _("No"),
+	mesh: data.mesh ? _("Yes") : _("No"),
+	metrics: data.metrics || _("N/A"),
+	health: data.health || _("N/A"),
 		error: data.error || "",
 		clients: data.clients ?? 0,
 		accepts: data.accepts ?? 0,
 		bytesRecv: data.bytesRecv ?? 0,
 		bytesSent: data.bytesSent ?? 0,
+		bytesRecvTotal: data.bytesRecvTotal ?? 0,
+		bytesSentTotal: data.bytesSentTotal ?? 0,
+		acceptsTotal: data.acceptsTotal ?? 0,
+		trafficPersist: !!data.trafficPersist,
 	};
 }
 
 function actionLabel(action: ActionName): string {
 	switch (action) {
 		case "start":
-			return "Start";
+		return _("Start");
 		case "stop":
-			return "Stop";
+		return _("Stop");
 		case "restart":
-			return "Restart";
+		return _("Restart");
 		case "reload":
-			return "Reload";
+		return _("Reload");
 	}
 }
 
@@ -172,8 +186,8 @@ function matchesPendingStatus(
 	return (
 		normalized.running === true &&
 		normalizeAddress(normalized.listen) === normalizeAddress(pending.listen) &&
-		normalized.stun === (pending.stun ? "Yes" : "No") &&
-		normalized.mesh === (pending.mesh ? "Yes" : "No") &&
+		normalized.stun === (pending.stun ? _("Yes") : _("No")) &&
+		normalized.mesh === (pending.mesh ? _("Yes") : _("No")) &&
 		normalized.metrics === pending.metrics &&
 		normalized.health === pending.health
 	);
@@ -188,7 +202,7 @@ function getSyncState(
 	if (!pending) {
 		return {
 			color: "#666",
-			text: "No configuration change pending.",
+			text: _("No configuration change pending."),
 			clear: false,
 		};
 	}
@@ -196,7 +210,7 @@ function getSyncState(
 	if (isPendingExpired(pending)) {
 		return {
 			color: "#c60",
-			text: "Saved configuration status expired before it could be confirmed.",
+			text: _("Saved configuration status expired before it could be confirmed."),
 			clear: true,
 		};
 	}
@@ -204,7 +218,7 @@ function getSyncState(
 	if (normalized && matchesPendingStatus(normalized, pending)) {
 		return {
 			color: "#090",
-			text: "Saved configuration is now active.",
+			text: _("Saved configuration is now active."),
 			clear: true,
 		};
 	}
@@ -212,8 +226,8 @@ function getSyncState(
 	return {
 		color: "#c60",
 		text: backendMessage
-			? `Waiting for saved configuration to become active: ${backendMessage}`
-			: "Waiting for saved configuration to become active...",
+			? `${_("Waiting for saved configuration to become active:")} ${backendMessage}`
+			: _("Waiting for saved configuration to become active..."),
 		clear: false,
 	};
 }
@@ -230,6 +244,7 @@ type StatusView = {
 	errorEl: HTMLElement;
 	clientsEl: HTMLElement;
 	trafficEl: HTMLElement;
+	trafficTotalEl: HTMLElement;
 	syncEl: HTMLElement;
 	resultEl: HTMLElement;
 	actionButtons: HTMLButtonElement[];
@@ -240,31 +255,38 @@ function pollStatus(view: StatusView): Promise<void> {
 	return Promise.all([callStatus(), callVersion()])
 		.then(([status, version]) => {
 			const normalized = normalizeStatus(status || {});
-			view.statusEl.textContent = normalized.running ? "Running" : "Stopped";
-			view.versionEl.textContent = normalized.error
-				? "Unavailable"
-				: version?.version || "Unknown";
-			view.listenEl.textContent = normalized.error
-				? "Unavailable"
-				: normalized.listen;
-			view.stunEl.textContent = normalized.error
-				? "Unknown"
-				: normalized.stun;
-			view.meshEl.textContent = normalized.error
-				? "Unknown"
-				: normalized.mesh;
-			view.verifyClientsEl.textContent = normalized.error
-				? "Unknown"
-				: normalized.verifyClients;
-			view.metricsEl.textContent = normalized.error
-				? "Unavailable"
-				: normalized.metrics;
-			view.healthEl.textContent = normalized.error
-				? "Unavailable"
-				: normalized.health;
-			view.errorEl.textContent = normalized.error || "None";
-			view.clientsEl.textContent = `${normalized.clients} connected (${normalized.accepts} total accepted)`;
-			view.trafficEl.textContent = `↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`;
+				view.statusEl.textContent = normalized.running ? _("Running") : _("Stopped");
+				view.versionEl.textContent = normalized.error
+					? _("Unavailable")
+					: version?.version || _("Unknown");
+				view.listenEl.textContent = normalized.error
+					? _("Unavailable")
+					: normalized.listen;
+				view.stunEl.textContent = normalized.error
+					? _("Unknown")
+					: normalized.stun;
+				view.meshEl.textContent = normalized.error
+					? _("Unknown")
+					: normalized.mesh;
+				view.verifyClientsEl.textContent = normalized.error
+					? _("Unknown")
+					: normalized.verifyClients;
+				view.metricsEl.textContent = normalized.error
+					? _("Unavailable")
+					: normalized.metrics;
+				view.healthEl.textContent = normalized.error
+					? _("Unavailable")
+					: normalized.health;
+				view.errorEl.textContent = normalized.error || _("None");
+				view.clientsEl.textContent = `${normalized.clients} ${_("connected")} (${normalized.accepts} ${_("total accepted")})`;
+			if (normalized.trafficPersist) {
+				view.trafficEl.textContent = `Session: ↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`;
+				view.trafficTotalEl.textContent = `Total: ↓ ${formatBytes(normalized.bytesRecvTotal)} / ↑ ${formatBytes(normalized.bytesSentTotal)}`;
+				view.trafficTotalEl.style.display = "";
+			} else {
+				view.trafficEl.textContent = `↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`;
+				view.trafficTotalEl.style.display = "none";
+			}
 
 			const syncState = getSyncState(normalized, normalized.error);
 			if (syncState.clear) {
@@ -274,21 +296,23 @@ function pollStatus(view: StatusView): Promise<void> {
 			view.syncEl.textContent = syncState.text;
 		})
 		.catch((err: unknown) => {
-			const message =
-				err instanceof Error ? err.message : "Status backend unavailable";
-			view.statusEl.textContent = _("Offline");
-			view.versionEl.textContent = "Unavailable";
-			view.listenEl.textContent = "Unavailable";
-			view.stunEl.textContent = "Unknown";
-			view.meshEl.textContent = "Unknown";
-			view.verifyClientsEl.textContent = "Unknown";
-			view.metricsEl.textContent = "Unavailable";
-			view.healthEl.textContent = "Unavailable";
-			view.errorEl.textContent = message || "Status backend unavailable";
-			view.clientsEl.textContent = "0 connected (0 total accepted)";
-			view.trafficEl.textContent = "↓ 0 B / ↑ 0 B";
+				const message =
+					err instanceof Error ? err.message : _("Status backend unavailable");
+				view.statusEl.textContent = _("Offline");
+				view.versionEl.textContent = _("Unavailable");
+				view.listenEl.textContent = _("Unavailable");
+				view.stunEl.textContent = _("Unknown");
+				view.meshEl.textContent = _("Unknown");
+				view.verifyClientsEl.textContent = _("Unknown");
+				view.metricsEl.textContent = _("Unavailable");
+				view.healthEl.textContent = _("Unavailable");
+				view.errorEl.textContent = message || _("Status backend unavailable");
+				view.clientsEl.textContent = `0 ${_("connected")} (0 ${_("total accepted")})`;
+				view.trafficEl.textContent = "↓ 0 B / ↑ 0 B";
+				view.trafficTotalEl.textContent = "";
+				view.trafficTotalEl.style.display = "none";
 
-			const syncState = getSyncState(null, message || "Status backend unavailable");
+				const syncState = getSyncState(null, message || _("Status backend unavailable"));
 			if (syncState.clear) {
 				clearPendingStatus();
 			}
@@ -302,10 +326,10 @@ export const main = view.extend({
 		const label = actionLabel(action);
 
 		if (shouldConfirm(action)) {
-			const message = `Are you sure you want to ${action} the DERP service?`;
+			const message = `${_("Are you sure you want to")} ${action} ${_("the DERP service?")}`;
 			if (!window.confirm(message)) {
 				this.resultEl.style.color = "#c00";
-				this.resultEl.textContent = `${label} cancelled.`;
+				this.resultEl.textContent = `${label} ${_("cancelled.")}`;
 				return Promise.resolve();
 			}
 		}
@@ -314,7 +338,7 @@ export const main = view.extend({
 			btn.disabled = true;
 		}
 		this.resultEl.style.color = "#090";
-		this.resultEl.textContent = `${label} in progress...`;
+		this.resultEl.textContent = `${label} ${_("in progress...")}`;
 
 		return invokeAction(action)
 			.then((result) => {
@@ -323,17 +347,17 @@ export const main = view.extend({
 				const errorMessage = response.error;
 
 				if (resultLabel !== "ok" || errorMessage) {
-					throw new Error(errorMessage || `${label} failed`);
+						throw new Error(errorMessage || `${label} ${_("failed")}`);
 				}
 
 				this.resultEl.style.color = "#090";
-				this.resultEl.textContent = `${label} completed successfully.`;
+				this.resultEl.textContent = `${label} ${_("completed successfully.")}`;
 				return pollStatus(this);
 			})
 			.catch((err: unknown) => {
-				const message = err instanceof Error ? err.message : "unknown error";
+				const message = err instanceof Error ? err.message : _("unknown error");
 				this.resultEl.style.color = "#c00";
-				this.resultEl.textContent = `${label} failed: ${message}`;
+				this.resultEl.textContent = `${label} ${_("failed:")} ${message}`;
 				return pollStatus(this);
 			})
 			.finally(() => {
@@ -347,9 +371,9 @@ export const main = view.extend({
 		return Promise.all([
 			callStatus().catch((err: unknown) => ({
 				error:
-					err instanceof Error ? err.message : "Status backend unavailable",
+					err instanceof Error ? err.message : _("Status backend unavailable"),
 			})),
-			callVersion().catch(() => ({ version: "Unavailable" })),
+			callVersion().catch(() => ({ version: _("Unavailable") })),
 		]);
 	},
 
@@ -368,17 +392,24 @@ export const main = view.extend({
 		const handleRestart = ui.createHandlerFn(this, "handleAction", "restart");
 		const handleReload = ui.createHandlerFn(this, "handleAction", "reload");
 
-		const statusEl = <td class="td">{normalized.running ? "Running" : "Stopped"}</td>;
-		const versionEl = <td class="td">{normalized.error ? "Unavailable" : version.version || "Unknown"}</td>;
-		const listenEl = <td class="td">{normalized.error ? "Unavailable" : normalized.listen}</td>;
-		const stunEl = <td class="td">{normalized.error ? "Unknown" : normalized.stun}</td>;
-		const meshEl = <td class="td">{normalized.error ? "Unknown" : normalized.mesh}</td>;
-		const verifyClientsEl = <td class="td">{normalized.error ? "Unknown" : normalized.verifyClients}</td>;
-		const metricsEl = <td class="td">{normalized.error ? "Unavailable" : normalized.metrics}</td>;
-		const healthEl = <td class="td">{normalized.error ? "Unavailable" : normalized.health}</td>;
-		const errorEl = <td class="td">{normalized.error || "None"}</td>;
-		const clientsEl = <td class="td">{`${normalized.clients} connected (${normalized.accepts} total accepted)`}</td>;
+		const statusEl = <td class="td">{normalized.running ? _("Running") : _("Stopped")}</td>;
+		const versionEl = <td class="td">{normalized.error ? _("Unavailable") : version.version || _("Unknown")}</td>;
+		const listenEl = <td class="td">{normalized.error ? _("Unavailable") : normalized.listen}</td>;
+		const stunEl = <td class="td">{normalized.error ? _("Unknown") : normalized.stun}</td>;
+		const meshEl = <td class="td">{normalized.error ? _("Unknown") : normalized.mesh}</td>;
+		const verifyClientsEl = <td class="td">{normalized.error ? _("Unknown") : normalized.verifyClients}</td>;
+		const metricsEl = <td class="td">{normalized.error ? _("Unavailable") : normalized.metrics}</td>;
+		const healthEl = <td class="td">{normalized.error ? _("Unavailable") : normalized.health}</td>;
+		const errorEl = <td class="td">{normalized.error || _("None")}</td>;
+		const clientsEl = <td class="td">{`${normalized.clients} ${_("connected")} (${normalized.accepts} ${_("total accepted")})`}</td>;
 		const trafficEl = <td class="td">{`↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`}</td>;
+		const trafficTotalEl = <td class="td" style="display: none;"></td>;
+
+		if (normalized.trafficPersist) {
+			trafficEl.textContent = `Session: ↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`;
+			trafficTotalEl.textContent = `Total: ↓ ${formatBytes(normalized.bytesRecvTotal)} / ↑ ${formatBytes(normalized.bytesSentTotal)}`;
+			trafficTotalEl.style.display = "";
+		}
 
 		const syncEl = (
 			<div style={`margin-bottom: 0.75em; color: ${initialSyncState.color};`}>
@@ -388,7 +419,7 @@ export const main = view.extend({
 
 		const resultEl = (
 			<div style="margin-top: 0.75em; min-height: 1.2em; color: #090;">
-				No action executed yet.
+				{_("No action executed yet.")}
 			</div>
 		);
 
@@ -403,101 +434,106 @@ export const main = view.extend({
 		this.errorEl = errorEl;
 		this.clientsEl = clientsEl;
 		this.trafficEl = trafficEl;
+		this.trafficTotalEl = trafficTotalEl;
 		this.syncEl = syncEl;
 		this.resultEl = resultEl;
 
 		const btnStart = (
 			<button
 				class="cbi-button cbi-button-action"
-				onClick={handleStart}
+				onclick={handleStart}
 			>
-				Start
+				{_("Start")}
 			</button>
 		);
 		const btnStop = (
 			<button
 				class="cbi-button cbi-button-negative"
-				onClick={handleStop}
+				onclick={handleStop}
 			>
-				Stop
+				{_("Stop")}
 			</button>
 		);
 		const btnRestart = (
 			<button
 				class="cbi-button cbi-button-action"
-				onClick={handleRestart}
+				onclick={handleRestart}
 			>
-				Restart
+				{_("Restart")}
 			</button>
 		);
 		const btnReload = (
 			<button
 				class="cbi-button cbi-button-action"
-				onClick={handleReload}
+				onclick={handleReload}
 			>
-				Reload Config
+				{_("Reload Config")}
 			</button>
 		);
 
-		this.actionButtons = [btnStart, btnStop, btnRestart, btnReload];
+		this.actionButtons = [btnStart, btnStop, btnRestart, btnReload] as HTMLButtonElement[];
 
 		poll.add(() => pollStatus(this), 5);
 
 		return (
 			<div>
-				<h2>Tailscale DERP Status</h2>
+				<h2>{_("Tailscale DERP Status")}</h2>
 				<div class="cbi-section">
-					<h3>DERP Server Status</h3>
+					<h3>{_("DERP Server Status")}</h3>
 					{syncEl}
 					<table class="table">
 						<tr class="tr">
-							<td class="td">Service Status</td>
+							<td class="td">{_("Service Status")}</td>
 							{statusEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Version</td>
+							<td class="td">{_("Version")}</td>
 							{versionEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Connected Clients</td>
+							<td class="td">{_("Connected Clients")}</td>
 							{clientsEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Traffic</td>
+							<td class="td">{_("Traffic")}</td>
 							{trafficEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Listen Address</td>
+							<td class="td">{_("Traffic (Total)")}</td>
+							{trafficTotalEl}
+						</tr>
+						<tr class="tr">
+							<td class="td">{_("Listen Address")}</td>
 							{listenEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">STUN Enabled</td>
+							<td class="td">{_("STUN Enabled")}</td>
 							{stunEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Mesh Enabled</td>
+							<td class="td">{_("Mesh Enabled")}</td>
 							{meshEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Verify Clients</td>
+							<td class="td">{_("Verify Clients")}</td>
 							{verifyClientsEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Metrics Address</td>
+							<td class="td">{_("Metrics Address")}</td>
 							{metricsEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Health Address</td>
+							<td class="td">{_("Health Address")}</td>
 							{healthEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">Last Error</td>
+							<td class="td">{_("Last Error")}</td>
 							{errorEl}
 						</tr>
 					</table>
 				</div>
 				<div class="cbi-section" style="margin-top: 1em;">
-					<h3>Service Actions</h3>
+					<h3>{_("Service Actions")}</h3>
 					<div class="cbi-section-node">
 						{btnStart}
 						{" "}
