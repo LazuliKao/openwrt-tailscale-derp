@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "frontend:build": "pnpm --dir luci-app-tailscale-derp/frontend build",
-    "frontend:dev": "pnpm --dir luci-app-tailscale-derp/frontend dev",
+    "frontend:dev": "pnpm --dir luci-app-tailscale-derp/frontend dev:remote",
     "frontend:typecheck": "pnpm --dir luci-app-tailscale-derp/frontend typecheck"
   }
 }
