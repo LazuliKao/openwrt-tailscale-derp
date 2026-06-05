@@ -5,7 +5,9 @@
       "ubus": {
         "luci.tailscale-derp": [
           "get_status",
-          "get_version"
+          "get_version",
+          "get_clients",
+          "get_peers"
         ]
       },
       "uci": [

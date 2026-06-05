@@ -229,11 +229,11 @@ function readPendingStatus() {
     }
 }
 
-;// CONCATENATED MODULE: ./src/views/tailscale-derp.tsx
+;// CONCATENATED MODULE: ./src/views/main.tsx
 
 
 
-let tailscale_derp_s = L.view, tailscale_derp_d = L.form, tailscale_derp_c = L.rpc, tailscale_derp_p = LuCI.ui, tailscale_derp_u = L.uci, tailscale_derp_m = tailscale_derp_c.declare({
+let main_s = L.view, main_d = L.form, main_c = L.rpc, main_p = LuCI.ui, main_u = L.uci, main_m = main_c.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
@@ -241,24 +241,24 @@ function g(e, n) {
     let t = this.section.formvalue(e, "enabled");
     return "1" !== t && !0 !== t || !!n || _("Mesh key is required when mesh mode is enabled");
 }
-function tailscale_derp_f(e, n, t, r) {
+function main_f(e, n, t, r) {
     let i = t.section.formvalue(e, r) || "";
     return (!n || !!i) && (!!n || !i) || _("Certificate and key must be provided together");
 }
-let b = L.Poll, h = tailscale_derp_c.declare({
+let b = L.Poll, h = main_c.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
-}), y = tailscale_derp_c.declare({
+}), y = main_c.declare({
     object: "luci.tailscale-derp",
     method: "get_version"
 });
 function v(e) {
     return e < 1024 ? "".concat(e, " B") : e < 1048576 ? "".concat((e / 1024).toFixed(1), " KB") : e < 1073741824 ? "".concat((e / 1048576).toFixed(1), " MB") : "".concat((e / 1073741824).toFixed(1), " GB");
 }
-const main = tailscale_derp_s.extend({
+const main = main_s.extend({
     map: null,
     load: ()=>Promise.all([
-            tailscale_derp_u.load("tailscale-derp"),
+            main_u.load("tailscale-derp"),
             h().catch(()=>null),
             y().catch(()=>null)
         ]),
@@ -267,12 +267,12 @@ const main = tailscale_derp_s.extend({
         return this.super("handleSaveApply", [
             e,
             n
-        ]).then(()=>tailscale_derp_m()).then(()=>{
+        ]).then(()=>main_m()).then(()=>{
             savePendingStatus(o), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((e)=>{
             clearPendingStatus();
             let n = e instanceof Error ? e.message : "unknown error";
-            throw tailscale_derp_p.addNotification(null, jsxs("p", {
+            throw main_p.addNotification(null, jsxs("p", {
                 children: [
                     _("Failed to reload DERP configuration:"),
                     " ",
@@ -365,7 +365,7 @@ const main = tailscale_derp_s.extend({
                 }, 2000);
             }).catch((e)=>{
                 let n = e instanceof Error ? e.message : String(e);
-                tailscale_derp_p.addNotification(null, jsxs("p", {
+                main_p.addNotification(null, jsxs("p", {
                     children: [
                         _("Failed to copy configuration to clipboard:"),
                         " ",
@@ -543,16 +543,16 @@ const main = tailscale_derp_s.extend({
                 M,
                 U
             ]
-        }), H = new tailscale_derp_d.Map("tailscale-derp", _("Tailscale DERP Relay"), _("Configure the Tailscale DERP relay server."));
+        }), H = new main_d.Map("tailscale-derp", _("Tailscale DERP Relay"), _("Configure the Tailscale DERP relay server."));
         this.map = H;
-        let J = H.section(tailscale_derp_d.TypedSection, "settings", _("Global Settings"));
+        let J = H.section(main_d.TypedSection, "settings", _("Global Settings"));
         J.anonymous = !0;
-        let K = J.option(tailscale_derp_d.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
-        return K.default = "0", K.rmempty = !1, (K = J.option(tailscale_derp_d.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", K.rmempty = !1, K.placeholder = ":3478", K.validate = (e, n)=>validateSocketAddress("Listen address", n), (K = J.option(tailscale_derp_d.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", K.rmempty = !1, (J = H.section(tailscale_derp_d.TypedSection, "tls", _("TLS Settings"))).anonymous = !0, (K = J.option(tailscale_derp_d.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"))).placeholder = "/etc/ssl/certs/derp.pem", K.rmempty = !0, K.validate = function(e, n) {
-            return tailscale_derp_f(e, n, this, "keyfile");
-        }, (K = J.option(tailscale_derp_d.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"))).placeholder = "/etc/ssl/private/derp.key", K.rmempty = !0, K.validate = function(e, n) {
-            return tailscale_derp_f(e, n, this, "certfile");
-        }, (J = H.section(tailscale_derp_d.TypedSection, "mesh", _("Mesh Settings"))).anonymous = !0, (K = J.option(tailscale_derp_d.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", K.rmempty = !1, (K = J.option(tailscale_derp_d.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, K.depends("enabled", "1"), K.password = !0, K.validate = g, (J = H.section(tailscale_derp_d.TypedSection, "verify", _("Client Verification"))).anonymous = !0, (K = J.option(tailscale_derp_d.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)"))).rmempty = !0, K.placeholder = "https://your-admission-controller/verify", (K = J.option(tailscale_derp_d.Flag, "fail_open", _("Fail Open"), _("Allow clients to connect if all verify URLs are unreachable"))).default = "0", K.rmempty = !1, (J = H.section(tailscale_derp_d.TypedSection, "ops", _("Operations"))).anonymous = !0, (K = J.option(tailscale_derp_d.Value, "metrics", _("Metrics Port"), _("Port for Prometheus metrics endpoint"))).default = "127.0.0.1:9911", K.rmempty = !1, K.placeholder = "127.0.0.1:9911", K.validate = (e, n)=>validateLoopbackSocketAddress("Metrics address", n), (K = J.option(tailscale_derp_d.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", K.rmempty = !1, K.placeholder = ":9912", K.validate = (e, n)=>validateSocketAddress("Health address", n), (J = H.section(tailscale_derp_d.TypedSection, "traffic", _("Traffic Statistics"))).anonymous = !0, (K = J.option(tailscale_derp_d.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", K.rmempty = !1, (K = J.option(tailscale_derp_d.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", K.rmempty = !0, K.placeholder = "/tmp/tailscale-derp-traffic.json", K.depends("persist", "1"), (K = J.option(tailscale_derp_d.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", K.rmempty = !0, K.placeholder = "60", K.depends("persist", "1"), H.render().then((e)=>(b.add(()=>Promise.all([
+        let K = J.option(main_d.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
+        return K.default = "0", K.rmempty = !1, (K = J.option(main_d.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", K.rmempty = !1, K.placeholder = ":3478", K.validate = (e, n)=>validateSocketAddress("Listen address", n), (K = J.option(main_d.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", K.rmempty = !1, (J = H.section(main_d.TypedSection, "tls", _("TLS Settings"))).anonymous = !0, (K = J.option(main_d.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"))).placeholder = "/etc/ssl/certs/derp.pem", K.rmempty = !0, K.validate = function(e, n) {
+            return main_f(e, n, this, "keyfile");
+        }, (K = J.option(main_d.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"))).placeholder = "/etc/ssl/private/derp.key", K.rmempty = !0, K.validate = function(e, n) {
+            return main_f(e, n, this, "certfile");
+        }, (J = H.section(main_d.TypedSection, "mesh", _("Mesh Settings"))).anonymous = !0, (K = J.option(main_d.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", K.rmempty = !1, (K = J.option(main_d.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, K.depends("enabled", "1"), K.password = !0, K.validate = g, (J = H.section(main_d.TypedSection, "verify", _("Client Verification"))).anonymous = !0, (K = J.option(main_d.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)"))).rmempty = !0, K.placeholder = "https://your-admission-controller/verify", (K = J.option(main_d.Flag, "fail_open", _("Fail Open"), _("Allow clients to connect if all verify URLs are unreachable"))).default = "0", K.rmempty = !1, (J = H.section(main_d.TypedSection, "ops", _("Operations"))).anonymous = !0, (K = J.option(main_d.Value, "metrics", _("Metrics Port"), _("Port for Prometheus metrics endpoint"))).default = "127.0.0.1:9911", K.rmempty = !1, K.placeholder = "127.0.0.1:9911", K.validate = (e, n)=>validateLoopbackSocketAddress("Metrics address", n), (K = J.option(main_d.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", K.rmempty = !1, K.placeholder = ":9912", K.validate = (e, n)=>validateSocketAddress("Health address", n), (J = H.section(main_d.TypedSection, "traffic", _("Traffic Statistics"))).anonymous = !0, (K = J.option(main_d.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", K.rmempty = !1, (K = J.option(main_d.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", K.rmempty = !0, K.placeholder = "/tmp/tailscale-derp-traffic.json", K.depends("persist", "1"), (K = J.option(main_d.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", K.rmempty = !0, K.placeholder = "60", K.depends("persist", "1"), H.render().then((e)=>(b.add(()=>Promise.all([
                     h(),
                     y()
                 ]).then((e)=>{

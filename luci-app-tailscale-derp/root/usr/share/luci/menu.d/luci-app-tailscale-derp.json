@@ -4,25 +4,23 @@
     "order": 90,
     "action": {
       "type": "view",
-      "path": "tailscale-derp"
-    },
-    "children": {
-      "status": {
-        "title": "Status",
-        "order": 1,
-        "action": {
-          "type": "view",
-          "path": "tailscale-derp-status"
-        }
-      },
-      "peers": {
-        "title": "Peers",
-        "order": 2,
-        "action": {
-          "type": "view",
-          "path": "tailscale-derp-peers"
-        }
-      }
+      "path": "tailscale-derp/main"
+    }
+  },
+  "admin/services/derp/status": {
+    "title": "Status",
+    "order": 1,
+    "action": {
+      "type": "view",
+      "path": "tailscale-derp/status"
+    }
+  },
+  "admin/services/derp/peers": {
+    "title": "Peers",
+    "order": 2,
+    "action": {
+      "type": "view",
+      "path": "tailscale-derp/peers"
     }
   }
 }

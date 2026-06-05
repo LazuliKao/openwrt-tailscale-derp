@@ -14,9 +14,9 @@ const luciRequires = `'use strict';
 export default defineConfig({
   source: {
     entry: {
-      "tailscale-derp": "./src/views/tailscale-derp.tsx",
-      "tailscale-derp-status": "./src/views/tailscale-derp-status.tsx",
-      "tailscale-derp-peers": "./src/views/tailscale-derp-peers.tsx"
+      "main": "./src/views/main.tsx",
+      "status": "./src/views/status.tsx",
+      "peers": "./src/views/peers.tsx"
     },
     tsconfigPath: "./tsconfig.json"
   },

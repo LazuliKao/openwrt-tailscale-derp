@@ -229,30 +229,30 @@ function readPendingStatus() {
     }
 }
 
-;// CONCATENATED MODULE: ./src/views/tailscale-derp-status.tsx
+;// CONCATENATED MODULE: ./src/views/status.tsx
 
 
-let tailscale_derp_status_c = L.view, tailscale_derp_status_r = L.rpc, tailscale_derp_status_s = LuCI.ui, tailscale_derp_status_a = L.Poll, tailscale_derp_status_o = {
-    start: tailscale_derp_status_r.declare({
+let status_c = L.view, status_r = L.rpc, status_s = LuCI.ui, status_a = L.Poll, status_o = {
+    start: status_r.declare({
         object: "luci.tailscale-derp",
         method: "start"
     }),
-    stop: tailscale_derp_status_r.declare({
+    stop: status_r.declare({
         object: "luci.tailscale-derp",
         method: "stop"
     }),
-    restart: tailscale_derp_status_r.declare({
+    restart: status_r.declare({
         object: "luci.tailscale-derp",
         method: "restart"
     }),
-    reload: tailscale_derp_status_r.declare({
+    reload: status_r.declare({
         object: "luci.tailscale-derp",
         method: "reload_config"
     })
-}, tailscale_derp_status_i = tailscale_derp_status_r.declare({
+}, status_i = status_r.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
-}), tailscale_derp_status_d = tailscale_derp_status_r.declare({
+}), status_d = status_r.declare({
     object: "luci.tailscale-derp",
     method: "get_version"
 });
@@ -280,19 +280,19 @@ function u(t) {
         trafficPersist: !!t.trafficPersist
     };
 }
-function tailscale_derp_status_b(t) {
+function status_b(t) {
     if (!t) return "";
     if (/^:\d+$/.test(t)) return "0.0.0.0".concat(t);
     let e = t.match(/^\[::\]:(\d+)$/);
     return e ? "0.0.0.0:".concat(e[1]) : t;
 }
-function tailscale_derp_status_f(t, e) {
+function status_f(t, e) {
     let n = readPendingStatus();
     return n ? !n.savedAt || Date.now() - n.savedAt > 300000 ? {
         color: "#c60",
         text: _("Saved configuration status expired before it could be confirmed."),
         clear: !0
-    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && tailscale_derp_status_b(t.listen) === tailscale_derp_status_b(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.metrics === n.metrics && t.health === n.health) ? {
+    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && status_b(t.listen) === status_b(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.metrics === n.metrics && t.health === n.health) ? {
         color: "#090",
         text: _("Saved configuration is now active."),
         clear: !0
@@ -308,21 +308,21 @@ function tailscale_derp_status_f(t, e) {
 }
 function v(t) {
     return Promise.all([
-        tailscale_derp_status_i(),
-        tailscale_derp_status_d()
+        status_i(),
+        status_d()
     ]).then((e)=>{
         let [l, c] = e, r = u(l || {});
         t.statusEl.textContent = r.running ? _("Running") : _("Stopped"), t.versionEl.textContent = r.error ? _("Unavailable") : (null == c ? void 0 : c.version) || _("Unknown"), t.listenEl.textContent = r.error ? _("Unavailable") : r.listen, t.stunEl.textContent = r.error ? _("Unknown") : r.stun, t.meshEl.textContent = r.error ? _("Unknown") : r.mesh, t.verifyClientsEl.textContent = r.error ? _("Unknown") : r.verifyClients, t.metricsEl.textContent = r.error ? _("Unavailable") : r.metrics, t.healthEl.textContent = r.error ? _("Unavailable") : r.health, t.errorEl.textContent = r.error || _("None"), t.clientsEl.textContent = "".concat(r.clients, " ").concat(_("connected"), " (").concat(r.accepts, " ").concat(_("total accepted"), ")"), r.trafficPersist ? (t.trafficEl.textContent = "Session: \u2193 ".concat(h(r.bytesRecv), " / \u2191 ").concat(h(r.bytesSent)), t.trafficTotalEl.textContent = "Total: \u2193 ".concat(h(r.bytesRecvTotal), " / \u2191 ").concat(h(r.bytesSentTotal)), t.trafficTotalEl.style.display = "") : (t.trafficEl.textContent = "\u2193 ".concat(h(r.bytesRecv), " / \u2191 ").concat(h(r.bytesSent)), t.trafficTotalEl.style.display = "none");
-        let s = tailscale_derp_status_f(r, r.error);
+        let s = status_f(r, r.error);
         s.clear && clearPendingStatus(), t.syncEl.style.color = s.color, t.syncEl.textContent = s.text;
     }).catch((e)=>{
         let l = e instanceof Error ? e.message : _("Status backend unavailable");
         t.statusEl.textContent = _("Offline"), t.versionEl.textContent = _("Unavailable"), t.listenEl.textContent = _("Unavailable"), t.stunEl.textContent = _("Unknown"), t.meshEl.textContent = _("Unknown"), t.verifyClientsEl.textContent = _("Unknown"), t.metricsEl.textContent = _("Unavailable"), t.healthEl.textContent = _("Unavailable"), t.errorEl.textContent = l || _("Status backend unavailable"), t.clientsEl.textContent = "0 ".concat(_("connected"), " (0 ").concat(_("total accepted"), ")"), t.trafficEl.textContent = "\u2193 0 B / \u2191 0 B", t.trafficTotalEl.textContent = "", t.trafficTotalEl.style.display = "none";
-        let c = tailscale_derp_status_f(null, l || _("Status backend unavailable"));
+        let c = status_f(null, l || _("Status backend unavailable"));
         c.clear && clearPendingStatus(), t.syncEl.style.color = c.color, t.syncEl.textContent = c.text;
     });
 }
-const main = tailscale_derp_status_c.extend({
+const main = status_c.extend({
     handleAction (t) {
         let e = function(t) {
             switch(t){
@@ -341,7 +341,7 @@ const main = tailscale_derp_status_c.extend({
             if (!window.confirm(n)) return this.resultEl.style.color = "#c00", this.resultEl.textContent = "".concat(e, " ").concat(_("cancelled.")), Promise.resolve();
         }
         for (let t of this.actionButtons)t.disabled = !0;
-        return this.resultEl.style.color = "#090", this.resultEl.textContent = "".concat(e, " ").concat(_("in progress...")), tailscale_derp_status_o[t]().then((t)=>{
+        return this.resultEl.style.color = "#090", this.resultEl.textContent = "".concat(e, " ").concat(_("in progress...")), status_o[t]().then((t)=>{
             let n = t || {}, l = n.result || "ok", c = n.error;
             if ("ok" !== l || c) throw Error(c || "".concat(e, " ").concat(_("failed")));
             return this.resultEl.style.color = "#090", this.resultEl.textContent = "".concat(e, " ").concat(_("completed successfully.")), v(this);
@@ -353,17 +353,17 @@ const main = tailscale_derp_status_c.extend({
         });
     },
     load: ()=>Promise.all([
-            tailscale_derp_status_i().catch((t)=>({
+            status_i().catch((t)=>({
                     error: t instanceof Error ? t.message : _("Status backend unavailable")
                 })),
-            tailscale_derp_status_d().catch(()=>({
+            status_d().catch(()=>({
                     version: _("Unavailable")
                 }))
         ]),
     render (l) {
-        let c = l[0] || {}, r = l[1] || {}, o = u(c), i = tailscale_derp_status_f(o, o.error);
+        let c = l[0] || {}, r = l[1] || {}, o = u(c), i = status_f(o, o.error);
         i.clear && clearPendingStatus();
-        let d = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "start"), b = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "stop"), E = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "restart"), y = tailscale_derp_status_s.createHandlerFn(this, "handleAction", "reload"), x = jsx("td", {
+        let d = status_s.createHandlerFn(this, "handleAction", "start"), b = status_s.createHandlerFn(this, "handleAction", "stop"), E = status_s.createHandlerFn(this, "handleAction", "restart"), y = status_s.createHandlerFn(this, "handleAction", "reload"), x = jsx("td", {
             class: "td",
             children: o.running ? _("Running") : _("Stopped")
         }), m = jsx("td", {
@@ -431,7 +431,7 @@ const main = tailscale_derp_status_c.extend({
             B,
             F,
             D
-        ], tailscale_derp_status_a.add(()=>v(this), 5), jsxs("div", {
+        ], status_a.add(()=>v(this), 5), jsxs("div", {
             children: [
                 jsx("h2", {
                     children: _("Tailscale DERP Status")

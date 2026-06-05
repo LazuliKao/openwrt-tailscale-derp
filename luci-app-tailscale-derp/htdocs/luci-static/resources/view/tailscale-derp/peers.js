@@ -171,19 +171,19 @@ function jsxDEV(e, t) {
 ;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
-;// CONCATENATED MODULE: ./src/views/tailscale-derp-peers.tsx
+;// CONCATENATED MODULE: ./src/views/peers.tsx
 
-let tailscale_derp_peers_l = L.view, tailscale_derp_peers_n = L.rpc, tailscale_derp_peers_r = L.Poll, tailscale_derp_peers_o = tailscale_derp_peers_n.declare({
+let peers_l = L.view, peers_n = L.rpc, peers_r = L.Poll, peers_o = peers_n.declare({
     object: "luci.tailscale-derp",
     method: "get_peers"
-}), tailscale_derp_peers_c = tailscale_derp_peers_n.declare({
+}), peers_c = peers_n.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
 });
-function tailscale_derp_peers_d(t) {
+function peers_d(t) {
     return t < 1024 ? "".concat(t, " B") : t < 1048576 ? "".concat((t / 1024).toFixed(1), " KB") : t < 1073741824 ? "".concat((t / 1048576).toFixed(1), " MB") : "".concat((t / 1073741824).toFixed(1), " GB");
 }
-function tailscale_derp_peers_a(l) {
+function peers_a(l) {
     return 0 === l.length ? [
         jsx("tr", {
             class: "tr",
@@ -237,13 +237,13 @@ function tailscale_derp_peers_a(l) {
         });
     });
 }
-const main = tailscale_derp_peers_l.extend({
+const main = peers_l.extend({
     load: ()=>Promise.all([
-            tailscale_derp_peers_o().catch(()=>({
+            peers_o().catch(()=>({
                     peers: [],
                     count: 0
                 })),
-            tailscale_derp_peers_c().catch(()=>({}))
+            peers_c().catch(()=>({}))
         ]),
     render (l) {
         var n, s;
@@ -256,21 +256,21 @@ const main = tailscale_derp_peers_l.extend({
             style: "margin-bottom: 0.5em; color: #666; font-size: 0.9em;"
         }), v = jsx("div", {
             style: "margin-bottom: 0.75em; color: #333;",
-            children: "\u2193 " + tailscale_derp_peers_d(m) + " / \u2191 " + tailscale_derp_peers_d(f)
+            children: "\u2193 " + peers_d(m) + " / \u2191 " + peers_d(f)
         }), x = jsx("tbody", {});
-        for (let t of (this.tableBody = x, this.countEl = p, this.errorEl = b, this.lastUpdatedEl = y, this.trafficEl = v, tailscale_derp_peers_a(u)))x.appendChild(t);
-        return tailscale_derp_peers_r.add(()=>{
+        for (let t of (this.tableBody = x, this.countEl = p, this.errorEl = b, this.lastUpdatedEl = y, this.trafficEl = v, peers_a(u)))x.appendChild(t);
+        return peers_r.add(()=>{
             var t;
             return t = this, Promise.all([
-                tailscale_derp_peers_o(),
-                tailscale_derp_peers_c()
+                peers_o(),
+                peers_c()
             ]).then((e)=>{
                 var l, n;
                 let [r, o] = e, c = (null == r ? void 0 : r.peers) || [];
                 t.countEl.textContent = _("%d connected peer(s)").format(c.length), t.errorEl.textContent = "", t.lastUpdatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString());
                 let s = null != (l = null == o ? void 0 : o.bytesRecv) ? l : 0, i = null != (n = null == o ? void 0 : o.bytesSent) ? n : 0;
-                for(t.trafficEl.textContent = "\u2193 " + tailscale_derp_peers_d(s) + " / \u2191 " + tailscale_derp_peers_d(i); t.tableBody.firstChild;)t.tableBody.removeChild(t.tableBody.firstChild);
-                for (let e of tailscale_derp_peers_a(c))t.tableBody.appendChild(e);
+                for(t.trafficEl.textContent = "\u2193 " + peers_d(s) + " / \u2191 " + peers_d(i); t.tableBody.firstChild;)t.tableBody.removeChild(t.tableBody.firstChild);
+                for (let e of peers_a(c))t.tableBody.appendChild(e);
             }).catch((e)=>{
                 let l = e instanceof Error ? e.message : "Backend unavailable";
                 t.errorEl.textContent = l, t.countEl.textContent = "0 " + _("connected peer(s)");
