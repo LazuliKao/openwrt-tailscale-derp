@@ -1,10 +1,21 @@
 {
-  "name": "openwrt-tailscale-derp",
+  "name": "@tailscale-derp/luci-ui",
   "private": true,
   "type": "module",
   "scripts": {
-    "frontend:build": "pnpm --dir luci-app-tailscale-derp/frontend build",
-    "frontend:dev": "pnpm --dir luci-app-tailscale-derp/frontend dev:remote",
-    "frontend:typecheck": "pnpm --dir luci-app-tailscale-derp/frontend typecheck"
+    "build": "rsbuild build",
+    "dev": "rsbuild dev",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "i18n:export": "dotenvx run -- luci-types i18n -i ../htdocs --po ../po/zh_Hans/tailscale-derp.po --merge -p luci-app-tailscale-derp --translate --batch-size 20 --prompt translate.md",
+    "dev:remote": "dotenvx run -- luci-types dev"
+  },
+  "devDependencies": {
+    "@lazulikao/luci-types": "github:LazuliKao/luci-types",
+    "@biomejs/biome": "^2.4.15",
+    "@dotenvx/dotenvx": "^1.59.1",
+    "@rsbuild/core": "^2.0.7",
+    "@types/node": "^20.19.29",
+    "tsx": "^4.22.1",
+    "typescript": "^6.0.3"
   }
 }

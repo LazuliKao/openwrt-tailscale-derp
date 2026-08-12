@@ -1,75 +1,123 @@
-# PROJECT KNOWLEDGE BASE
+# FRONTEND KNOWLEDGE BASE
 
-**Generated:** 2026-05-28
-**Commit:** 65bdd69
-**Branch:** main
-
-## OVERVIEW
-
-OpenWrt LuCI application for managing a Tailscale DERP relay server. Monorepo with pnpm workspaces: Go backend (`tailscale-derp/`) + TypeScript frontend (`luci-app-tailscale-derp/frontend/`).
+**Stack:** TypeScript + rsbuild + @lazulikao/luci-types JSX runtime
 
 ## STRUCTURE
 
 ```
-openwrt-tailscale-derp/
-├── luci-app-tailscale-derp/    # LuCI web interface
-│   ├── frontend/               # TypeScript/TSX source (rsbuild)
-│   ├── htdocs/                 # Build output → /www on router
-│   ├── po/                     # i18n translations (zh_Hans)
-│   ├── root/                   # OpenWrt package files (rpcd, menu.d)
-│   └── Makefile                # OpenWrt package build
-├── tailscale-derp/             # Go backend service
-│   ├── src/                    # Go source (cmd/, config/, internal/)
-│   ├── files/                  # Init scripts, UCI defaults
-│   └── Makefile                # Go build for OpenWrt
-├── package.json                # Root workspace scripts
-└── pnpm-workspace.yaml         # Workspace: luci-app-tailscale-derp/frontend
+frontend/
+├── src/
+│   ├── views/          # Page components (TSX) - each exports `main`
+│   ├── shared/         # Cross-view utilities (config.ts)
+│   ├── types/          # Type definitions
+│   └── utils/          # Helpers (if needed)
+├── tsconfig.json       # TypeScript config
+├── rsbuild.config.ts   # Build config (SWC, rspack)
+└── package.json        # Dependencies
 ```
 
-## WHERE TO LOOK
+## JSX RUNTIME (@lazulikao/luci-types)
 
-| Task | Location | Notes |
-|------|----------|-------|
-| Frontend views | `luci-app-tailscale-derp/frontend/src/views/` | TSX files with LuCI form API |
-| Shared utilities | `luci-app-tailscale-derp/frontend/src/shared/` | Config helpers, validation |
-| Build config | `luci-app-tailscale-derp/frontend/rsbuild.config.ts` | SWC, JSX, output settings |
-| Type definitions | `luci-app-tailscale-derp/frontend/tsconfig.json` | Uses @lazulikao/luci-types |
-| Backend logic | `tailscale-derp/src/` | Go: cmd/, config/, internal/ |
-| RPC interface | `luci-app-tailscale-derp/root/usr/libexec/rpcd/` | Shell scripts for ubus |
-| Translations | `luci-app-tailscale-derp/po/` | Gettext .po files |
+**CRITICAL**: This project uses LuCI's JSX runtime, NOT React.
 
-## COMMANDS
+### Configuration
 
-```bash
-# Frontend
-pnpm frontend:build      # Build TSX → JS (output: htdocs/luci-static/resources/view/)
-pnpm frontend:dev        # Dev server with watch
-pnpm frontend:typecheck  # TypeScript type checking
+- `tsconfig.json`: `"jsx": "react-jsx"`, `"jsxImportSource": "@lazulikao/luci-types"`
+- `rsbuild.config.ts`: `transform.react.runtime: "automatic"`, `importSource: "@lazulikao/luci-types"`
 
-# i18n
-pnpm --dir luci-app-tailscale-derp/frontend i18n:export  # Export translations
+### JSX Rules (DIFFERENT FROM REACT)
+
+| Feature | React | LuCI (this project) |
+|---------|-------|---------------------|
+| CSS class | `className` | `class` |
+| Inline style | `style={{color: 'red'}}` | `style="color: red;"` |
+| Event handlers | `onClick={fn}` | `onClick={fn}` (same syntax, uses addEventListener internally) |
+| Boolean attrs | `disabled={true}` | `disabled` (attribute name as value) |
+| Fragment | `<React.Fragment>` or `<>` | `<>` (uses Symbol.for("jsx.fragment")) |
+
+### JSX Type Definitions
+
+Located in `@lazulikao/luci-types/jsx.d.ts`:
+
+- `JSX.Element` = `HTMLElement`
+- `JSX.IntrinsicElements` = typed HTML elements (div, button, table, etc.)
+- `BaseProps`: `children`, `class`, `id`, `name`, `style`
+
+### Event Handling Pattern
+
+```tsx
+// Pre-bind handlers to preserve `this` context
+const handleClick = ui.createHandlerFn(this, "handleAction", "start");
+
+// Use in JSX
+<button onClick={handleClick}>Start</button>
 ```
 
-## CONVENTIONS
+## VIEW PATTERN
 
-- **JSX Runtime**: Uses `@lazulikao/luci-types` (NOT React). See frontend/AGENTS.md for details.
-- **Module format**: LuCI expects `'use strict'; 'require view'; ... return main;` wrapper (auto-added by rsbuild)
-- **Entry points**: Each view exports `const main = view.extend({...})`
-- **RPC calls**: `L.rpc.declare<T>({object, method})` with TypeScript generics
-- **Form API**: `L.form.Map` → `TypedSection` → `option(Flag|Value)` pattern
-- **Paths alias**: `src/*` → `./src/*` (rsbuild + tsconfig)
+```tsx
+import { someUtil } from "@/shared/config";
+
+type ViewContext = { map: LuCI.form.CBIMap | null };
+
+export const main = L.view.extend({
+  load() {
+    return Promise.all([L.uci.load("config-name")]);
+  },
+  
+  render(this: ViewContext) {
+    const m = new L.form.Map("config-name", "Title", "Description");
+    this.map = m;
+    
+    let s = m.section(L.form.TypedSection, "section", "Section Title");
+    s.anonymous = true;
+    
+    let o = s.option(L.form.Flag, "enabled", "Enable");
+    o.default = "0";
+    
+    return m.render();
+  }
+});
+```
+
+## BUILD CONFIGURATION
+
+### rsbuild.config.ts
+
+- Entry: `src/views/*.tsx` → `../htdocs/luci-static/resources/view/*.js`
+- Output: Single-file LuCI modules (no splitChunks)
+- Banner: Prepends `'use strict'; 'require view'; ...`
+- Footer: Appends `return main;`
+- SWC: TypeScript + JSX automatic runtime
+
+### Key Constraints
+
+- NEVER enable `splitChunks` or `runtimeChunk` → breaks LuCI module loading
+- NEVER minify → LuCI needs readable error messages
+- Output must be ASCII → `charset: "ascii"`
+- Target: ES2020+ browsers
+
+## TYPES
+
+Global types from `@lazulikao/luci-types`:
+
+- `L` - LuCI global (view, form, rpc, uci, Poll)
+- `LuCI` - LuCI namespace (ui, form types)
+- `E()` - DOM element factory (used internally by JSX)
+- `_()` - i18n translation function
+
+### Form Types
+
+- `LuCI.form.CBIMap` - Form map
+- `LuCI.form.CBIAbstractValue` - Base option type
+- `LuCI.form.CBIAbstractSection` - Base section type
 
 ## ANTI-PATTERNS
 
-- NEVER use React-style `className` → use `class`
-- NEVER use React-style `style={{}}` objects → use `style="string"`
-- NEVER use `import React` → JSX runtime is automatic via luci-types
-- NEVER edit `htdocs/` directly → it's build output, edit `frontend/src/` instead
-- NEVER add `splitChunks` or `runtimeChunk` → LuCI modules must be single-file
-
-## NOTES
-
-- Build output wraps each file as a LuCI view module with `require` declarations
-- The Go backend communicates via ubus/rpcd (shell scripts in root/)
-- Translations use LuCI's `_()` function + gettext .po workflow
-- `@lazulikao/luci-types` provides global types: `L`, `LuCI`, `E`, `_`
+- NEVER `import React` → JSX runtime is automatic
+- NEVER use `className` → use `class`
+- NEVER use `style={{}}` → use `style=""`
+- NEVER edit `htdocs/` directly → build output
+- NEVER add React-specific patterns (hooks, context, etc.)
+- NEVER use `document.getElementById`, `document.querySelector`, or any DOM traversal API → JSX returns `HTMLElement` directly, store the reference
+- NEVER add `id` attributes just to look up elements later → pass JSX element references directly instead
