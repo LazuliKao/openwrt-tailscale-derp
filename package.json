@@ -6,7 +6,7 @@
     "build": "rsbuild build",
     "dev": "rsbuild dev",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "i18n:export": "dotenvx run -- luci-types i18n -i ../htdocs --po ../po/zh_Hans/tailscale-derp.po --merge -p luci-app-tailscale-derp --translate --batch-size 20 --prompt translate.md",
+    "i18n:export": "dotenvx run -- luci-types i18n -i ./package/luci-app-tailscale-derp/htdocs --po ./package/luci-app-tailscale-derp/po/zh_Hans/tailscale-derp.po --merge -p luci-app-tailscale-derp --translate --batch-size 20 --prompt translate.md",
     "dev:remote": "dotenvx run -- luci-types dev"
   },
   "devDependencies": {

@@ -8,7 +8,7 @@
 # Go build artifacts
 *.test
 *.out
-tailscale-derp/src/derp.exe
+package/tailscale-derp/src/derp.exe
 
 # Node / pnpm local install artifacts
 node_modules/

@@ -5,15 +5,21 @@
 ## STRUCTURE
 
 ```
-frontend/
-├── src/
-│   ├── views/          # Page components (TSX) - each exports `main`
-│   ├── shared/         # Cross-view utilities (config.ts)
-│   ├── types/          # Type definitions
-│   └── utils/          # Helpers (if needed)
-├── tsconfig.json       # TypeScript config
-├── rsbuild.config.ts   # Build config (SWC, rspack)
-└── package.json        # Dependencies
+openwrt-tailscale-derp/
+├── package/                    # OpenWrt packages
+│   ├── luci-app-tailscale-derp # LuCI app package
+│   │   ├── Makefile            # LuCI app package Makefile
+│   │   ├── htdocs              # Build output (copied to router /www)
+│   │   ├── po                  # i18n translations
+│   │   └── root                # Configs/rpcd files
+│   └── tailscale-derp          # Go backend daemon package
+│       ├── Makefile            # Go build Makefile
+│       ├── files               # Init scripts/config
+│       └── src                 # Go source code
+├── src/                        # Frontend TypeScript/TSX source
+├── tsconfig.json               # TypeScript config
+├── rsbuild.config.ts           # Build config (SWC, rspack)
+└── package.json                # Dependencies and build scripts
 ```
 
 ## JSX RUNTIME (@lazulikao/luci-types)
@@ -84,7 +90,7 @@ export const main = L.view.extend({
 
 ### rsbuild.config.ts
 
-- Entry: `src/views/*.tsx` → `../htdocs/luci-static/resources/view/*.js`
+- Entry: `src/views/*.tsx` → `package/luci-app-tailscale-derp/htdocs/luci-static/resources/view/tailscale-derp/*.js`
 - Output: Single-file LuCI modules (no splitChunks)
 - Banner: Prepends `'use strict'; 'require view'; ...`
 - Footer: Appends `return main;`

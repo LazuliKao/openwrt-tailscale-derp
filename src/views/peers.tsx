@@ -138,7 +138,7 @@ function pollPeers(view: PeersView): Promise<void> {
 		});
 }
 
-export const main = view.extend({
+export const main = (view as any).extend({
 	load() {
 		return Promise.all([
 			callPeers().catch(() => ({ peers: [], count: 0 })),

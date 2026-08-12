@@ -1,8 +1,8 @@
 import { captureExpectedStatus, clearPendingStatus, savePendingStatus, validateLoopbackSocketAddress, validateSocketAddress } from "@/shared/config";
 
 type ReloadConfigResponse = Record<string, never>;
-type FormMap = LuCI.form.CBIMap;
-type FormOption = LuCI.form.CBIAbstractValue;
+type FormMap = LuCI.form.Map;
+type FormOption = any;
 
 const view = L.view;
 const form = L.form;
@@ -15,7 +15,7 @@ const callReloadConfig = rpc.declare<ReloadConfigResponse>({
   method: "reload_config",
 });
 
-function validateMeshKey(this: FormOption, sectionId: string, value: string): true | string {
+function validateMeshKey(this: FormOption, sectionId: string, value: any): true | string {
   const enabled = this.section.formvalue(sectionId, "enabled");
 
   if ((enabled === "1" || enabled === true) && !value) {
@@ -153,7 +153,7 @@ function pollStatus(view: SettingsView): Promise<void> {
     });
 }
 
-export const main = view.extend({
+export const main = (view as any).extend({
   map: null as FormMap | null,
 
   load() {
@@ -553,7 +553,7 @@ export const main = view.extend({
     let s = m.section(form.TypedSection, "settings", _("Global Settings"));
     s.anonymous = true;
 
-    let o = s.option(form.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
+    let o: FormOption = s.option(form.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
     o.default = "0";
     o.rmempty = false;
 
@@ -561,7 +561,7 @@ export const main = view.extend({
     o.default = ":3478";
     o.rmempty = false;
     o.placeholder = ":3478";
-    o.validate = (_sectionId: string, value: string) => validateSocketAddress("Listen address", value);
+    o.validate = (_sectionId: string, value: any) => validateSocketAddress("Listen address", value);
 
     o = s.option(form.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"));
     o.default = "1";
@@ -573,14 +573,14 @@ export const main = view.extend({
     o = s.option(form.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"));
     o.placeholder = "/etc/ssl/certs/derp.pem";
     o.rmempty = true;
-    o.validate = function (this: FormOption, sectionId: string, value: string) {
+    o.validate = function (this: FormOption, sectionId: string, value: any) {
       return validateTLSPair(sectionId, value, this, "keyfile");
     };
 
     o = s.option(form.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"));
     o.placeholder = "/etc/ssl/private/derp.key";
     o.rmempty = true;
-    o.validate = function (this: FormOption, sectionId: string, value: string) {
+    o.validate = function (this: FormOption, sectionId: string, value: any) {
       return validateTLSPair(sectionId, value, this, "certfile");
     };
 
@@ -614,13 +614,13 @@ export const main = view.extend({
     o.default = "127.0.0.1:9911";
     o.rmempty = false;
     o.placeholder = "127.0.0.1:9911";
-    o.validate = (_sectionId: string, value: string) => validateLoopbackSocketAddress("Metrics address", value);
+    o.validate = (_sectionId: string, value: any) => validateLoopbackSocketAddress("Metrics address", value);
 
     o = s.option(form.Value, "health", _("Health Port"), _("Port for health check endpoint"));
     o.default = ":9912";
     o.rmempty = false;
     o.placeholder = ":9912";
-    o.validate = (_sectionId: string, value: string) => validateSocketAddress("Health address", value);
+    o.validate = (_sectionId: string, value: any) => validateSocketAddress("Health address", value);
 
     s = m.section(form.TypedSection, "traffic", _("Traffic Statistics"));
     s.anonymous = true;

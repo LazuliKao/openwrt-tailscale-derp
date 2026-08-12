@@ -36,7 +36,7 @@ export default defineConfig({
       "edge >= 16"
     ],
     distPath: {
-      root: "../htdocs/luci-static/resources/view/tailscale-derp",
+      root: "./package/luci-app-tailscale-derp/htdocs/luci-static/resources/view/tailscale-derp",
       js: "."
     },
     filename: {

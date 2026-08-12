@@ -11,7 +11,7 @@
 
 // UNUSED EXPORTS: main
 
-;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_define_property.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_define_property.js
 function _define_property(obj, key, value) {
     if (key in obj) {
         Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true });
@@ -21,7 +21,7 @@ function _define_property(obj, key, value) {
 }
 
 
-;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread.js
 
 
 function _object_spread(target) {
@@ -46,7 +46,7 @@ function _object_spread(target) {
 }
 
 
-;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread_props.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_spread_props.js
 function _object_spread_props_ownKeys(object, enumerableOnly) {
     var keys = Object.keys(object);
 
@@ -76,7 +76,7 @@ function _object_spread_props(target, source) {
 }
 
 
-;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties_loose.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties_loose.js
 function _object_without_properties_loose(source, excluded) {
     if (source == null) return {};
 
@@ -92,7 +92,7 @@ function _object_without_properties_loose(source, excluded) {
 }
 
 
-;// CONCATENATED MODULE: ../../node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties.js
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@swc+helpers@0.5.21/node_modules/@swc/helpers/esm/_object_without_properties.js
 
 
 function _object_without_properties(source, excluded) {
@@ -127,32 +127,39 @@ function _object_without_properties(source, excluded) {
 
 
 
-;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_cfc1ec583b455be203cca2d0660c10a7/node_modules/@lazulikao/luci-types/src/jsx/jsx-factory.ts
 
 
 
 const Fragment = Symbol.for("jsx.fragment");
 function jsx_factory_o(o, n) {
-    let s = n || {}, { children: l } = s, f = _object_without_properties(s, [
+    let s = null === n || "object" != typeof n || Array.isArray(n) ? {} : n, { children: l } = s, i = _object_without_properties(s, [
         "children"
-    ]), i = function e(t) {
+    ]), f = function e(t) {
         let r = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : [];
-        for (let o of t)null != o && "boolean" != typeof o && (Array.isArray(o) ? e(o, r) : r.push(o));
+        for (let o of t)null != o && "boolean" != typeof o && (Array.isArray(o) ? e(o, r) : r.push(o instanceof Node ? o : String(o)));
         return r;
     }(null == l ? [] : Array.isArray(l) ? l : [
         l
     ]);
     if (o === Fragment) {
         let e = document.createDocumentFragment();
-        return e.append(...i), e;
+        return e.append(...f), e;
     }
-    if ("function" == typeof o) return o(_object_spread_props(_object_spread({}, f), {
-        children: i
-    }));
-    let c = {}, p = _object_spread({}, f);
-    for (let [e, t] of Object.entries(p))e.startsWith("on") && "function" == typeof t ? (c[e] = t, delete p[e]) : "boolean" == typeof t && (t ? p[e] = e : delete p[e]);
-    let a = Object.keys(p).length > 0 ? i.length > 1 ? E(o, p, i) : E(o, p, i[0]) : i.length > 1 ? E(o, {}, i) : E(o, {}, i[0]);
-    for (let [e, t] of Object.entries(c)){
+    if ("function" == typeof o) {
+        let r = Reflect.apply(o, void 0, [
+            _object_spread_props(_object_spread({}, i), {
+                children: f
+            })
+        ]);
+        if (!(r instanceof Node)) throw TypeError("JSX components must return a DOM Node");
+        return r;
+    }
+    if ("string" != typeof o) throw TypeError("JSX element types must be tag names or component functions");
+    let p = {}, c = _object_spread({}, i);
+    for (let [e, t] of Object.entries(c))e.startsWith("on") && "function" == typeof t ? (p[e] = t, delete c[e]) : "boolean" == typeof t && (t ? c[e] = e : delete c[e]);
+    let a = Object.keys(c).length > 0 ? f.length > 1 ? E(o, c, f) : E(o, c, f[0]) : f.length > 1 ? E(o, {}, f) : E(o, {}, f[0]);
+    for (let [e, t] of Object.entries(p)){
         let r = e.slice(2).toLowerCase();
         a.addEventListener(r, t);
     }
@@ -168,7 +175,7 @@ function jsxDEV(e, t) {
     return jsx_factory_o(e, t);
 }
 
-;// CONCATENATED MODULE: ../../node_modules/.pnpm/@lazulikao+luci-types@https_28f088c788d6dcc2b37f1ad690c74fc7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
+;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_cfc1ec583b455be203cca2d0660c10a7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
 ;// CONCATENATED MODULE: ./src/views/peers.tsx

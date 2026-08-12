@@ -10,8 +10,8 @@ export type ExpectedStatus = {
   savedAt?: number;
 };
 
-type FormMap = LuCI.form.CBIMap;
-type FormOption = LuCI.form.CBIAbstractValue;
+type FormMap = LuCI.form.Map;
+type FormOption = LuCI.form.AbstractValue;
 
 export function isSocketAddress(value: string): boolean {
   return /^(:\d+|[^\s:]+:\d+)$/.test(value);

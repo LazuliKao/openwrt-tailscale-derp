@@ -321,7 +321,7 @@ function pollStatus(view: StatusView): Promise<void> {
 		});
 }
 
-export const main = view.extend({
+export const main = (view as any).extend({
 	handleAction(this: StatusView, action: ActionName) {
 		const label = actionLabel(action);
 
