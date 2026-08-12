@@ -4,9 +4,12 @@ PKG_NAME:=tailscale-derp
 PKG_VERSION:=0.1.0
 PKG_RELEASE:=1
 
-PKG_SOURCE_PROTO:=none
-PKG_SOURCE:=
-PKG_MIRROR_HASH:=skip
+PKG_SOURCE_DATE:=2026-08-12
+PKG_SOURCE_VERSION:=fb6cde9cb4788534bb014c44d4b5b5e8ca959cdb
+PKG_BUILD_DIR:=$(BUILD_DIR)/tailscale-derp-$(PKG_SOURCE_VERSION)
+PKG_SOURCE:=$(PKG_NAME)-$(PKG_SOURCE_VERSION).tar.gz
+PKG_SOURCE_URL:=https://codeload.github.com/LazuliKao/tailscale-derp/tar.gz/$(PKG_SOURCE_VERSION)?
+PKG_HASH:=0000000000000000000000000000000000000000000000000000000000000000
 
 PKG_MAINTAINER:=DERP Relay Contributors
 PKG_LICENSE:=MIT
@@ -16,7 +19,7 @@ PKG_BUILD_DEPENDS:=golang/host
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
 
-GO_PKG:=github.com/LazuliKao/openwrt-tailscale-derp
+GO_PKG:=github.com/LazuliKao/tailscale-derp
 GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)
 
 # The upstream DERP dependency must stay pinned in src/go.mod.
@@ -28,16 +31,12 @@ include $(TOPDIR)/feeds/packages/lang/golang/golang-package.mk
 # Shell last-wins semantics: "auto" appended after "local" wins in the recipe
 GO_PKG_BUILD_VARS += GOTOOLCHAIN=auto
 
-define Build/Prepare
-	$(CP) ./src/. $(PKG_BUILD_DIR)/
-endef
-
 define Package/tailscale-derp
   SECTION:=net
   CATEGORY:=Network
   TITLE:=Tailscale DERP Relay (Go daemon)
   SUBMENU:=VPN
-  URL:=https://github.com/LazuliKao/openwrt-tailscale-derp
+  URL:=https://github.com/LazuliKao/tailscale-derp
   DEPENDS:=$(GO_ARCH_DEPENDS) +ca-bundle
 endef
 

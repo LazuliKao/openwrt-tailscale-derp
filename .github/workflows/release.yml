@@ -1,0 +1,226 @@
+name: Release OpenWrt Packages
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v1.0.0)"
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  prepare:
+    name: Prepare release version & update Makefiles
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ env.TAG }}
+
+      - id: meta
+        name: Resolve release version
+        run: |
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Using release version ${VERSION} from ${TAG}"
+
+      - name: Sync version in Makefiles
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" package/tailscale-derp/Makefile
+          sed -i "s/^PKG_VERSION:=.*/PKG_VERSION:=${VERSION}/" package/luci-app-tailscale-derp/Makefile
+          echo "Updated Makefiles:"
+          grep '^PKG_VERSION:=' package/tailscale-derp/Makefile
+          grep '^PKG_VERSION:=' package/luci-app-tailscale-derp/Makefile
+
+      - name: Commit version bump
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'main' }}
+        run: |
+          TAG_COMMIT=$(git rev-list -n 1 "$TAG")
+          BRANCH=$(git for-each-ref --format='%(refname:short)' refs/remotes/origin --contains "$TAG_COMMIT" | grep -Ev '^origin/HEAD$' | sed 's#^origin/##' | head -1)
+          BRANCH=${BRANCH:-$DEFAULT_BRANCH}
+          git checkout "$BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package/tailscale-derp/Makefile package/luci-app-tailscale-derp/Makefile
+          if git diff --cached --quiet; then
+            echo "Version files already match ${TAG}; nothing to commit."
+          else
+            git commit -m "chore: sync release version ${TAG} [skip ci]"
+            git push origin HEAD:"$BRANCH"
+          fi
+
+  build:
+    name: ${{ matrix.pkg }} / ${{ matrix.arch }} (${{ matrix.openwrt_version }})
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pkg:
+          - tailscale-derp
+        arch:
+          - x86_64
+          - aarch64_generic
+          - aarch64_cortex-a53
+          - aarch64_cortex-a72
+          - arm_cortex-a5_vfpv4
+          - arm_cortex-a7
+          - arm_cortex-a7_neon-vfpv4
+          - arm_cortex-a8_vfpv3
+          - arm_cortex-a9
+          - arm_cortex-a9_neon
+          - arm_cortex-a9_vfpv3-d16
+          - arm_cortex-a15_neon-vfpv4
+          - mips_24kc
+          - mips_4kec
+          - mips_mips32
+          - mipsel_24kc
+          - mipsel_74kc
+          - mipsel_mips32
+        openwrt_version:
+          - "24.10.7"
+          - "25.12.5"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Git pull updated branch
+        run: git pull origin main || true
+
+      - name: Build with OpenWrt SDK
+        id: build_openwrt
+        uses: openwrt/gh-action-sdk@main
+        env:
+          FEEDNAME: custom
+          PACKAGES: ${{ matrix.pkg }} luci-app-tailscale-derp
+          ARCH: ${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          V: ${{ runner.debug == '1' && 's' || '' }}
+
+      - name: List built packages
+        run: |
+          echo "=== Listing bin directory ==="
+          find bin -type f \( -name "*.ipk" -o -name "*.apk" \) || true
+          ls -lhR bin/ || true
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ matrix.pkg }}-${{ matrix.arch }}-${{ matrix.openwrt_version }}
+          path: |
+            bin/packages/*/custom/*.ipk
+            bin/packages/*/custom/*.apk
+            bin/targets/*/*/*.ipk
+            bin/targets/*/*/*.apk
+          if-no-files-found: error
+
+  publish:
+    name: Create Tag GitHub Release
+    needs: [build]
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download All Release Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: all-artifacts
+
+      - name: Organize Release Files
+        run: |
+          mkdir -p release
+          for artifact_dir in all-artifacts/release-tailscale-derp-*; do
+            if [ -d "$artifact_dir" ]; then
+              dirname=$(basename "$artifact_dir")
+              arch_version="${dirname#release-tailscale-derp-}"
+
+              find "$artifact_dir" \( -name "*.ipk" -o -name "*.apk" \) | while read file; do
+                filename=$(basename "$file")
+                if [[ "$filename" =~ ^(luci-(app|i18n)-tailscale-derp[^_]*)[_-]([0-9]+(\.[0-9]+)*[^_]*)[_-].*\.(ipk|apk)$ ]]; then
+                  pkgname="${BASH_REMATCH[1]}"
+                  version="${BASH_REMATCH[3]}"
+                  ext="${BASH_REMATCH[5]}"
+                  newname="${pkgname}_${version}.${ext}"
+                  cp "$file" "release/$newname"
+                  echo "Copied: $filename -> $newname"
+                elif [[ "$filename" =~ ^(tailscale-derp)[_-]([0-9]+\.[0-9]+\.[0-9]+(-r[0-9]+)?)(_.*)?\.(ipk|apk)$ ]]; then
+                  pkgname="${BASH_REMATCH[1]}"
+                  version="${BASH_REMATCH[3]}"
+                  ext="${BASH_REMATCH[6]}"
+                  newname="${pkgname}_${version}_${arch_version}.${ext}"
+                  cp "$file" "release/$newname"
+                  echo "Copied: $filename -> $newname"
+                elif [[ "$filename" =~ ^(.+)-([0-9]+\.[0-9]+\.[0-9]+-r[0-9]+)\.(ipk|apk)$ ]]; then
+                  pkgname="${BASH_REMATCH[1]}"
+                  version="${BASH_REMATCH[2]}"
+                  ext="${BASH_REMATCH[3]}"
+                  newname="${pkgname}_${version}_${arch_version}.${ext}"
+                  cp "$file" "release/$newname"
+                  echo "Copied: $filename -> $newname"
+                else
+                  if [[ "$filename" == luci-app-tailscale-derp* ]] || [[ "$filename" == luci-i18n-tailscale-derp* ]]; then
+                    cp "$file" "release/$filename"
+                    echo "Copied: $filename -> $filename"
+                  else
+                    newname="${filename%.*}_${arch_version}.${filename##*.}"
+                    cp "$file" "release/$newname"
+                    echo "Copied: $filename -> $newname"
+                  fi
+                fi
+              done
+            fi
+          done
+          cd release
+          ls -lh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ env.TAG }}
+          name: "Tailscale DERP Relay ${{ env.TAG }}"
+          body: |
+            ## Tailscale DERP Relay Release ${{ env.TAG }}
+
+            Built with OpenWrt SDK (24.10.7 and 25.12.5)
+
+            ### Installation
+
+            ```bash
+            opkg install tailscale-derp_*.ipk
+            opkg install luci-app-tailscale-derp_*.ipk
+            # For APK format (newer OpenWrt versions):
+            apk add tailscale-derp_*.apk
+            apk add luci-app-tailscale-derp_*.apk
+            ```
+
+            ### Supported Architectures
+            - x86_64
+            - aarch64
+            - arm
+            - mips
+            - mipsel
+          files: |
+            release/*.ipk
+            release/*.apk
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
