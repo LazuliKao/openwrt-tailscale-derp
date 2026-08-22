@@ -155,21 +155,21 @@ export const main = (view as any).extend({
 		const bytesSent = statusData.bytesSent ?? 0;
 
 		const countEl = (
-			<div style="margin-bottom: 0.75em; color: #333;">
+			<div style="margin-bottom: 0.75em;">
 				{_("%d connected peer(s)").format(peers.length)}
 			</div>
 		);
 
 		const errorEl = (
-			<div style="margin-bottom: 0.5em; color: #c00; min-height: 1.2em;"></div>
+			<div style="margin-bottom: 0.5em; min-height: 1.2em; color: #cf222e;"></div>
 		);
 
 		const lastUpdatedEl = (
-			<div style="margin-bottom: 0.5em; color: #666; font-size: 0.9em;"></div>
+			<div style="margin-bottom: 0.5em; font-size: 0.9em;"></div>
 		);
 
 		const trafficEl = (
-			<div style="margin-bottom: 0.75em; color: #333;">
+			<div style="margin-bottom: 0.75em;">
 				{"↓ " + formatBytes(bytesRecv) + " / ↑ " + formatBytes(bytesSent)}
 			</div>
 		);

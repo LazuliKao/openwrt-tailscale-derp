@@ -239,7 +239,7 @@ function readPendingStatus() {
 ;// CONCATENATED MODULE: ./src/views/status.tsx
 
 
-let status_c = L.view, status_r = L.rpc, status_s = LuCI.ui, status_a = L.Poll, status_o = {
+let status_c = L.view, status_r = L.rpc, status_s = L.ui, status_a = L.Poll, status_o = {
     start: status_r.declare({
         object: "luci.tailscale-derp",
         method: "start"
@@ -287,20 +287,20 @@ function u(t) {
         trafficPersist: !!t.trafficPersist
     };
 }
-function status_b(t) {
+function status_f(t) {
     if (!t) return "";
     if (/^:\d+$/.test(t)) return "0.0.0.0".concat(t);
     let e = t.match(/^\[::\]:(\d+)$/);
     return e ? "0.0.0.0:".concat(e[1]) : t;
 }
-function status_f(t, e) {
+function b(t, e) {
     let n = readPendingStatus();
     return n ? !n.savedAt || Date.now() - n.savedAt > 300000 ? {
         color: "#c60",
         text: _("Saved configuration status expired before it could be confirmed."),
         clear: !0
-    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && status_b(t.listen) === status_b(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.metrics === n.metrics && t.health === n.health) ? {
-        color: "#090",
+    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && status_f(t.listen) === status_f(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.metrics === n.metrics && t.health === n.health) ? {
+        color: "#1a7f37",
         text: _("Saved configuration is now active."),
         clear: !0
     } : {
@@ -308,7 +308,7 @@ function status_f(t, e) {
         text: e ? "".concat(_("Waiting for saved configuration to become active:"), " ").concat(e) : _("Waiting for saved configuration to become active..."),
         clear: !1
     } : {
-        color: "#666",
+        color: "inherit",
         text: _("No configuration change pending."),
         clear: !1
     };
@@ -320,12 +320,12 @@ function v(t) {
     ]).then((e)=>{
         let [l, c] = e, r = u(l || {});
         t.statusEl.textContent = r.running ? _("Running") : _("Stopped"), t.versionEl.textContent = r.error ? _("Unavailable") : (null == c ? void 0 : c.version) || _("Unknown"), t.listenEl.textContent = r.error ? _("Unavailable") : r.listen, t.stunEl.textContent = r.error ? _("Unknown") : r.stun, t.meshEl.textContent = r.error ? _("Unknown") : r.mesh, t.verifyClientsEl.textContent = r.error ? _("Unknown") : r.verifyClients, t.metricsEl.textContent = r.error ? _("Unavailable") : r.metrics, t.healthEl.textContent = r.error ? _("Unavailable") : r.health, t.errorEl.textContent = r.error || _("None"), t.clientsEl.textContent = "".concat(r.clients, " ").concat(_("connected"), " (").concat(r.accepts, " ").concat(_("total accepted"), ")"), r.trafficPersist ? (t.trafficEl.textContent = "Session: \u2193 ".concat(h(r.bytesRecv), " / \u2191 ").concat(h(r.bytesSent)), t.trafficTotalEl.textContent = "Total: \u2193 ".concat(h(r.bytesRecvTotal), " / \u2191 ").concat(h(r.bytesSentTotal)), t.trafficTotalEl.style.display = "") : (t.trafficEl.textContent = "\u2193 ".concat(h(r.bytesRecv), " / \u2191 ").concat(h(r.bytesSent)), t.trafficTotalEl.style.display = "none");
-        let s = status_f(r, r.error);
+        let s = b(r, r.error);
         s.clear && clearPendingStatus(), t.syncEl.style.color = s.color, t.syncEl.textContent = s.text;
     }).catch((e)=>{
         let l = e instanceof Error ? e.message : _("Status backend unavailable");
         t.statusEl.textContent = _("Offline"), t.versionEl.textContent = _("Unavailable"), t.listenEl.textContent = _("Unavailable"), t.stunEl.textContent = _("Unknown"), t.meshEl.textContent = _("Unknown"), t.verifyClientsEl.textContent = _("Unknown"), t.metricsEl.textContent = _("Unavailable"), t.healthEl.textContent = _("Unavailable"), t.errorEl.textContent = l || _("Status backend unavailable"), t.clientsEl.textContent = "0 ".concat(_("connected"), " (0 ").concat(_("total accepted"), ")"), t.trafficEl.textContent = "\u2193 0 B / \u2191 0 B", t.trafficTotalEl.textContent = "", t.trafficTotalEl.style.display = "none";
-        let c = status_f(null, l || _("Status backend unavailable"));
+        let c = b(null, l || _("Status backend unavailable"));
         c.clear && clearPendingStatus(), t.syncEl.style.color = c.color, t.syncEl.textContent = c.text;
     });
 }
@@ -345,16 +345,16 @@ const main = status_c.extend({
         }(t);
         if ("stop" === t || "restart" === t) {
             let n = "".concat(_("Are you sure you want to"), " ").concat(t, " ").concat(_("the DERP service?"));
-            if (!window.confirm(n)) return this.resultEl.style.color = "#c00", this.resultEl.textContent = "".concat(e, " ").concat(_("cancelled.")), Promise.resolve();
+            if (!window.confirm(n)) return this.resultEl.style.color = "#cf222e", this.resultEl.textContent = "".concat(e, " ").concat(_("cancelled.")), Promise.resolve();
         }
         for (let t of this.actionButtons)t.disabled = !0;
-        return this.resultEl.style.color = "#090", this.resultEl.textContent = "".concat(e, " ").concat(_("in progress...")), status_o[t]().then((t)=>{
+        return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("in progress...")), status_o[t]().then((t)=>{
             let n = t || {}, l = n.result || "ok", c = n.error;
             if ("ok" !== l || c) throw Error(c || "".concat(e, " ").concat(_("failed")));
-            return this.resultEl.style.color = "#090", this.resultEl.textContent = "".concat(e, " ").concat(_("completed successfully.")), v(this);
+            return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("completed successfully.")), v(this);
         }).catch((t)=>{
             let n = t instanceof Error ? t.message : _("unknown error");
-            return this.resultEl.style.color = "#c00", this.resultEl.textContent = "".concat(e, " ").concat(_("failed:"), " ").concat(n), v(this);
+            return this.resultEl.style.color = "#cf222e", this.resultEl.textContent = "".concat(e, " ").concat(_("failed:"), " ").concat(n), v(this);
         }).finally(()=>{
             for (let t of this.actionButtons)t.disabled = !1;
         });
@@ -368,9 +368,9 @@ const main = status_c.extend({
                 }))
         ]),
     render (l) {
-        let c = l[0] || {}, r = l[1] || {}, o = u(c), i = status_f(o, o.error);
+        let c = l[0] || {}, r = l[1] || {}, o = u(c), i = b(o, o.error);
         i.clear && clearPendingStatus();
-        let d = status_s.createHandlerFn(this, "handleAction", "start"), b = status_s.createHandlerFn(this, "handleAction", "stop"), E = status_s.createHandlerFn(this, "handleAction", "restart"), y = status_s.createHandlerFn(this, "handleAction", "reload"), x = jsx("td", {
+        let d = status_s.createHandlerFn(this, "handleAction", "start"), f = status_s.createHandlerFn(this, "handleAction", "stop"), E = status_s.createHandlerFn(this, "handleAction", "restart"), y = status_s.createHandlerFn(this, "handleAction", "reload"), x = jsx("td", {
             class: "td",
             children: o.running ? _("Running") : _("Stopped")
         }), m = jsx("td", {
@@ -412,7 +412,7 @@ const main = status_c.extend({
             style: "margin-bottom: 0.75em; color: ".concat(i.color, ";"),
             children: i.text
         }), P = jsx("div", {
-            style: "margin-top: 0.75em; min-height: 1.2em; color: #090;",
+            style: "margin-top: 0.75em; min-height: 1.2em; color: #1a7f37;",
             children: _("No action executed yet.")
         });
         this.statusEl = x, this.versionEl = m, this.listenEl = C, this.stunEl = p, this.meshEl = S, this.verifyClientsEl = g, this.metricsEl = U, this.healthEl = k, this.errorEl = T, this.clientsEl = w, this.trafficEl = R, this.trafficTotalEl = A, this.syncEl = N, this.resultEl = P;
@@ -422,7 +422,7 @@ const main = status_c.extend({
             children: _("Start")
         }), B = jsx("button", {
             class: "cbi-button cbi-button-negative",
-            onclick: b,
+            onclick: f,
             children: _("Stop")
         }), F = jsx("button", {
             class: "cbi-button cbi-button-action",

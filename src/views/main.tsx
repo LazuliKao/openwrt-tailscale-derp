@@ -7,7 +7,7 @@ type FormOption = any;
 const view = L.view;
 const form = L.form;
 const rpc = L.rpc;
-const ui = LuCI.ui;
+const ui = L.ui;
 const uci = L.uci;
 
 const callReloadConfig = rpc.declare<ReloadConfigResponse>({
@@ -197,7 +197,7 @@ export const main = (view as any).extend({
     const stunPortInput = <input type="number" class="cbi-input-text" style="width:100%" value={String(listenPort)} /> as HTMLInputElement;
 
     const jsonPre = <div class="derp-json-pre"></div> as HTMLElement;
-    const copyBtn = <button class="derp-copy-btn">{_("Copy")}</button> as HTMLButtonElement;
+    const copyBtn = <button class="cbi-button derp-copy-btn">{_("Copy")}</button> as HTMLButtonElement;
 
     const viewState: SettingsView = {
       badgeEl: null as any,
@@ -279,12 +279,9 @@ export const main = (view as any).extend({
     const styleEl = (
       <style>{`
         .derp-status-card {
-          background: var(--cbi-section-background, #fff);
-          border: 1px solid var(--cbi-border-color, #ddd);
           border-radius: 8px;
           padding: 1.5em;
           margin-bottom: 2em;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
           transition: all 0.3s ease;
         }
         .derp-status-header {
@@ -299,7 +296,6 @@ export const main = (view as any).extend({
           font-size: 1.25em;
           font-weight: 600;
           margin: 0;
-          color: var(--cbi-title-color, #333);
         }
         .derp-status-badge {
           display: inline-flex;
@@ -311,14 +307,10 @@ export const main = (view as any).extend({
           gap: 0.4em;
         }
         .derp-status-badge.running {
-          background-color: #e6f7ed;
           color: #1a7f37;
-          border: 1px solid #a2e8c2;
         }
         .derp-status-badge.stopped {
-          background-color: #ffebe9;
           color: #cf222e;
-          border: 1px solid #ffc1c0;
         }
         .derp-status-dot {
           width: 8px;
@@ -330,9 +322,9 @@ export const main = (view as any).extend({
           animation: derp-pulse 1.8s infinite ease-in-out;
         }
         @keyframes derp-pulse {
-          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(26, 127, 55, 0.5); }
-          70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(26, 127, 55, 0); }
-          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(26, 127, 55, 0); }
+          0% { transform: scale(0.95); opacity: 0.7; }
+          70% { transform: scale(1); opacity: 1; }
+          100% { transform: scale(0.95); opacity: 0.7; }
         }
         .derp-metrics-grid {
           display: grid;
@@ -341,8 +333,6 @@ export const main = (view as any).extend({
           margin-bottom: 1.2em;
         }
         .derp-metric-item {
-          background: var(--cbi-input-background, #f9f9f9);
-          border: 1px solid var(--cbi-border-color, #eee);
           border-radius: 6px;
           padding: 0.8em 1em;
           display: flex;
@@ -350,7 +340,6 @@ export const main = (view as any).extend({
         }
         .derp-metric-label {
           font-size: 0.85em;
-          color: #666;
           margin-bottom: 0.3em;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -358,12 +347,9 @@ export const main = (view as any).extend({
         .derp-metric-value {
           font-size: 1.15em;
           font-weight: bold;
-          color: #333;
         }
         .derp-config-details {
-          border: 1px solid var(--cbi-border-color, #eee);
           border-radius: 6px;
-          background: var(--cbi-input-background, #fcfcfc);
           margin-top: 1em;
         }
         .derp-config-summary {
@@ -374,11 +360,10 @@ export const main = (view as any).extend({
           user-select: none;
         }
         .derp-config-summary:hover {
-          background: #f4f4f4;
+          text-decoration: underline;
         }
         .derp-config-content {
           padding: 1.2em;
-          border-top: 1px solid var(--cbi-border-color, #eee);
         }
         .derp-config-inputs {
           display: grid;
@@ -394,11 +379,9 @@ export const main = (view as any).extend({
           font-size: 0.85em;
           font-weight: 600;
           margin-bottom: 0.3em;
-          color: #555;
         }
         .derp-config-input-group input {
           padding: 0.4em 0.6em;
-          border: 1px solid #ccc;
           border-radius: 4px;
         }
         .derp-json-wrapper {
@@ -406,8 +389,6 @@ export const main = (view as any).extend({
           margin-top: 1em;
         }
         .derp-json-pre {
-          background: #1e1e1e !important;
-          color: #d4d4d4 !important;
           padding: 1.2em;
           border-radius: 6px;
           font-family: monospace;
@@ -423,23 +404,15 @@ export const main = (view as any).extend({
           top: 0.6em;
           right: 0.6em;
           padding: 0.4em 0.8em;
-          background: rgba(255, 255, 255, 0.15);
-          border: 1px solid rgba(255, 255, 255, 0.25);
-          color: #fff;
           border-radius: 4px;
           cursor: pointer;
           font-size: 0.8em;
           transition: all 0.2s ease;
         }
-        .derp-copy-btn:hover {
-          background: rgba(255, 255, 255, 0.3);
-        }
         .derp-placeholder-box {
           padding: 1em;
-          background: var(--cbi-input-background, #f9f9f9);
-          border: 1px dashed var(--cbi-border-color, #ccc);
+          border-style: dashed;
           border-radius: 6px;
-          color: #666;
           text-align: center;
           margin-top: 1em;
         }
@@ -469,7 +442,7 @@ export const main = (view as any).extend({
       <div class="derp-config-details" style={isRunning ? "" : "display: none;"}>
         <div class="derp-config-summary">{_("Tailscale ACL Configuration (DERP Map)")}</div>
         <div class="derp-config-content">
-          <p style="margin-bottom: 1em; font-size: 0.9em; color: #555;">
+          <p style="margin-bottom: 1em; font-size: 0.9em;">
             {_("You can paste this JSON into your Tailscale ACL configuration (derpMap section) to allow clients to use this relay. Customize the parameters below to match your public setup:")}
           </p>
           <div class="derp-config-inputs">
@@ -522,7 +495,7 @@ export const main = (view as any).extend({
     viewState.configPlaceholderEl = configPlaceholder;
 
     const statusCard = (
-      <div class="derp-status-card">
+      <div class="derp-status-card cbi-section">
         {styleEl}
         <div class="derp-status-header">
           <h4 class="derp-status-title">{_("DERP Server Status")}</h4>

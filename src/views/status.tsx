@@ -7,7 +7,7 @@ import {
 type ActionName = "start" | "stop" | "restart" | "reload";
 const view = L.view;
 const rpc = L.rpc;
-const ui = LuCI.ui;
+const ui = L.ui;
 const poll = L.Poll;
 
 type ActionResponse = {
@@ -201,7 +201,7 @@ function getSyncState(
 
 	if (!pending) {
 		return {
-			color: "#666",
+			color: "inherit",
 			text: _("No configuration change pending."),
 			clear: false,
 		};
@@ -217,7 +217,7 @@ function getSyncState(
 
 	if (normalized && matchesPendingStatus(normalized, pending)) {
 		return {
-			color: "#090",
+			color: "#1a7f37",
 			text: _("Saved configuration is now active."),
 			clear: true,
 		};
@@ -328,7 +328,7 @@ export const main = (view as any).extend({
 		if (shouldConfirm(action)) {
 			const message = `${_("Are you sure you want to")} ${action} ${_("the DERP service?")}`;
 			if (!window.confirm(message)) {
-				this.resultEl.style.color = "#c00";
+				this.resultEl.style.color = "#cf222e";
 				this.resultEl.textContent = `${label} ${_("cancelled.")}`;
 				return Promise.resolve();
 			}
@@ -337,7 +337,7 @@ export const main = (view as any).extend({
 		for (const btn of this.actionButtons) {
 			btn.disabled = true;
 		}
-		this.resultEl.style.color = "#090";
+		this.resultEl.style.color = "#1a7f37";
 		this.resultEl.textContent = `${label} ${_("in progress...")}`;
 
 		return invokeAction(action)
@@ -350,13 +350,13 @@ export const main = (view as any).extend({
 						throw new Error(errorMessage || `${label} ${_("failed")}`);
 				}
 
-				this.resultEl.style.color = "#090";
+				this.resultEl.style.color = "#1a7f37";
 				this.resultEl.textContent = `${label} ${_("completed successfully.")}`;
 				return pollStatus(this);
 			})
 			.catch((err: unknown) => {
 				const message = err instanceof Error ? err.message : _("unknown error");
-				this.resultEl.style.color = "#c00";
+				this.resultEl.style.color = "#cf222e";
 				this.resultEl.textContent = `${label} ${_("failed:")} ${message}`;
 				return pollStatus(this);
 			})
@@ -418,7 +418,7 @@ export const main = (view as any).extend({
 		);
 
 		const resultEl = (
-			<div style="margin-top: 0.75em; min-height: 1.2em; color: #090;">
+			<div style="margin-top: 0.75em; min-height: 1.2em; color: #1a7f37;">
 				{_("No action executed yet.")}
 			</div>
 		);

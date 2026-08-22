@@ -180,15 +180,15 @@ function jsxDEV(e, t) {
 
 ;// CONCATENATED MODULE: ./src/views/peers.tsx
 
-let peers_l = L.view, peers_n = L.rpc, peers_r = L.Poll, peers_o = peers_n.declare({
+let peers_l = L.view, peers_n = L.rpc, peers_r = L.Poll, peers_c = peers_n.declare({
     object: "luci.tailscale-derp",
     method: "get_peers"
-}), peers_c = peers_n.declare({
+}), peers_d = peers_n.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
 });
-function peers_d(t) {
-    return t < 1024 ? "".concat(t, " B") : t < 1048576 ? "".concat((t / 1024).toFixed(1), " KB") : t < 1073741824 ? "".concat((t / 1048576).toFixed(1), " MB") : "".concat((t / 1073741824).toFixed(1), " GB");
+function peers_o(e) {
+    return e < 1024 ? "".concat(e, " B") : e < 1048576 ? "".concat((e / 1024).toFixed(1), " KB") : e < 1073741824 ? "".concat((e / 1048576).toFixed(1), " MB") : "".concat((e / 1073741824).toFixed(1), " GB");
 }
 function peers_a(l) {
     return 0 === l.length ? [
@@ -218,25 +218,25 @@ function peers_a(l) {
                 }),
                 jsx("td", {
                     class: "td",
-                    children: function(t) {
+                    children: function(e) {
                         try {
-                            let e = new Date(t).getTime(), l = Date.now(), n = Math.max(0, l - e), r = Math.floor(n / 1000), o = Math.floor(r / 60), c = Math.floor(o / 60), d = Math.floor(c / 24);
-                            if (d > 0) return _("%dd %dh %dm").format(d, c % 24, o % 60);
-                            if (c > 0) return _("%dh %dm %ds").format(c, o % 60, r % 60);
-                            if (o > 0) return _("%dm %ds").format(o, r % 60);
+                            let t = new Date(e).getTime(), l = Date.now(), n = Math.max(0, l - t), r = Math.floor(n / 1000), c = Math.floor(r / 60), d = Math.floor(c / 60), o = Math.floor(d / 24);
+                            if (o > 0) return _("%dd %dh %dm").format(o, d % 24, c % 60);
+                            if (d > 0) return _("%dh %dm %ds").format(d, c % 60, r % 60);
+                            if (c > 0) return _("%dm %ds").format(c, r % 60);
                             return _("%ds").format(r);
-                        } catch (t) {
+                        } catch (e) {
                             return "-";
                         }
                     }(l.connectedAt)
                 }),
                 jsx("td", {
                     class: "td",
-                    children: function(t) {
+                    children: function(e) {
                         try {
-                            return new Date(t).toLocaleString();
-                        } catch (e) {
-                            return t;
+                            return new Date(e).toLocaleString();
+                        } catch (t) {
+                            return e;
                         }
                     }(l.connectedAt)
                 })
@@ -246,41 +246,41 @@ function peers_a(l) {
 }
 const main = peers_l.extend({
     load: ()=>Promise.all([
-            peers_o().catch(()=>({
+            peers_c().catch(()=>({
                     peers: [],
                     count: 0
                 })),
-            peers_c().catch(()=>({}))
+            peers_d().catch(()=>({}))
         ]),
     render (l) {
         var n, s;
         let i = l[0] || {}, h = l[1] || {}, u = i.peers || [], m = null != (n = h.bytesRecv) ? n : 0, f = null != (s = h.bytesSent) ? s : 0, p = jsx("div", {
-            style: "margin-bottom: 0.75em; color: #333;",
+            style: "margin-bottom: 0.75em;",
             children: _("%d connected peer(s)").format(u.length)
         }), b = jsx("div", {
-            style: "margin-bottom: 0.5em; color: #c00; min-height: 1.2em;"
+            style: "margin-bottom: 0.5em; min-height: 1.2em; color: #cf222e;"
         }), y = jsx("div", {
-            style: "margin-bottom: 0.5em; color: #666; font-size: 0.9em;"
+            style: "margin-bottom: 0.5em; font-size: 0.9em;"
         }), v = jsx("div", {
-            style: "margin-bottom: 0.75em; color: #333;",
-            children: "\u2193 " + peers_d(m) + " / \u2191 " + peers_d(f)
+            style: "margin-bottom: 0.75em;",
+            children: "\u2193 " + peers_o(m) + " / \u2191 " + peers_o(f)
         }), x = jsx("tbody", {});
-        for (let t of (this.tableBody = x, this.countEl = p, this.errorEl = b, this.lastUpdatedEl = y, this.trafficEl = v, peers_a(u)))x.appendChild(t);
+        for (let e of (this.tableBody = x, this.countEl = p, this.errorEl = b, this.lastUpdatedEl = y, this.trafficEl = v, peers_a(u)))x.appendChild(e);
         return peers_r.add(()=>{
-            var t;
-            return t = this, Promise.all([
-                peers_o(),
-                peers_c()
-            ]).then((e)=>{
+            var e;
+            return e = this, Promise.all([
+                peers_c(),
+                peers_d()
+            ]).then((t)=>{
                 var l, n;
-                let [r, o] = e, c = (null == r ? void 0 : r.peers) || [];
-                t.countEl.textContent = _("%d connected peer(s)").format(c.length), t.errorEl.textContent = "", t.lastUpdatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString());
-                let s = null != (l = null == o ? void 0 : o.bytesRecv) ? l : 0, i = null != (n = null == o ? void 0 : o.bytesSent) ? n : 0;
-                for(t.trafficEl.textContent = "\u2193 " + peers_d(s) + " / \u2191 " + peers_d(i); t.tableBody.firstChild;)t.tableBody.removeChild(t.tableBody.firstChild);
-                for (let e of peers_a(c))t.tableBody.appendChild(e);
-            }).catch((e)=>{
-                let l = e instanceof Error ? e.message : "Backend unavailable";
-                t.errorEl.textContent = l, t.countEl.textContent = "0 " + _("connected peer(s)");
+                let [r, c] = t, d = (null == r ? void 0 : r.peers) || [];
+                e.countEl.textContent = _("%d connected peer(s)").format(d.length), e.errorEl.textContent = "", e.lastUpdatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString());
+                let s = null != (l = null == c ? void 0 : c.bytesRecv) ? l : 0, i = null != (n = null == c ? void 0 : c.bytesSent) ? n : 0;
+                for(e.trafficEl.textContent = "\u2193 " + peers_o(s) + " / \u2191 " + peers_o(i); e.tableBody.firstChild;)e.tableBody.removeChild(e.tableBody.firstChild);
+                for (let t of peers_a(d))e.tableBody.appendChild(t);
+            }).catch((t)=>{
+                let l = t instanceof Error ? t.message : "Backend unavailable";
+                e.errorEl.textContent = l, e.countEl.textContent = "0 " + _("connected peer(s)");
             });
         }, 5), jsxs("div", {
             children: [
