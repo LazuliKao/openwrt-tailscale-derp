@@ -22,6 +22,10 @@ openwrt-tailscale-derp/
 └── package.json                # Dependencies and build scripts
 ```
 
+## Core Project
+- For golang backend (derp core), view `../tailscale-derp`, notify the user if new feature require backend changes, after confirmation, make an prompt for assign the backend task to the golang developer agent.
+
+
 ## JSX RUNTIME (@lazulikao/luci-types)
 
 **CRITICAL**: This project uses LuCI's JSX runtime, NOT React.
