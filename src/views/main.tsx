@@ -636,7 +636,7 @@ export const main = (view as any).extend({
     o.rmempty = false;
     o.depends("enabled", "1");
 
-    o = s.option(form.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)"));
+    o = s.option(form.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients"));
     o.rmempty = true;
     o.placeholder = "https://your-admission-controller/verify";
     o.depends({
@@ -648,6 +648,23 @@ export const main = (view as any).extend({
     o.default = "0";
     o.rmempty = false;
     o.depends("enabled", "1");
+
+    o = s.option(form.Flag, "tailscaled_socket_enabled", _("Use Custom tailscaled Socket"), _("Use a custom socket path instead of tailscaled's default socket"));
+    o.default = "0";
+    o.rmempty = false;
+    o.depends({
+      "tailscale-derp.verify.enabled": "1",
+      "tailscale-derp.verify.tailscaled_enabled": "1"
+    });
+
+    o = s.option(form.Value, "tailscaled_socket", _("Custom tailscaled Socket"), _("Path to the local tailscaled socket"));
+    o.rmempty = true;
+    o.placeholder = "/var/run/tailscale/tailscaled.sock";
+    o.depends({
+      "tailscale-derp.verify.enabled": "1",
+      "tailscale-derp.verify.tailscaled_enabled": "1",
+      "tailscale-derp.verify.tailscaled_socket_enabled": "1"
+    });
 
     o = s.option(form.Flag, "api_enabled", _("Enable Official API Verification"), _("Allow authorized, non-expired devices from configured Tailscale API instances"));
     o.default = "0";
