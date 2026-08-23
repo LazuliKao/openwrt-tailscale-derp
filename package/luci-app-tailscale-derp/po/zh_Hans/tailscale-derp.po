@@ -1,15 +1,624 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-tailscale-derp\n"
-"POT-Creation-Date: 2026-05-25 17:35+0800\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: zh_CN\n"
+"POT-Creation-Date: 2026-08-24 00:15+0800\n"
+"PO-Revision-Date: \n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh_Hans\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
+msgid "%d connected peer(s)"
+msgstr ""
+
+msgid "%d device(s)"
+msgstr ""
+
+msgid "%dd %dh %dm"
+msgstr ""
+
+msgid "%dh %dm %ds"
+msgstr ""
+
+msgid "%dm %ds"
+msgstr ""
+
+msgid "%ds"
+msgstr ""
+
+msgid "A display name used in LuCI and device sources"
+msgstr ""
+
+msgid "ACL Policy (HuJSON)"
+msgstr ""
+
+msgid "ACL policy is required."
+msgstr ""
+
+msgid "ACL policy is valid."
+msgstr ""
+
+msgid "ACL policy loaded."
+msgstr ""
+
+msgid "ACL policy validation failed."
+msgstr ""
+
+msgid "Add API Instance"
+msgstr ""
+
+msgid "Address and port for DERP/STUN (e.g. :3478)"
+msgstr ""
+
+msgid "Addresses"
+msgstr ""
+
+msgid ""
+"Admission controller URLs for verifying DERP clients (comma-separated or "
+"multiple entries)"
+msgstr ""
+
+msgid ""
+"Allow authorized, non-expired devices from configured Tailscale API "
+"instances"
+msgstr ""
+
+msgid "Allow clients accepted by any configured admission controller URL"
+msgstr ""
+
+msgid "API Cache TTL (seconds)"
+msgstr ""
+
+msgid "API Instance"
+msgstr ""
+
+msgid "API instance for IPv4 changes"
+msgstr ""
+
+msgid "API instance(s)"
+msgstr ""
+
+msgid "API Key"
+msgstr ""
+
+msgid "API Sync Interval (seconds)"
+msgstr ""
+
+msgid "Are you sure you want to"
+msgstr ""
+
+msgid "Authorized"
+msgstr ""
+
+msgid "Backend unavailable"
+msgstr ""
+
+msgid "Cached devices older than this are not used for authentication"
+msgstr ""
+
+msgid "cancelled."
+msgstr ""
+
+msgid "Certificate and key must be provided together"
+msgstr ""
+
+msgid "Certificate File"
+msgstr ""
+
+msgid "Client Verification"
+msgstr ""
+
+msgid "completed successfully."
+msgstr ""
+
+msgid "Configure the Tailscale DERP relay server."
+msgstr ""
+
+msgid "connected"
+msgstr ""
+
+msgid "Connected At"
+msgstr ""
+
+msgid "Connected Clients"
+msgstr ""
+
+msgid "connected peer(s)"
+msgstr ""
+
+msgid "Connected Peers"
+msgstr ""
+
+msgid "Copied!"
+msgstr ""
+
+msgid "Copy"
+msgstr ""
+
+msgid "Delete"
+msgstr ""
+
+msgid "DERP configuration JSON will be available here when the service is running."
+msgstr ""
+
+msgid "DERP Connected Peers"
+msgstr ""
+
+msgid "DERP Port"
+msgstr ""
+
+msgid "DERP Server Status"
+msgstr ""
+
+msgid "Device"
+msgstr ""
+
+msgid "Device data refreshed."
+msgstr ""
+
+msgid "Device IPv4 address updated."
+msgstr ""
+
+msgid "Devices"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid ""
+"Edit the raw HuJSON ACL policy for one configured Tailscale API instance. "
+"Saving validates the policy and uses the loaded ETag to prevent overwriting "
+"another administrator's changes."
+msgstr ""
+
+msgid "Enable Client Verification"
+msgstr ""
+
+msgid "Enable DERP mesh mode"
+msgstr ""
+
+msgid "Enable Mesh"
+msgstr ""
+
+msgid "Enable Official API Verification"
+msgstr ""
+
+msgid "Enable Persistence"
+msgstr ""
+
+msgid "Enable Service"
+msgstr ""
+
+msgid "Enable STUN"
+msgstr ""
+
+msgid "Enable STUN server on the same port"
+msgstr ""
+
+msgid "Enable tailscaled Verification"
+msgstr ""
+
+msgid "Enable Verify URLs"
+msgstr ""
+
+msgid "Enabled, but no methods configured"
+msgstr ""
+
+msgid ""
+"Enter a new Bearer token to replace the stored secret; leave empty to keep "
+"it"
+msgstr ""
+
+msgid "Enter a valid IPv4 address."
+msgstr ""
+
+msgid "failed"
+msgstr ""
+
+msgid "Failed to copy configuration to clipboard:"
+msgstr ""
+
+msgid "Failed to reload DERP configuration:"
+msgstr ""
+
+msgid "failed:"
+msgstr ""
+
+msgid ""
+"File path for storing traffic statistics (use tmpfs to minimize flash "
+"writes)"
+msgstr ""
+
+msgid "Fresh"
+msgstr ""
+
+msgid "Global Settings"
+msgstr ""
+
+msgid "Health Address"
+msgstr ""
+
+msgid "Health Port"
+msgstr ""
+
+msgid "How often to refresh configured Tailscale API instances"
+msgstr ""
+
+msgid "How often to save traffic statistics (higher = less flash wear)"
+msgstr ""
+
+msgid "in progress..."
+msgstr ""
+
+msgid "Instance"
+msgstr ""
+
+msgid "IPv4 Management"
+msgstr ""
+
+msgid "Key File"
+msgstr ""
+
+msgid "Last Error"
+msgstr ""
+
+msgid "Last Seen"
+msgstr ""
+
+msgid "Last updated: %s"
+msgstr ""
+
+msgid "Leave empty to keep the current key"
+msgstr ""
+
+msgid "Listen Address"
+msgstr ""
+
+msgid "Load"
+msgstr ""
+
+msgid "Load an ACL policy before saving."
+msgstr ""
+
+msgid "Load the ACL policy to begin editing."
+msgstr ""
+
+msgid "Loading ACL policy..."
+msgstr ""
+
+msgid "Mesh Enabled"
+msgstr ""
+
+msgid "Mesh key is required when mesh mode is enabled"
+msgstr ""
+
+msgid "Mesh Settings"
+msgstr ""
+
+msgid "Mesh Shared Key"
+msgstr ""
+
+msgid "Metrics Address"
+msgstr ""
+
+msgid "Metrics Port"
+msgstr ""
+
+msgid "N/A"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "No action executed yet."
+msgstr ""
+
+msgid "No configuration change pending."
+msgstr ""
+
+msgid "No connected peers"
+msgstr ""
+
+msgid "No devices available"
+msgstr ""
+
+msgid "No matching devices"
+msgstr ""
+
+msgid "No Official API instances are configured."
+msgstr ""
+
+msgid "Node Key"
+msgstr ""
+
+msgid "Node key copied"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Not authorized"
+msgstr ""
+
+msgid "Not configured"
+msgstr ""
+
+msgid "Official API"
+msgstr ""
+
+msgid "Official API Instances"
+msgstr ""
+
+msgid "Official API Synchronization"
+msgstr ""
+
 msgid "Offline"
 msgstr "离线"
+
+msgid "Operations"
+msgstr ""
+
+msgid "Path to TLS certificate (leave empty for auto)"
+msgstr ""
+
+msgid "Path to TLS private key (leave empty for auto)"
+msgstr ""
+
+msgid "Platform"
+msgstr ""
+
+msgid "Port for health check endpoint"
+msgstr ""
+
+msgid "Port for Prometheus metrics endpoint"
+msgstr ""
+
+msgid "Public HostName / IP"
+msgstr ""
+
+msgid "Public Key"
+msgstr ""
+
+msgid "Refresh"
+msgstr ""
+
+msgid "Refresh failed"
+msgstr ""
+
+msgid "Refreshing Official API devices..."
+msgstr ""
+
+msgid "Region Code"
+msgstr ""
+
+msgid "Region ID"
+msgstr ""
+
+msgid "Region Name"
+msgstr ""
+
+msgid "Reload"
+msgstr ""
+
+msgid "Reload Config"
+msgstr ""
+
+msgid "Remote Address"
+msgstr ""
+
+msgid "Require a client to pass at least one enabled verification method"
+msgstr ""
+
+msgid "Restart"
+msgstr ""
+
+msgid "Running"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Save cumulative traffic statistics to file across restarts"
+msgstr ""
+
+msgid "Save Interval (seconds)"
+msgstr ""
+
+msgid "Saved configuration is now active."
+msgstr ""
+
+msgid "Saved configuration status expired before it could be confirmed."
+msgstr ""
+
+msgid "Saving ACL policy..."
+msgstr ""
+
+msgid "Search devices..."
+msgstr ""
+
+msgid "Select a configured API instance to manage its ACL policy."
+msgstr ""
+
+msgid "Select an API instance"
+msgstr ""
+
+msgid "Select an API instance before changing an address."
+msgstr ""
+
+msgid "Select an API instance first."
+msgstr ""
+
+msgid "Service Actions"
+msgstr ""
+
+msgid "Service Status"
+msgstr ""
+
+msgid "Set IPv4"
+msgstr ""
+
+msgid "Shared mesh key passed to the DERP server when mesh mode is enabled"
+msgstr ""
+
+msgid "Sources"
+msgstr ""
+
+msgid "Stale or not synchronized"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "Start DERP service on boot"
+msgstr ""
+
+msgid "Status"
+msgstr ""
+
+msgid "Status backend unavailable"
+msgstr ""
+
+msgid "Stop"
+msgstr ""
+
+msgid "Stopped"
+msgstr ""
+
+msgid "Storage Path"
+msgstr ""
+
+msgid "STUN Enabled"
+msgstr ""
+
+msgid "STUN Port"
+msgstr ""
+
+msgid "Tailnet"
+msgstr ""
+
+msgid "Tailnet ACL Management"
+msgstr ""
+
+msgid "Tailscale ACL Configuration (DERP Map)"
+msgstr ""
+
+msgid "Tailscale DERP Relay"
+msgstr ""
+
+msgid "Tailscale DERP Status"
+msgstr ""
+
+msgid "Tailscale Devices"
+msgstr ""
+
+msgid "tailscaled"
+msgstr ""
+
+msgid "the DERP service?"
+msgstr ""
+
+msgid ""
+"The server policy changed. Your draft was retained; review it before saving "
+"again."
+msgstr ""
+
+msgid "TLS Settings"
+msgstr ""
+
+msgid "total accepted"
+msgstr ""
+
+msgid "Traffic"
+msgstr ""
+
+msgid "Traffic (Session)"
+msgstr ""
+
+msgid "Traffic (Total)"
+msgstr ""
+
+msgid "Traffic Statistics"
+msgstr ""
+
+msgid "Unable to copy node key"
+msgstr ""
+
+msgid "Unable to load ACL policy."
+msgstr ""
+
+msgid "Unable to save ACL policy."
+msgstr ""
+
+msgid "Unable to update device IPv4 address."
+msgstr ""
+
+msgid "Unavailable"
+msgstr ""
+
+msgid "Unknown"
+msgstr ""
+
+msgid "unknown error"
+msgstr ""
+
+msgid "Unnamed device"
+msgstr ""
+
+msgid "Unnamed instance"
+msgstr ""
+
+msgid "Updating device IPv4 address..."
+msgstr ""
+
+msgid "URLs"
+msgstr ""
+
+msgid "Use - for the API key's default tailnet, or enter a tailnet ID"
+msgstr ""
+
+msgid "User"
+msgstr ""
+
+msgid "Validate"
+msgstr ""
+
+msgid "Validating ACL policy..."
+msgstr ""
+
+msgid "Verify Clients"
+msgstr ""
+
+msgid ""
+"Verify clients against the local tailscaled instance using its default "
+"socket"
+msgstr ""
+
+msgid "Verify URLs"
+msgstr ""
+
+msgid "Version"
+msgstr ""
+
+msgid "Waiting for saved configuration to become active:"
+msgstr ""
+
+msgid "Waiting for saved configuration to become active..."
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid ""
+"You can paste this JSON into your Tailscale ACL configuration (derpMap "
+"section) to allow clients to use this relay. Customize the parameters below "
+"to match your public setup:"
+msgstr ""

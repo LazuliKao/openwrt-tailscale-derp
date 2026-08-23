@@ -1,3 +1,5 @@
+import { callSetDeviceIPv4, callTailnets, type TailnetInstance, type TailnetsResponse } from "@/shared/tailnets";
+
 type Device = {
 	nodeId?: string;
 	nodeKey?: string;
@@ -33,6 +35,7 @@ type DeviceSyncStatus = {
 type DevicesResponse = {
 	devices?: Device[];
 	instances?: DeviceSyncStatus[];
+	error?: string;
 };
 
 type DevicesView = {
@@ -42,8 +45,11 @@ type DevicesView = {
 	messageEl: HTMLElement;
 	instancesEl: HTMLElement;
 	searchEl: HTMLInputElement;
+	tailnetSelect: HTMLSelectElement;
 	refreshEl: HTMLButtonElement;
 	devices: Device[];
+	tailnets: TailnetInstance[];
+	selectedInstance: string;
 	updateTable: () => void;
 };
 
@@ -76,6 +82,51 @@ function formatDeviceName(device: Device): string {
 	return device.name || device.hostname || device.nodeId || _("Unnamed device");
 }
 
+function isIPv4(value: string): boolean {
+	const octets = value.split(".");
+	return octets.length === 4 && octets.every((octet) => /^\d+$/.test(octet) && Number(octet) <= 255);
+}
+
+function deviceIPv4(device: Device): string {
+	return device.addresses?.find(isIPv4) || "";
+}
+
+function updateDeviceIPv4(viewState: DevicesView, device: Device, input: HTMLInputElement, button: HTMLButtonElement): void {
+	const instance = viewState.selectedInstance;
+	const ipv4 = input.value.trim();
+	if (!instance) {
+		viewState.messageEl.style.color = "#cf222e";
+		viewState.messageEl.textContent = _("Select an API instance before changing an address.");
+		return;
+	}
+	if (!device.nodeId || !isIPv4(ipv4)) {
+		viewState.messageEl.style.color = "#cf222e";
+		viewState.messageEl.textContent = _("Enter a valid IPv4 address.");
+		return;
+	}
+
+	button.disabled = true;
+	viewState.messageEl.style.color = "";
+	viewState.messageEl.textContent = _("Updating device IPv4 address...");
+	callSetDeviceIPv4(instance, device.nodeId, ipv4)
+		.then((result) => {
+			if (result?.error) throw new Error(result.error);
+			return callDevices();
+		})
+		.then((data) => {
+			applyData(viewState, data || {});
+			viewState.messageEl.style.color = "#1a7f37";
+			viewState.messageEl.textContent = _("Device IPv4 address updated.");
+		})
+		.catch((err: unknown) => {
+			viewState.messageEl.style.color = "#cf222e";
+			viewState.messageEl.textContent = err instanceof Error ? err.message : _("Unable to update device IPv4 address.");
+		})
+		.finally(() => {
+			button.disabled = false;
+		});
+}
+
 function buildRows(viewState: DevicesView): HTMLElement[] {
 	const query = viewState.searchEl.value.trim().toLowerCase();
 	const devices = viewState.devices.filter((device) => {
@@ -93,7 +144,7 @@ function buildRows(viewState: DevicesView): HTMLElement[] {
 	if (devices.length === 0) {
 		return [
 			<tr class="tr">
-				<td class="td" colSpan={8} style="text-align: center;">
+				<td class="td" colSpan={9} style="text-align: center;">
 					{query ? _("No matching devices") : _("No devices available")}
 				</td>
 			</tr>,
@@ -119,6 +170,10 @@ function buildRows(viewState: DevicesView): HTMLElement[] {
 				{_("Copy")}
 			</button>
 		) : null;
+		const ipv4Input = <input class="cbi-input-text" type="text" value={deviceIPv4(device)} placeholder="100.64.0.1" style="width: 8.5em;" /> as HTMLInputElement;
+		const updateButton = <button class="cbi-button cbi-button-action" type="button">{_("Set IPv4")}</button> as HTMLButtonElement;
+		updateButton.disabled = !device.nodeId;
+		updateButton.onclick = () => updateDeviceIPv4(viewState, device, ipv4Input, updateButton);
 
 		return (
 			<tr class="tr">
@@ -135,6 +190,7 @@ function buildRows(viewState: DevicesView): HTMLElement[] {
 				<td class="td">{device.addresses?.join(", ") || "-"}</td>
 				<td class="td">{formatTime(device.lastSeen)}</td>
 				<td class="td">{device.sources?.join(", ") || "-"}</td>
+				<td class="td" style="white-space: nowrap;">{device.nodeId ? <>{ipv4Input} {updateButton}</> : "-"}</td>
 			</tr>
 		);
 	});
@@ -163,6 +219,18 @@ function renderInstances(instances: DeviceSyncStatus[]): HTMLElement[] {
 	});
 }
 
+function applyTailnets(viewState: DevicesView, data: TailnetsResponse): void {
+	viewState.tailnets = (data.instances || []).filter((instance) => instance.configured && instance.name);
+	const previous = viewState.selectedInstance;
+	viewState.tailnetSelect.replaceChildren(
+		<option value="">{_("Select an API instance")}</option>,
+		...viewState.tailnets.map((instance) => <option value={instance.name || ""}>{instance.label || instance.name}</option>),
+	);
+	viewState.tailnetSelect.value = viewState.tailnets.some((instance) => instance.name === previous) ? previous : "";
+	viewState.selectedInstance = viewState.tailnetSelect.value;
+	viewState.updateTable();
+}
+
 function applyData(viewState: DevicesView, data: DevicesResponse): void {
 	viewState.devices = data?.devices || [];
 	viewState.countEl.textContent = _("%d device(s)").format(viewState.devices.length);
@@ -174,6 +242,7 @@ function applyData(viewState: DevicesView, data: DevicesResponse): void {
 function pollDevices(viewState: DevicesView): Promise<void> {
 	return callDevices()
 		.then((data) => {
+			if (data?.error) throw new Error(data.error);
 			viewState.messageEl.textContent = "";
 			applyData(viewState, data || {});
 		})
@@ -184,16 +253,20 @@ function pollDevices(viewState: DevicesView): Promise<void> {
 
 export const main = (view as any).extend({
 	load() {
-		return callDevices().catch(() => ({ devices: [], instances: [] }));
+		return Promise.all([
+			callDevices().catch(() => ({ devices: [], instances: [] })),
+			callTailnets().catch(() => ({ instances: [] })),
+		]);
 	},
 
-	render(this: DevicesView, data: DevicesResponse) {
+	render(this: DevicesView, data: [DevicesResponse, TailnetsResponse]) {
 		const tableBody = <tbody></tbody>;
 		const countEl = <div style="margin-bottom: 0.5em;"></div>;
 		const updatedEl = <div style="font-size: 0.9em; margin-bottom: 0.5em;"></div>;
 		const messageEl = <div style="color: #cf222e; min-height: 1.2em; margin-bottom: 0.5em;"></div>;
 		const instancesEl = <div></div>;
 		const searchEl = <input class="cbi-input-text" type="search" placeholder={_("Search devices...")} style="width: 100%;" /> as HTMLInputElement;
+		const tailnetSelect = <select class="cbi-input-select" style="min-width: 18em;"></select> as HTMLSelectElement;
 		const refreshEl = <button class="cbi-button cbi-button-action" type="button">{_("Refresh")}</button> as HTMLButtonElement;
 
 		const viewState: DevicesView = {
@@ -203,8 +276,11 @@ export const main = (view as any).extend({
 			messageEl,
 			instancesEl,
 			searchEl,
+			tailnetSelect,
 			refreshEl,
 			devices: [],
+			tailnets: [],
+			selectedInstance: "",
 			updateTable: () => undefined,
 		};
 
@@ -212,12 +288,17 @@ export const main = (view as any).extend({
 			viewState.tableBody.replaceChildren(...buildRows(viewState));
 		};
 		searchEl.oninput = viewState.updateTable;
+		tailnetSelect.onchange = () => {
+			viewState.selectedInstance = tailnetSelect.value;
+			viewState.updateTable();
+		};
 		refreshEl.onclick = () => {
 			refreshEl.disabled = true;
 			messageEl.style.color = "";
 			messageEl.textContent = _("Refreshing Official API devices...");
 			callRefreshDevices()
 				.then((result) => {
+					if (result?.error) throw new Error(result.error);
 					messageEl.style.color = "#1a7f37";
 					messageEl.textContent = _("Device data refreshed.");
 					applyData(viewState, result || {});
@@ -231,7 +312,8 @@ export const main = (view as any).extend({
 				});
 		};
 
-		applyData(viewState, data || {});
+		applyTailnets(viewState, data[1] || {});
+		applyData(viewState, data[0] || {});
 		poll.add(() => pollDevices(viewState), 15);
 
 		return (
@@ -241,7 +323,11 @@ export const main = (view as any).extend({
 					<h3>{_("Official API Synchronization")}</h3>
 					{instancesEl}
 					{updatedEl}
-					{refreshEl}{" "}{messageEl}
+					<div style="margin-bottom: 0.75em;">
+						<label>{_("API instance for IPv4 changes")}</label><br />
+						{tailnetSelect}
+					</div>
+					{refreshEl} {messageEl}
 				</div>
 				<div class="cbi-section">
 					<h3>{_("Devices")}</h3>
@@ -259,6 +345,7 @@ export const main = (view as any).extend({
 									<th class="th">{_("Addresses")}</th>
 									<th class="th">{_("Last Seen")}</th>
 									<th class="th">{_("Sources")}</th>
+									<th class="th">{_("IPv4 Management")}</th>
 								</tr>
 							</thead>
 							{tableBody}
