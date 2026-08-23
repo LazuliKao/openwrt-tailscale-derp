@@ -3,6 +3,8 @@
 . /usr/share/libubox/jshn.sh
 
 CONFIG_NAME=tailscale-derp
+SECRET_CONFIG_NAME=tailscale-derp-secrets
+SECRET_FILE=/etc/config/tailscale-derp-secrets
 DEFAULT_OPS_ADDR=127.0.0.1:9911
 SERVICE_SCRIPT=/etc/init.d/tailscale-derp
 
@@ -67,6 +69,72 @@ fetch_json() {
     }
 }
 
+set_api_key() {
+    local payload name api_key clear
+
+    payload="$(cat)"
+    [ -n "$payload" ] || payload='{}'
+    json_cleanup
+    json_load "$payload" 2>/dev/null || {
+        echo '{"error":"invalid RPC parameters"}'
+        return 1
+    }
+    json_get_var name name
+    json_get_var api_key api_key
+    json_get_var clear clear
+
+    case "$name" in
+        ''|*[!A-Za-z0-9_]*|.*)
+            echo '{"error":"invalid API instance name"}'
+            return 1
+            ;;
+    esac
+
+    case "$api_key" in
+        *[![:print:]]*)
+            echo '{"error":"invalid API key"}'
+            return 1
+            ;;
+    esac
+
+    if [ "$clear" = "1" ]; then
+        [ -e "$SECRET_FILE" ] || {
+            echo '{"result":"ok"}'
+            return 0
+        }
+        uci -q delete "${SECRET_CONFIG_NAME}.${name}" 2>/dev/null || true
+    else
+        [ -n "$api_key" ] || {
+            echo '{"error":"API key is required"}'
+            return 1
+        }
+        umask 077
+        [ -e "$SECRET_FILE" ] || : > "$SECRET_FILE" || {
+            echo '{"error":"cannot create API secrets file"}'
+            return 1
+        }
+        chmod 600 "$SECRET_FILE" 2>/dev/null || {
+            echo '{"error":"cannot protect API secrets file"}'
+            return 1
+        }
+        uci -q set "${SECRET_CONFIG_NAME}.${name}=secret" 2>/dev/null || {
+            echo '{"error":"cannot update API secret"}'
+            return 1
+        }
+        uci -q set "${SECRET_CONFIG_NAME}.${name}.api_key=${api_key}" 2>/dev/null || {
+            echo '{"error":"cannot update API secret"}'
+            return 1
+        }
+    fi
+
+    uci -q commit "$SECRET_CONFIG_NAME" 2>/dev/null || {
+        echo '{"error":"cannot commit API secret"}'
+        return 1
+    }
+    [ -e "$SECRET_FILE" ] && chmod 600 "$SECRET_FILE" 2>/dev/null
+    echo '{"result":"ok"}'
+}
+
 rpc_read() {
     local base_url
     base_url="$(ops_addr)"
@@ -84,6 +152,9 @@ rpc_read() {
         get_peers)
             fetch_json "${base_url}/peers"
             ;;
+        get_devices)
+            fetch_json "${base_url}/devices"
+            ;;
         *)
             echo '{"error":"unknown method"}'
             exit 1
@@ -92,6 +163,9 @@ rpc_read() {
 }
 
 rpc_write() {
+    local base_url
+    base_url="$(ops_addr)"
+
     case "$1" in
         start)
             service_action start
@@ -105,6 +179,12 @@ rpc_write() {
         reload_config)
             service_action reload
             ;;
+        refresh_devices)
+            fetch_json "${base_url}/devices/refresh" POST
+            ;;
+        set_api_key)
+            set_api_key
+            ;;
         *)
             echo '{"error":"unknown method"}'
             exit 1
@@ -114,15 +194,15 @@ rpc_write() {
 
 case "$1" in
     list)
-        echo '{"get_status":{},"get_version":{},"get_clients":{},"get_peers":{},"start":{},"stop":{},"restart":{},"reload_config":{}}'
+        echo '{"get_status":{},"get_version":{},"get_clients":{},"get_peers":{},"get_devices":{},"start":{},"stop":{},"restart":{},"reload_config":{},"refresh_devices":{},"set_api_key":{"name":"String","api_key":"String","clear":"String"}}'
         ;;
     call)
         method="$2"
         case "$method" in
-            get_status|get_version|get_clients|get_peers)
+            get_status|get_version|get_clients|get_peers|get_devices)
                 rpc_read "$method"
                 ;;
-            start|stop|restart|reload_config)
+            start|stop|restart|reload_config|refresh_devices|set_api_key)
                 rpc_write "$method"
                 ;;
             *)

@@ -18,6 +18,11 @@ type ActionResponse = {
 
 type StatusResponse = {
 	verifyClients?: string[];
+	verifyEnabled?: boolean;
+	verifyURLsEnabled?: boolean;
+	verifyTailscaled?: boolean;
+	verifyAPIEnabled?: boolean;
+	verifyAPIInstances?: number;
 	running?: boolean;
 	listen?: string;
 	stun?: boolean;
@@ -105,10 +110,23 @@ function formatBytes(n: number): string {
 }
 
 function normalizeStatus(data: StatusResponse): NormalizedStatus {
+	const methods: string[] = [];
+	if (data.verifyURLsEnabled) methods.push(_("URLs"));
+	if (data.verifyTailscaled) methods.push(_("tailscaled"));
+	if (data.verifyAPIEnabled) methods.push(_("Official API"));
+	let verifyClients = !data.verifyEnabled
+		? _("Disabled")
+		: methods.length
+			? methods.join(", ")
+			: _("Enabled, but no methods configured");
+	if (data.verifyAPIInstances && data.verifyAPIInstances > 0) {
+		verifyClients += ` (${data.verifyAPIInstances} ${_("API instance(s)")})`;
+	}
+	if (data.verifyClients?.length) {
+		verifyClients += `; ${data.verifyClients.join(", ")}`;
+	}
 	return {
-		verifyClients: data.verifyClients?.length
-			? data.verifyClients.join(", ")
-			: _("Disabled"),
+		verifyClients,
 		running: !!data.running,
 	listen: data.listen || _("N/A"),
 	stun: data.stun ? _("Yes") : _("No"),

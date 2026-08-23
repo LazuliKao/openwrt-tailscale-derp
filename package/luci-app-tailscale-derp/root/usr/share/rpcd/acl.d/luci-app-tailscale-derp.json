@@ -7,7 +7,8 @@
           "get_status",
           "get_version",
           "get_clients",
-          "get_peers"
+          "get_peers",
+          "get_devices"
         ]
       },
       "uci": [
@@ -20,7 +21,9 @@
           "start",
           "stop",
           "restart",
-          "reload_config"
+          "reload_config",
+          "refresh_devices",
+          "set_api_key"
         ]
       },
       "uci": [

@@ -240,46 +240,75 @@ function readPendingStatus() {
 
 
 
-let main_o = L.view, main_d = L.form, main_p = L.rpc, main_c = L.ui, main_u = L.uci, main_m = main_p.declare({
+let main_o = L.view, main_d = L.form, main_c = L.rpc, main_p = L.ui, main_u = L.uci, main_m = main_c.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
-function g(e, t) {
+function main_f(e, t) {
     let n = this.section.formvalue(e, "enabled");
     return "1" !== n && !0 !== n || !!t || _("Mesh key is required when mesh mode is enabled");
 }
-function main_f(e, t, n, i) {
-    let r = n.section.formvalue(e, i) || "";
-    return (!t || !!r) && (!!t || !r) || _("Certificate and key must be provided together");
+function g(e, t, n, i) {
+    let a = n.section.formvalue(e, i) || "";
+    return (!t || !!a) && (!!t || !a) || _("Certificate and key must be provided together");
 }
-let h = L.Poll, b = main_p.declare({
+let main_h = main_c.declare({
+    object: "luci.tailscale-derp",
+    method: "set_api_key",
+    params: [
+        "name",
+        "api_key",
+        "clear"
+    ],
+    reject: !0
+});
+function y() {
+    return main_u.sections("tailscale-derp", "verify_api").map((e)=>String(e[".name"]));
+}
+let b = L.Poll, v = main_c.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
-}), y = main_p.declare({
+}), main_E = main_c.declare({
     object: "luci.tailscale-derp",
     method: "get_version"
 });
-function v(e) {
+function x(e) {
     return e < 1024 ? "".concat(e, " B") : e < 1048576 ? "".concat((e / 1024).toFixed(1), " KB") : e < 1073741824 ? "".concat((e / 1048576).toFixed(1), " MB") : "".concat((e / 1073741824).toFixed(1), " GB");
 }
 const main = main_o.extend({
     map: null,
+    pendingAPIKeyChanges: new Map(),
+    originalAPISectionNames: new Set(),
     load: ()=>Promise.all([
             main_u.load("tailscale-derp"),
-            b().catch(()=>null),
-            y().catch(()=>null)
+            v().catch(()=>null),
+            main_E().catch(()=>null)
         ]),
     handleSaveApply (e, t) {
         let l = captureExpectedStatus(this.map);
         return this.super("handleSaveApply", [
             e,
             t
-        ]).then(()=>main_m()).then(()=>{
+        ]).then(()=>(function(e) {
+                let t = new Set(y());
+                for (let n of e.originalAPISectionNames)t.has(n) || e.pendingAPIKeyChanges.set(n, {
+                    value: "",
+                    clear: !0
+                });
+                return Array.from(e.pendingAPIKeyChanges.entries()).reduce((e, t)=>{
+                    let [n, i] = t;
+                    return e.then(()=>main_h(n, i.value, i.clear ? "1" : "0").then((e)=>{
+                            if (null == e ? void 0 : e.error) throw Error(e.error);
+                        }));
+                }, Promise.resolve()).then(()=>{
+                    e.pendingAPIKeyChanges.clear();
+                });
+            })(this)).then(()=>main_m()).then(()=>{
             savePendingStatus(l), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((e)=>{
             clearPendingStatus();
             let t = e instanceof Error ? e.message : "unknown error";
-            throw main_c.addNotification(null, jsxs("p", {
+            throw main_p.addNotification(null, jsxs("p", {
                 children: [
                     _("Failed to reload DERP configuration:"),
                     " ",
@@ -289,8 +318,9 @@ const main = main_o.extend({
         });
     },
     render (i) {
-        var r, a, o;
-        let p = i[1] || {}, u = i[2] || {}, m = !!p.running, x = parseInt((p.listen || ":3478").split(":").pop() || "3478") || 3478, E = jsx("input", {
+        var a, r, o;
+        this.pendingAPIKeyChanges.clear(), this.originalAPISectionNames = new Set(y());
+        let c = i[1] || {}, u = i[2] || {}, m = !!c.running, h = parseInt((c.listen || ":3478").split(":").pop() || "3478") || 3478, P = jsx("input", {
             type: "text",
             class: "cbi-input-text",
             style: "width:100%",
@@ -305,27 +335,27 @@ const main = main_o.extend({
             class: "cbi-input-text",
             style: "width:100%",
             value: "openwrt-derp"
-        }), P = jsx("input", {
+        }), C = jsx("input", {
             type: "text",
             class: "cbi-input-text",
             style: "width:100%",
             value: "OpenWrt DERP Relay"
-        }), C = jsx("input", {
+        }), I = jsx("input", {
             type: "number",
             class: "cbi-input-text",
             style: "width:100%",
-            value: String(x)
-        }), R = jsx("input", {
+            value: String(h)
+        }), A = jsx("input", {
             type: "number",
             class: "cbi-input-text",
             style: "width:100%",
-            value: String(x)
-        }), T = jsx("div", {
+            value: String(h)
+        }), R = jsx("div", {
             class: "derp-json-pre"
-        }), N = jsx("button", {
+        }), T = jsx("button", {
             class: "cbi-button derp-copy-btn",
             children: _("Copy")
-        }), D = {
+        }), N = {
             badgeEl: null,
             badgeDotEl: null,
             badgeTextEl: null,
@@ -334,29 +364,29 @@ const main = main_o.extend({
             versionEl: null,
             configContainerEl: null,
             configPlaceholderEl: null,
-            jsonPreEl: T,
-            hostInputEl: E,
+            jsonPreEl: R,
+            hostInputEl: P,
             regionIdInputEl: w,
             regionCodeInputEl: S,
-            regionNameInputEl: P,
-            derpPortInputEl: C,
-            stunPortInputEl: R,
-            currentListenPort: x,
-            currentStunEnabled: !!p.stun
+            regionNameInputEl: C,
+            derpPortInputEl: I,
+            stunPortInputEl: A,
+            currentListenPort: h,
+            currentStunEnabled: !!c.stun
         }, k = ()=>{
-            let t = E.value.trim() || window.location.hostname, n = parseInt(w.value) || 900, i = S.value.trim() || "openwrt-derp", r = P.value.trim() || "OpenWrt DERP Relay", a = parseInt(C.value) || D.currentListenPort, l = parseInt(R.value) || D.currentListenPort, s = D.currentStunEnabled;
-            T.textContent = JSON.stringify({
+            let t = P.value.trim() || window.location.hostname, n = parseInt(w.value) || 900, i = S.value.trim() || "openwrt-derp", a = C.value.trim() || "OpenWrt DERP Relay", r = parseInt(I.value) || N.currentListenPort, l = parseInt(A.value) || N.currentListenPort, s = N.currentStunEnabled;
+            R.textContent = JSON.stringify({
                 Regions: {
                     [n]: {
                         RegionID: n,
                         RegionCode: i,
-                        RegionName: r,
+                        RegionName: a,
                         Nodes: [
                             _object_spread({
                                 Name: "".concat(n, "a"),
                                 RegionID: n,
                                 HostName: t,
-                                DERPPort: a
+                                DERPPort: r
                             }, s ? {
                                 STUNPort: l
                             } : {})
@@ -365,14 +395,14 @@ const main = main_o.extend({
                 }
             }, null, 2);
         };
-        D.updateJson = k, E.oninput = k, w.oninput = k, S.oninput = k, P.oninput = k, C.oninput = k, R.oninput = k, N.onclick = (e)=>{
-            e.preventDefault(), navigator.clipboard.writeText(T.textContent || "").then(()=>{
-                N.textContent = _("Copied!"), setTimeout(()=>{
-                    N.textContent = _("Copy");
+        N.updateJson = k, P.oninput = k, w.oninput = k, S.oninput = k, C.oninput = k, I.oninput = k, A.oninput = k, T.onclick = (e)=>{
+            e.preventDefault(), navigator.clipboard.writeText(R.textContent || "").then(()=>{
+                T.textContent = _("Copied!"), setTimeout(()=>{
+                    T.textContent = _("Copy");
                 }, 2000);
             }).catch((e)=>{
                 let t = e instanceof Error ? e.message : String(e);
-                main_c.addNotification(null, jsxs("p", {
+                main_p.addNotification(null, jsxs("p", {
                     children: [
                         _("Failed to copy configuration to clipboard:"),
                         " ",
@@ -381,24 +411,24 @@ const main = main_o.extend({
                 }));
             });
         }, k();
-        let I = jsx("style", {
+        let D = jsx("style", {
             children: "\n        .derp-status-card {\n          border-radius: 8px;\n          padding: 1.5em;\n          margin-bottom: 2em;\n          transition: all 0.3s ease;\n        }\n        .derp-status-header {\n          display: flex;\n          align-items: center;\n          justify-content: space-between;\n          margin-bottom: 1.2em;\n          flex-wrap: wrap;\n          gap: 1em;\n        }\n        .derp-status-title {\n          font-size: 1.25em;\n          font-weight: 600;\n          margin: 0;\n        }\n        .derp-status-badge {\n          display: inline-flex;\n          align-items: center;\n          padding: 0.35em 0.85em;\n          border-radius: 20px;\n          font-weight: 600;\n          font-size: 0.85em;\n          gap: 0.4em;\n        }\n        .derp-status-badge.running {\n          color: #1a7f37;\n        }\n        .derp-status-badge.stopped {\n          color: #cf222e;\n        }\n        .derp-status-dot {\n          width: 8px;\n          height: 8px;\n          border-radius: 50%;\n          background-color: currentColor;\n        }\n        .derp-status-dot.pulse {\n          animation: derp-pulse 1.8s infinite ease-in-out;\n        }\n        @keyframes derp-pulse {\n          0% { transform: scale(0.95); opacity: 0.7; }\n          70% { transform: scale(1); opacity: 1; }\n          100% { transform: scale(0.95); opacity: 0.7; }\n        }\n        .derp-metrics-grid {\n          display: grid;\n          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));\n          gap: 1.2em;\n          margin-bottom: 1.2em;\n        }\n        .derp-metric-item {\n          border-radius: 6px;\n          padding: 0.8em 1em;\n          display: flex;\n          flex-direction: column;\n        }\n        .derp-metric-label {\n          font-size: 0.85em;\n          margin-bottom: 0.3em;\n          text-transform: uppercase;\n          letter-spacing: 0.5px;\n        }\n        .derp-metric-value {\n          font-size: 1.15em;\n          font-weight: bold;\n        }\n        .derp-config-details {\n          border-radius: 6px;\n          margin-top: 1em;\n        }\n        .derp-config-summary {\n          padding: 0.8em 1.2em;\n          font-weight: 600;\n          cursor: pointer;\n          outline: none;\n          user-select: none;\n        }\n        .derp-config-summary:hover {\n          text-decoration: underline;\n        }\n        .derp-config-content {\n          padding: 1.2em;\n        }\n        .derp-config-inputs {\n          display: grid;\n          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));\n          gap: 0.8em;\n          margin-bottom: 1em;\n        }\n        .derp-config-input-group {\n          display: flex;\n          flex-direction: column;\n        }\n        .derp-config-input-group label {\n          font-size: 0.85em;\n          font-weight: 600;\n          margin-bottom: 0.3em;\n        }\n        .derp-config-input-group input {\n          padding: 0.4em 0.6em;\n          border-radius: 4px;\n        }\n        .derp-json-wrapper {\n          position: relative;\n          margin-top: 1em;\n        }\n        .derp-json-pre {\n          padding: 1.2em;\n          border-radius: 6px;\n          font-family: monospace;\n          font-size: 0.95em;\n          overflow-x: auto;\n          margin: 0;\n          max-height: 250px;\n          white-space: pre-wrap;\n          word-break: break-all;\n        }\n        .derp-copy-btn {\n          position: absolute;\n          top: 0.6em;\n          right: 0.6em;\n          padding: 0.4em 0.8em;\n          border-radius: 4px;\n          cursor: pointer;\n          font-size: 0.8em;\n          transition: all 0.2s ease;\n        }\n        .derp-placeholder-box {\n          padding: 1em;\n          border-style: dashed;\n          border-radius: 6px;\n          text-align: center;\n          margin-top: 1em;\n        }\n      "
-        }), j = jsx("span", {
+        }), V = jsx("span", {
             class: m ? "derp-status-dot pulse" : "derp-status-dot"
-        }), F = jsx("span", {
+        }), j = jsx("span", {
             children: m ? _("Running") : _("Stopped")
-        }), z = jsxs("span", {
+        }), F = jsxs("span", {
             class: m ? "derp-status-badge running" : "derp-status-badge stopped",
             children: [
-                j,
-                F
+                V,
+                j
             ]
-        }), A = jsx("span", {
+        }), z = jsx("span", {
             children: m ? u.version || _("Unknown") : _("N/A")
-        }), V = jsx("span", {
-            children: m ? String(null != (r = p.clients) ? r : 0) : "0"
+        }), U = jsx("span", {
+            children: m ? String(null != (a = c.clients) ? a : 0) : "0"
         }), B = jsx("span", {
-            children: m ? "\u2193 ".concat(v(null != (a = p.bytesRecv) ? a : 0), " / \u2191 ").concat(v(null != (o = p.bytesSent) ? o : 0)) : "\u2193 0 B / \u2191 0 B"
+            children: m ? "\u2193 ".concat(x(null != (r = c.bytesRecv) ? r : 0), " / \u2191 ").concat(x(null != (o = c.bytesSent) ? o : 0)) : "\u2193 0 B / \u2191 0 B"
         }), M = jsxs("div", {
             class: "derp-config-details",
             style: m ? "" : "display: none;",
@@ -423,7 +453,7 @@ const main = main_o.extend({
                                         jsx("label", {
                                             children: _("Public HostName / IP")
                                         }),
-                                        E
+                                        P
                                     ]
                                 }),
                                 jsxs("div", {
@@ -450,7 +480,7 @@ const main = main_o.extend({
                                         jsx("label", {
                                             children: _("Region Name")
                                         }),
-                                        P
+                                        C
                                     ]
                                 }),
                                 jsxs("div", {
@@ -459,7 +489,7 @@ const main = main_o.extend({
                                         jsx("label", {
                                             children: _("DERP Port")
                                         }),
-                                        C
+                                        I
                                     ]
                                 }),
                                 jsxs("div", {
@@ -468,7 +498,7 @@ const main = main_o.extend({
                                         jsx("label", {
                                             children: _("STUN Port")
                                         }),
-                                        R
+                                        A
                                     ]
                                 })
                             ]
@@ -476,23 +506,23 @@ const main = main_o.extend({
                         jsxs("div", {
                             class: "derp-json-wrapper",
                             children: [
-                                T,
-                                N
+                                R,
+                                T
                             ]
                         })
                     ]
                 })
             ]
-        }), U = jsx("div", {
+        }), K = jsx("div", {
             class: "derp-placeholder-box",
             style: m ? "display: none;" : "",
             children: _("DERP configuration JSON will be available here when the service is running.")
         });
-        D.badgeEl = z, D.badgeDotEl = j, D.badgeTextEl = F, D.versionEl = A, D.clientsEl = V, D.trafficEl = B, D.configContainerEl = M, D.configPlaceholderEl = U;
+        N.badgeEl = F, N.badgeDotEl = V, N.badgeTextEl = j, N.versionEl = z, N.clientsEl = U, N.trafficEl = B, N.configContainerEl = M, N.configPlaceholderEl = K;
         let O = jsxs("div", {
             class: "derp-status-card cbi-section",
             children: [
-                I,
+                D,
                 jsxs("div", {
                     class: "derp-status-header",
                     children: [
@@ -500,7 +530,7 @@ const main = main_o.extend({
                             class: "derp-status-title",
                             children: _("DERP Server Status")
                         }),
-                        z
+                        F
                     ]
                 }),
                 jsxs("div", {
@@ -515,7 +545,7 @@ const main = main_o.extend({
                                 }),
                                 jsx("span", {
                                     class: "derp-metric-value",
-                                    children: A
+                                    children: z
                                 })
                             ]
                         }),
@@ -528,7 +558,7 @@ const main = main_o.extend({
                                 }),
                                 jsx("span", {
                                     class: "derp-metric-value",
-                                    children: V
+                                    children: U
                                 })
                             ]
                         }),
@@ -548,28 +578,43 @@ const main = main_o.extend({
                     ]
                 }),
                 M,
-                U
+                K
             ]
         }), H = new main_d.Map("tailscale-derp", _("Tailscale DERP Relay"), _("Configure the Tailscale DERP relay server."));
         this.map = H;
         let J = H.section(main_d.TypedSection, "settings", _("Global Settings"));
         J.anonymous = !0;
-        let K = J.option(main_d.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
-        return K.default = "0", K.rmempty = !1, (K = J.option(main_d.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", K.rmempty = !1, K.placeholder = ":3478", K.validate = (e, t)=>validateSocketAddress("Listen address", t), (K = J.option(main_d.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", K.rmempty = !1, (J = H.section(main_d.TypedSection, "tls", _("TLS Settings"))).anonymous = !0, (K = J.option(main_d.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"))).placeholder = "/etc/ssl/certs/derp.pem", K.rmempty = !0, K.validate = function(e, t) {
-            return main_f(e, t, this, "keyfile");
-        }, (K = J.option(main_d.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"))).placeholder = "/etc/ssl/private/derp.key", K.rmempty = !0, K.validate = function(e, t) {
-            return main_f(e, t, this, "certfile");
-        }, (J = H.section(main_d.TypedSection, "mesh", _("Mesh Settings"))).anonymous = !0, (K = J.option(main_d.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", K.rmempty = !1, (K = J.option(main_d.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, K.depends("enabled", "1"), K.password = !0, K.validate = g, (J = H.section(main_d.TypedSection, "verify", _("Client Verification"))).anonymous = !0, (K = J.option(main_d.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)"))).rmempty = !0, K.placeholder = "https://your-admission-controller/verify", (K = J.option(main_d.Flag, "fail_open", _("Fail Open"), _("Allow clients to connect if all verify URLs are unreachable"))).default = "0", K.rmempty = !1, (J = H.section(main_d.TypedSection, "ops", _("Operations"))).anonymous = !0, (K = J.option(main_d.Value, "metrics", _("Metrics Port"), _("Port for Prometheus metrics endpoint"))).default = "127.0.0.1:9911", K.rmempty = !1, K.placeholder = "127.0.0.1:9911", K.validate = (e, t)=>validateLoopbackSocketAddress("Metrics address", t), (K = J.option(main_d.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", K.rmempty = !1, K.placeholder = ":9912", K.validate = (e, t)=>validateSocketAddress("Health address", t), (J = H.section(main_d.TypedSection, "traffic", _("Traffic Statistics"))).anonymous = !0, (K = J.option(main_d.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", K.rmempty = !1, (K = J.option(main_d.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", K.rmempty = !0, K.placeholder = "/tmp/tailscale-derp-traffic.json", K.depends("persist", "1"), (K = J.option(main_d.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", K.rmempty = !0, K.placeholder = "60", K.depends("persist", "1"), H.render().then((e)=>(h.add(()=>Promise.all([
-                    b(),
-                    y()
+        let G = J.option(main_d.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
+        G.default = "0", G.rmempty = !1, (G = J.option(main_d.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", G.rmempty = !1, G.placeholder = ":3478", G.validate = (e, t)=>validateSocketAddress("Listen address", t), (G = J.option(main_d.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", G.rmempty = !1, (J = H.section(main_d.TypedSection, "tls", _("TLS Settings"))).anonymous = !0, (G = J.option(main_d.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"))).placeholder = "/etc/ssl/certs/derp.pem", G.rmempty = !0, G.validate = function(e, t) {
+            return g(e, t, this, "keyfile");
+        }, (G = J.option(main_d.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"))).placeholder = "/etc/ssl/private/derp.key", G.rmempty = !0, G.validate = function(e, t) {
+            return g(e, t, this, "certfile");
+        }, (J = H.section(main_d.TypedSection, "mesh", _("Mesh Settings"))).anonymous = !0, (G = J.option(main_d.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", G.rmempty = !1, (G = J.option(main_d.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, G.depends("enabled", "1"), G.password = !0, G.validate = main_f, (J = H.section(main_d.TypedSection, "verify", _("Client Verification"))).anonymous = !0, (G = J.option(main_d.Flag, "enabled", _("Enable Client Verification"), _("Require a client to pass at least one enabled verification method"))).default = "0", G.rmempty = !1, (G = J.option(main_d.Flag, "url_enabled", _("Enable Verify URLs"), _("Allow clients accepted by any configured admission controller URL"))).default = "0", G.rmempty = !1, G.depends("enabled", "1"), (G = J.option(main_d.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)"))).rmempty = !0, G.placeholder = "https://your-admission-controller/verify", G.depends({
+            "tailscale-derp.verify.enabled": "1",
+            "tailscale-derp.verify.url_enabled": "1"
+        }), (G = J.option(main_d.Flag, "tailscaled_enabled", _("Enable tailscaled Verification"), _("Verify clients against the local tailscaled instance using its default socket"))).default = "0", G.rmempty = !1, G.depends("enabled", "1"), (G = J.option(main_d.Flag, "api_enabled", _("Enable Official API Verification"), _("Allow authorized, non-expired devices from configured Tailscale API instances"))).default = "0", G.rmempty = !1, G.depends("enabled", "1"), (G = J.option(main_d.Value, "sync_interval", _("API Sync Interval (seconds)"), _("How often to refresh configured Tailscale API instances"))).default = "300", G.rmempty = !1, G.datatype = "uinteger", G.depends({
+            "tailscale-derp.verify.enabled": "1"
+        }), (G = J.option(main_d.Value, "cache_ttl", _("API Cache TTL (seconds)"), _("Cached devices older than this are not used for authentication"))).default = "900", G.rmempty = !1, G.datatype = "uinteger", G.depends({
+            "tailscale-derp.verify.enabled": "1"
+        });
+        let q = H.section(main_d.GridSection, "verify_api", _("Official API Instances"));
+        return q.anonymous = !0, q.addremove = !0, q.sortable = !0, q.nodescriptions = !0, q.addbtntitle = _("Add API Instance"), q.delbtntitle = _("Delete"), (G = q.option(main_d.Value, "label", _("Name"), _("A display name used in LuCI and device sources"))).rmempty = !0, (G = q.option(main_d.Value, "tailnet", _("Tailnet"), _("Use - for the API key's default tailnet, or enter a tailnet ID"))).default = "-", G.rmempty = !1, (G = q.option(main_d.Value, "api_key", _("API Key"), _("Enter a new Bearer token to replace the stored secret; leave empty to keep it"))).password = !0, G.rmempty = !0, G.placeholder = _("Leave empty to keep the current key"), G.load = ()=>"", G.write = (e, t)=>{
+            let n = String((Array.isArray(t) ? t[0] : t) || "").trim();
+            return n && this.pendingAPIKeyChanges.set(e, {
+                value: n,
+                clear: !1
+            }), null;
+        }, G.remove = ()=>{}, (J = H.section(main_d.TypedSection, "ops", _("Operations"))).anonymous = !0, (G = J.option(main_d.Value, "metrics", _("Metrics Port"), _("Port for Prometheus metrics endpoint"))).default = "127.0.0.1:9911", G.rmempty = !1, G.placeholder = "127.0.0.1:9911", G.validate = (e, t)=>validateLoopbackSocketAddress("Metrics address", t), (G = J.option(main_d.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", G.rmempty = !1, G.placeholder = ":9912", G.validate = (e, t)=>validateSocketAddress("Health address", t), (J = H.section(main_d.TypedSection, "traffic", _("Traffic Statistics"))).anonymous = !0, (G = J.option(main_d.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", G.rmempty = !1, (G = J.option(main_d.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", G.rmempty = !0, G.placeholder = "/tmp/tailscale-derp-traffic.json", G.depends("persist", "1"), (G = J.option(main_d.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", G.rmempty = !0, G.placeholder = "60", G.depends("persist", "1"), H.render().then((e)=>(b.add(()=>Promise.all([
+                    v(),
+                    main_E()
                 ]).then((e)=>{
                     var t, n, i;
-                    let [r, a] = e, l = r || {}, s = !!l.running;
-                    s ? (D.badgeEl.className = "derp-status-badge running", D.badgeDotEl.className = "derp-status-dot pulse", D.badgeTextEl.textContent = _("Running")) : (D.badgeEl.className = "derp-status-badge stopped", D.badgeDotEl.className = "derp-status-dot", D.badgeTextEl.textContent = _("Stopped")), D.versionEl.textContent = s ? (a || {}).version || _("Unknown") : _("N/A"), D.clientsEl.textContent = s ? String(null != (t = l.clients) ? t : 0) : "0";
+                    let [a, r] = e, l = a || {}, s = !!l.running;
+                    s ? (N.badgeEl.className = "derp-status-badge running", N.badgeDotEl.className = "derp-status-dot pulse", N.badgeTextEl.textContent = _("Running")) : (N.badgeEl.className = "derp-status-badge stopped", N.badgeDotEl.className = "derp-status-dot", N.badgeTextEl.textContent = _("Stopped")), N.versionEl.textContent = s ? (r || {}).version || _("Unknown") : _("N/A"), N.clientsEl.textContent = s ? String(null != (t = l.clients) ? t : 0) : "0";
                     let o = null != (n = l.bytesRecv) ? n : 0, d = null != (i = l.bytesSent) ? i : 0;
-                    D.trafficEl.textContent = s ? "\u2193 ".concat(v(o), " / \u2191 ").concat(v(d)) : "\u2193 0 B / \u2191 0 B", D.configContainerEl.style.display = s ? "" : "none", D.configPlaceholderEl.style.display = s ? "none" : "", s && (D.currentListenPort = parseInt((l.listen || ":3478").split(":").pop() || "3478") || 3478, D.currentStunEnabled = !!l.stun, D.updateJson());
+                    N.trafficEl.textContent = s ? "\u2193 ".concat(x(o), " / \u2191 ").concat(x(d)) : "\u2193 0 B / \u2191 0 B", N.configContainerEl.style.display = s ? "" : "none", N.configPlaceholderEl.style.display = s ? "none" : "", s && (N.currentListenPort = parseInt((l.listen || ":3478").split(":").pop() || "3478") || 3478, N.currentStunEnabled = !!l.stun, N.updateJson());
                 }).catch(()=>{
-                    D.badgeEl.className = "derp-status-badge stopped", D.badgeDotEl.className = "derp-status-dot", D.badgeTextEl.textContent = _("Offline"), D.versionEl.textContent = _("N/A"), D.clientsEl.textContent = "0", D.trafficEl.textContent = "\u2193 0 B / \u2191 0 B", D.configContainerEl.style.display = "none", D.configPlaceholderEl.style.display = "";
+                    N.badgeEl.className = "derp-status-badge stopped", N.badgeDotEl.className = "derp-status-dot", N.badgeTextEl.textContent = _("Offline"), N.versionEl.textContent = _("N/A"), N.clientsEl.textContent = "0", N.trafficEl.textContent = "\u2193 0 B / \u2191 0 B", N.configContainerEl.style.display = "none", N.configPlaceholderEl.style.display = "";
                 }), 5), jsxs("div", {
                 children: [
                     O,

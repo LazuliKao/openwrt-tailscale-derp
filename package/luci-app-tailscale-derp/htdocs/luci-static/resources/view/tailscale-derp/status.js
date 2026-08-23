@@ -268,8 +268,11 @@ function h(t) {
 }
 function u(t) {
     var e, n, l, c, r, s, a, o;
-    return {
-        verifyClients: (null == (o = t.verifyClients) ? void 0 : o.length) ? t.verifyClients.join(", ") : _("Disabled"),
+    let i = [];
+    t.verifyURLsEnabled && i.push(_("URLs")), t.verifyTailscaled && i.push(_("tailscaled")), t.verifyAPIEnabled && i.push(_("Official API"));
+    let d = t.verifyEnabled ? i.length ? i.join(", ") : _("Enabled, but no methods configured") : _("Disabled");
+    return t.verifyAPIInstances && t.verifyAPIInstances > 0 && (d += " (".concat(t.verifyAPIInstances, " ").concat(_("API instance(s)"), ")")), (null == (o = t.verifyClients) ? void 0 : o.length) && (d += "; ".concat(t.verifyClients.join(", "))), {
+        verifyClients: d,
         running: !!t.running,
         listen: t.listen || _("N/A"),
         stun: t.stun ? _("Yes") : _("No"),
@@ -370,52 +373,52 @@ const main = status_c.extend({
     render (l) {
         let c = l[0] || {}, r = l[1] || {}, o = u(c), i = b(o, o.error);
         i.clear && clearPendingStatus();
-        let d = status_s.createHandlerFn(this, "handleAction", "start"), f = status_s.createHandlerFn(this, "handleAction", "stop"), E = status_s.createHandlerFn(this, "handleAction", "restart"), y = status_s.createHandlerFn(this, "handleAction", "reload"), x = jsx("td", {
+        let d = status_s.createHandlerFn(this, "handleAction", "start"), f = status_s.createHandlerFn(this, "handleAction", "stop"), E = status_s.createHandlerFn(this, "handleAction", "restart"), y = status_s.createHandlerFn(this, "handleAction", "reload"), m = jsx("td", {
             class: "td",
             children: o.running ? _("Running") : _("Stopped")
-        }), m = jsx("td", {
+        }), x = jsx("td", {
             class: "td",
             children: o.error ? _("Unavailable") : r.version || _("Unknown")
-        }), C = jsx("td", {
-            class: "td",
-            children: o.error ? _("Unavailable") : o.listen
         }), p = jsx("td", {
             class: "td",
+            children: o.error ? _("Unavailable") : o.listen
+        }), C = jsx("td", {
+            class: "td",
             children: o.error ? _("Unknown") : o.stun
-        }), S = jsx("td", {
+        }), g = jsx("td", {
             class: "td",
             children: o.error ? _("Unknown") : o.mesh
-        }), g = jsx("td", {
+        }), S = jsx("td", {
             class: "td",
             children: o.error ? _("Unknown") : o.verifyClients
         }), U = jsx("td", {
             class: "td",
             children: o.error ? _("Unavailable") : o.metrics
-        }), k = jsx("td", {
-            class: "td",
-            children: o.error ? _("Unavailable") : o.health
         }), T = jsx("td", {
             class: "td",
+            children: o.error ? _("Unavailable") : o.health
+        }), k = jsx("td", {
+            class: "td",
             children: o.error || _("None")
-        }), w = jsx("td", {
+        }), A = jsx("td", {
             class: "td",
             children: "".concat(o.clients, " ").concat(_("connected"), " (").concat(o.accepts, " ").concat(_("total accepted"), ")")
         }), R = jsx("td", {
             class: "td",
             children: "\u2193 ".concat(h(o.bytesRecv), " / \u2191 ").concat(h(o.bytesSent))
-        }), A = jsx("td", {
+        }), w = jsx("td", {
             class: "td",
             style: "display: none;"
         });
-        o.trafficPersist && (R.textContent = "Session: \u2193 ".concat(h(o.bytesRecv), " / \u2191 ").concat(h(o.bytesSent)), A.textContent = "Total: \u2193 ".concat(h(o.bytesRecvTotal), " / \u2191 ").concat(h(o.bytesSentTotal)), A.style.display = "");
-        let N = jsx("div", {
+        o.trafficPersist && (R.textContent = "Session: \u2193 ".concat(h(o.bytesRecv), " / \u2191 ").concat(h(o.bytesSent)), w.textContent = "Total: \u2193 ".concat(h(o.bytesRecvTotal), " / \u2191 ").concat(h(o.bytesSentTotal)), w.style.display = "");
+        let P = jsx("div", {
             style: "margin-bottom: 0.75em; color: ".concat(i.color, ";"),
             children: i.text
-        }), P = jsx("div", {
+        }), N = jsx("div", {
             style: "margin-top: 0.75em; min-height: 1.2em; color: #1a7f37;",
             children: _("No action executed yet.")
         });
-        this.statusEl = x, this.versionEl = m, this.listenEl = C, this.stunEl = p, this.meshEl = S, this.verifyClientsEl = g, this.metricsEl = U, this.healthEl = k, this.errorEl = T, this.clientsEl = w, this.trafficEl = R, this.trafficTotalEl = A, this.syncEl = N, this.resultEl = P;
+        this.statusEl = m, this.versionEl = x, this.listenEl = p, this.stunEl = C, this.meshEl = g, this.verifyClientsEl = S, this.metricsEl = U, this.healthEl = T, this.errorEl = k, this.clientsEl = A, this.trafficEl = R, this.trafficTotalEl = w, this.syncEl = P, this.resultEl = N;
         let j = jsx("button", {
             class: "cbi-button cbi-button-action",
             onclick: d,
@@ -424,11 +427,11 @@ const main = status_c.extend({
             class: "cbi-button cbi-button-negative",
             onclick: f,
             children: _("Stop")
-        }), F = jsx("button", {
+        }), I = jsx("button", {
             class: "cbi-button cbi-button-action",
             onclick: E,
             children: _("Restart")
-        }), D = jsx("button", {
+        }), F = jsx("button", {
             class: "cbi-button cbi-button-action",
             onclick: y,
             children: _("Reload Config")
@@ -436,8 +439,8 @@ const main = status_c.extend({
         return this.actionButtons = [
             j,
             B,
-            F,
-            D
+            I,
+            F
         ], status_a.add(()=>v(this), 5), jsxs("div", {
             children: [
                 jsx("h2", {
@@ -449,7 +452,7 @@ const main = status_c.extend({
                         jsx("h3", {
                             children: _("DERP Server Status")
                         }),
-                        N,
+                        P,
                         jsxs("table", {
                             class: "table",
                             children: [
@@ -460,7 +463,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Service Status")
                                         }),
-                                        x
+                                        m
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -470,7 +473,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Version")
                                         }),
-                                        m
+                                        x
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -480,7 +483,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Connected Clients")
                                         }),
-                                        w
+                                        A
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -500,7 +503,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Traffic (Total)")
                                         }),
-                                        A
+                                        w
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -510,7 +513,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Listen Address")
                                         }),
-                                        C
+                                        p
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -520,7 +523,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("STUN Enabled")
                                         }),
-                                        p
+                                        C
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -530,7 +533,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Mesh Enabled")
                                         }),
-                                        S
+                                        g
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -540,7 +543,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Verify Clients")
                                         }),
-                                        g
+                                        S
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -560,7 +563,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Health Address")
                                         }),
-                                        k
+                                        T
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -570,7 +573,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Last Error")
                                         }),
-                                        T
+                                        k
                                     ]
                                 })
                             ]
@@ -591,12 +594,12 @@ const main = status_c.extend({
                                 " ",
                                 B,
                                 " ",
-                                F,
+                                I,
                                 " ",
-                                D
+                                F
                             ]
                         }),
-                        P
+                        N
                     ]
                 })
             ]

@@ -40,6 +40,54 @@ type SaveApplyContext = {
   super: (method: string, args: unknown[]) => Promise<unknown>;
 };
 
+type APIKeyChange = {
+  value: string;
+  clear: boolean;
+};
+
+type MainViewContext = SaveApplyContext & {
+  pendingAPIKeyChanges: Map<string, APIKeyChange>;
+  originalAPISectionNames: Set<string>;
+};
+
+type APIKeyResponse = {
+  result?: string;
+  error?: string;
+};
+
+const callSetAPIKey = rpc.declare<APIKeyResponse, [string, string, string]>({
+  object: "luci.tailscale-derp",
+  method: "set_api_key",
+  params: ["name", "api_key", "clear"],
+  reject: true,
+});
+
+function apiSectionNames(): string[] {
+  return uci.sections("tailscale-derp", "verify_api")
+    .map((section) => String(section[".name"]));
+}
+
+function saveAPIKeyChanges(view: MainViewContext): Promise<void> {
+  const currentNames = new Set(apiSectionNames());
+  for (const name of view.originalAPISectionNames) {
+    if (!currentNames.has(name)) {
+      view.pendingAPIKeyChanges.set(name, { value: "", clear: true });
+    }
+  }
+
+  const changes = Array.from(view.pendingAPIKeyChanges.entries());
+  return changes.reduce(
+    (promise, [name, change]) => promise.then(() => callSetAPIKey(name, change.value, change.clear ? "1" : "0").then((response) => {
+      if (response?.error) {
+        throw new Error(response.error);
+      }
+    })),
+    Promise.resolve(),
+  ).then(() => {
+    view.pendingAPIKeyChanges.clear();
+  });
+}
+
 type StatusResponse = {
   verifyClients?: string[];
   running?: boolean;
@@ -155,6 +203,8 @@ function pollStatus(view: SettingsView): Promise<void> {
 
 export const main = (view as any).extend({
   map: null as FormMap | null,
+  pendingAPIKeyChanges: new Map<string, APIKeyChange>(),
+  originalAPISectionNames: new Set<string>(),
 
   load() {
     return Promise.all([
@@ -164,10 +214,11 @@ export const main = (view as any).extend({
     ]);
   },
 
-  handleSaveApply(this: SaveApplyContext, ev: Event, mode: string) {
+  handleSaveApply(this: MainViewContext, ev: Event, mode: string) {
     const expectedStatus = captureExpectedStatus(this.map);
 
     return this.super("handleSaveApply", [ev, mode])
+      .then(() => saveAPIKeyChanges(this))
       .then(() => callReloadConfig())
       .then(() => {
         savePendingStatus(expectedStatus);
@@ -181,7 +232,10 @@ export const main = (view as any).extend({
       });
   },
 
-  render(this: { map: FormMap | null }, data: [unknown, StatusResponse | null, VersionResponse | null]) {
+  render(this: MainViewContext, data: [unknown, StatusResponse | null, VersionResponse | null]) {
+    this.pendingAPIKeyChanges.clear();
+    this.originalAPISectionNames = new Set(apiSectionNames());
+
     const status = data[1] || {};
     const version = data[2] || {};
     const isRunning = !!status.running;
@@ -573,13 +627,81 @@ export const main = (view as any).extend({
     s = m.section(form.TypedSection, "verify", _("Client Verification"));
     s.anonymous = true;
 
+    o = s.option(form.Flag, "enabled", _("Enable Client Verification"), _("Require a client to pass at least one enabled verification method"));
+    o.default = "0";
+    o.rmempty = false;
+
+    o = s.option(form.Flag, "url_enabled", _("Enable Verify URLs"), _("Allow clients accepted by any configured admission controller URL"));
+    o.default = "0";
+    o.rmempty = false;
+    o.depends("enabled", "1");
+
     o = s.option(form.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients (comma-separated or multiple entries)"));
     o.rmempty = true;
     o.placeholder = "https://your-admission-controller/verify";
+    o.depends({
+      "tailscale-derp.verify.enabled": "1",
+      "tailscale-derp.verify.url_enabled": "1"
+    });
 
-    o = s.option(form.Flag, "fail_open", _("Fail Open"), _("Allow clients to connect if all verify URLs are unreachable"));
+    o = s.option(form.Flag, "tailscaled_enabled", _("Enable tailscaled Verification"), _("Verify clients against the local tailscaled instance using its default socket"));
     o.default = "0";
     o.rmempty = false;
+    o.depends("enabled", "1");
+
+    o = s.option(form.Flag, "api_enabled", _("Enable Official API Verification"), _("Allow authorized, non-expired devices from configured Tailscale API instances"));
+    o.default = "0";
+    o.rmempty = false;
+    o.depends("enabled", "1");
+
+    o = s.option(form.Value, "sync_interval", _("API Sync Interval (seconds)"), _("How often to refresh configured Tailscale API instances"));
+    o.default = "300";
+    o.rmempty = false;
+    o.datatype = "uinteger";
+    o.depends({
+      "tailscale-derp.verify.enabled": "1"
+    });
+
+    o = s.option(form.Value, "cache_ttl", _("API Cache TTL (seconds)"), _("Cached devices older than this are not used for authentication"));
+    o.default = "900";
+    o.rmempty = false;
+    o.datatype = "uinteger";
+    o.depends({
+      "tailscale-derp.verify.enabled": "1"
+    });
+
+    const apiSection = m.section(form.GridSection, "verify_api", _("Official API Instances"));
+    apiSection.anonymous = true;
+    apiSection.addremove = true;
+    apiSection.sortable = true;
+    apiSection.nodescriptions = true;
+    apiSection.addbtntitle = _("Add API Instance");
+    apiSection.delbtntitle = _("Delete");
+
+    o = apiSection.option(form.Value, "label", _("Name"), _("A display name used in LuCI and device sources"));
+    o.rmempty = true;
+
+    o = apiSection.option(form.Value, "tailnet", _("Tailnet"), _("Use - for the API key's default tailnet, or enter a tailnet ID"));
+    o.default = "-";
+    o.rmempty = false;
+
+    o = apiSection.option(form.Value, "api_key", _("API Key"), _("Enter a new Bearer token to replace the stored secret; leave empty to keep it"));
+    o.password = true;
+    o.rmempty = true;
+    o.placeholder = _("Leave empty to keep the current key");
+    o.load = () => "";
+    o.write = (sectionId: string, formvalue: string | string[]) => {
+      const value = Array.isArray(formvalue) ? formvalue[0] : formvalue;
+      const apiKey = String(value || "").trim();
+      if (apiKey) {
+        this.pendingAPIKeyChanges.set(sectionId, { value: apiKey, clear: false });
+      }
+      return null;
+    };
+    o.remove = () => {
+      // An empty field preserves the existing secret. Remove the instance to clear it.
+    };
+
     s = m.section(form.TypedSection, "ops", _("Operations"));
     s.anonymous = true;
 

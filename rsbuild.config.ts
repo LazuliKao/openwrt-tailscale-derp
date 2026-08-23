@@ -16,7 +16,8 @@ export default defineConfig({
     entry: {
       "main": "./src/views/main.tsx",
       "status": "./src/views/status.tsx",
-      "peers": "./src/views/peers.tsx"
+      "peers": "./src/views/peers.tsx",
+      "devices": "./src/views/devices.tsx"
     },
     tsconfigPath: "./tsconfig.json"
   },
