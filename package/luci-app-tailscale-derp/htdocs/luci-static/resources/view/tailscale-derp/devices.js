@@ -178,22 +178,19 @@ function jsxDEV(e, t) {
 ;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_cfc1ec583b455be203cca2d0660c10a7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
-;// CONCATENATED MODULE: ./src/shared/tailnets.ts
-let tailnets_e = L.rpc;
-const callTailnets = tailnets_e.declare({
+;// CONCATENATED MODULE: ./src/shared/devices.ts
+let devices_e = L.rpc;
+const callDevices = devices_e.declare({
     object: "luci.tailscale-derp",
-    method: "get_tailnets",
+    method: "get_devices",
     reject: !0
 });
-const callTailnetACL = tailnets_e.declare({
+const callRefreshDevices = devices_e.declare({
     object: "luci.tailscale-derp",
-    method: "get_tailnet_acl",
-    params: [
-        "instance"
-    ],
+    method: "refresh_devices",
     reject: !0
 });
-const callSetDeviceIPv4 = tailnets_e.declare({
+const callSetDeviceIPv4 = devices_e.declare({
     object: "luci.tailscale-derp",
     method: "set_device_ipv4",
     params: [
@@ -203,56 +200,138 @@ const callSetDeviceIPv4 = tailnets_e.declare({
     ],
     reject: !0
 });
-const callValidateTailnetACL = tailnets_e.declare({
+const callSetDeviceAuthorized = devices_e.declare({
     object: "luci.tailscale-derp",
-    method: "validate_tailnet_acl",
+    method: "set_device_authorized",
     params: [
         "instance",
-        "hujson"
+        "device_id",
+        "authorized"
     ],
     reject: !0
 });
-const callSetTailnetACL = tailnets_e.declare({
+const callSetDeviceName = devices_e.declare({
     object: "luci.tailscale-derp",
-    method: "set_tailnet_acl",
+    method: "set_device_name",
     params: [
         "instance",
-        "hujson",
-        "etag"
+        "device_id",
+        "name"
+    ],
+    reject: !0
+});
+const callSetDeviceTags = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "set_device_tags",
+    params: [
+        "instance",
+        "device_id",
+        "tags"
+    ],
+    reject: !0
+});
+const callSetDeviceKey = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "set_device_key",
+    params: [
+        "instance",
+        "device_id",
+        "key_expiry_disabled"
+    ],
+    reject: !0
+});
+const callDeleteDevice = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "delete_device",
+    params: [
+        "instance",
+        "device_id"
+    ],
+    reject: !0
+});
+const callExpireDevice = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "expire_device",
+    params: [
+        "instance",
+        "device_id"
+    ],
+    reject: !0
+});
+const callDeviceRoutes = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "get_device_routes",
+    params: [
+        "instance",
+        "device_id"
+    ],
+    reject: !0
+});
+const callSetDeviceRoutes = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "set_device_routes",
+    params: [
+        "instance",
+        "device_id",
+        "routes"
+    ],
+    reject: !0
+});
+const callDeviceAttributes = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "get_device_attributes",
+    params: [
+        "instance",
+        "device_id"
+    ],
+    reject: !0
+});
+const callSetDeviceAttribute = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "set_device_attribute",
+    params: [
+        "instance",
+        "device_id",
+        "key",
+        "value",
+        "expiry",
+        "comment"
+    ],
+    reject: !0
+});
+const callDeleteDeviceAttribute = devices_e.declare({
+    object: "luci.tailscale-derp",
+    method: "delete_device_attribute",
+    params: [
+        "instance",
+        "device_id",
+        "key"
     ],
     reject: !0
 });
 
-;// CONCATENATED MODULE: ./src/views/devices.tsx
+;// CONCATENATED MODULE: ./src/views/devices/common.tsx
 
-
-let devices_a = L.view, devices_c = L.rpc, devices_s = L.ui, devices_r = L.Poll, devices_o = devices_c.declare({
-    object: "luci.tailscale-derp",
-    method: "get_devices"
-}), devices_d = devices_c.declare({
-    object: "luci.tailscale-derp",
-    method: "refresh_devices"
-});
-function h(e) {
+function formatTime(e) {
     if (!e) return "-";
     let t = new Date(e);
     return Number.isNaN(t.getTime()) ? e : t.toLocaleString();
 }
-function u(e) {
+function formatDeviceName(e) {
     return e.name || e.hostname || e.nodeId || _("Unnamed device");
 }
-function v(e) {
+function isIPv4(e) {
     let t = e.split(".");
     return 4 === t.length && t.every((e)=>/^\d+$/.test(e) && 255 >= Number(e));
 }
-function b(e) {
+function deviceIPv4(e) {
     var t;
-    return (null == (t = e.addresses) ? void 0 : t.find(v)) || "";
+    return (null == (t = e.addresses) ? void 0 : t.find(isIPv4)) || "";
 }
-function m(e) {
+function formatOptionalBoolean(e) {
     return void 0 === e ? "-" : e ? _("Yes") : _("No");
 }
-function devices_p(n, l) {
+function detailField(n, i) {
     return jsxs("div", {
         class: "cbi-value",
         children: [
@@ -262,300 +341,692 @@ function devices_p(n, l) {
             }),
             jsx("div", {
                 class: "cbi-value-field",
-                children: l
+                children: i
             })
         ]
     });
 }
-function devices_f(n, l) {
-    var i;
-    n.devices = (null == l ? void 0 : l.devices) || [], n.countEl.textContent = _("%d device(s)").format(n.devices.length), n.updatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString()), n.instancesEl.replaceChildren(...0 === (i = (null == l ? void 0 : l.instances) || []).length ? [
-        jsx("p", {
-            children: _("No Official API instances are configured.")
-        })
-    ] : i.map((n)=>{
-        let l = n.configured ? n.fresh ? _("Fresh") : _("Stale or not synchronized") : _("Not configured"), i = n.fresh ? "#1a7f37" : "#c60";
-        return jsxs("div", {
-            class: "cbi-section-node",
-            style: "margin-bottom: 0.5em;",
-            children: [
-                jsx("strong", {
-                    children: n.label || n.name || _("Unnamed instance")
-                }),
-                " - ",
-                n.tailnet || "-",
-                " - ",
-                jsx("span", {
-                    style: "color: ".concat(i, ";"),
-                    children: l
-                }),
-                " - ",
-                _("%d device(s)").format(n.deviceCount || 0),
-                n.error ? jsx("span", {
-                    style: "color: #cf222e;",
-                    children: " - ".concat(n.error)
-                }) : null
-            ]
-        });
-    })), n.updateTable();
+function splitValues(e) {
+    return e.split(/[\n,]/).map((e)=>e.trim()).filter(Boolean);
 }
-const main = devices_a.extend({
-    load: ()=>Promise.all([
-            devices_o().catch(()=>({
-                    devices: [],
-                    instances: []
-                })),
-            callTailnets().catch(()=>({
-                    instances: []
-                }))
-        ]),
-    render (i) {
-        let a, c = jsx("tbody", {}), y = jsx("div", {
-            style: "margin-bottom: 0.5em;"
-        }), g = jsx("div", {
-            style: "font-size: 0.9em; margin-bottom: 0.5em;"
-        }), x = jsx("div", {
-            style: "color: #cf222e; min-height: 1.2em; margin-bottom: 0.5em;"
-        }), I = jsx("div", {}), C = jsx("input", {
-            class: "cbi-input-text",
-            type: "search",
-            placeholder: _("Search devices..."),
-            style: "width: 100%;"
-        }), E = jsx("select", {
-            class: "cbi-input-select",
-            style: "min-width: 18em;"
-        }), w = jsx("button", {
-            class: "cbi-button cbi-button-action",
-            type: "button",
-            children: _("Refresh")
-        }), S = {
-            tableBody: c,
-            countEl: y,
-            updatedEl: g,
-            messageEl: x,
-            instancesEl: I,
-            searchEl: C,
-            tailnetSelect: E,
-            refreshEl: w,
-            devices: [],
-            tailnets: [],
-            selectedInstance: "",
-            updateTable: ()=>void 0
-        };
-        return S.updateTable = ()=>{
-            let i, a;
-            S.tableBody.replaceChildren(...(i = S.searchEl.value.trim().toLowerCase(), 0 === (a = S.devices.filter((e)=>!i || [
-                    e.name,
-                    e.hostname,
-                    e.user,
-                    e.nodeId,
-                    e.nodeKey,
-                    ...e.tags || []
-                ].some((e)=>null == e ? void 0 : e.toLowerCase().includes(i)))).length ? [
-                jsx("tr", {
-                    class: "tr",
-                    children: jsx("td", {
-                        class: "td",
-                        colSpan: 5,
-                        style: "text-align: center;",
-                        children: i ? _("No matching devices") : _("No devices available")
-                    })
+function deviceOrigins(e) {
+    return (e.origins || []).filter((e)=>e.instance && e.nodeId);
+}
+function formatOrigin(e) {
+    return e.label || e.instance;
+}
+function setMessage(e, t) {
+    let n = arguments.length > 2 && void 0 !== arguments[2] && arguments[2];
+    e.style.color = n ? "#cf222e" : "#1a7f37", e.textContent = t;
+}
+
+;// CONCATENATED MODULE: ./src/views/devices/dialogs.tsx
+
+
+
+let w = L.ui;
+function dialogs_S(e, t) {
+    return e instanceof Error ? e.message : t;
+}
+function C(e, t, n, i, l, c) {
+    e.disabled = !0, t.textContent = _("Saving..."), t.style.color = "", n().then((e)=>{
+        if (null == e ? void 0 : e.error) throw Error(e.error);
+        return i.refresh();
+    }).then(()=>{
+        setMessage(t, l), i.notify(l), null == c || c();
+    }).catch((e)=>{
+        setMessage(t, dialogs_S(e, _("Device update failed.")), !0);
+    }).finally(()=>{
+        e.disabled = !1;
+    });
+}
+function A(n) {
+    let i = deviceOrigins(n);
+    if (0 === i.length) return {
+        element: jsx("p", {
+            style: "color: #cf222e;",
+            children: _("No API source is available for this device.")
+        }),
+        selected: ()=>void 0
+    };
+    if (1 === i.length) return {
+        element: detailField(_("API Instance"), formatOrigin(i[0])),
+        selected: ()=>i[0]
+    };
+    let l = jsx("select", {
+        class: "cbi-input-select",
+        children: i.map((t)=>jsx("option", {
+                value: "".concat(t.instance, "\0").concat(t.nodeId),
+                children: formatOrigin(t)
+            }))
+    });
+    return {
+        element: jsxs("div", {
+            class: "cbi-value",
+            children: [
+                jsx("label", {
+                    class: "cbi-value-title",
+                    children: _("API Instance")
+                }),
+                jsx("div", {
+                    class: "cbi-value-field",
+                    children: l
                 })
-            ] : a.map((i)=>{
-                let a = i.authorized ? _("Authorized") : _("Not authorized"), c = i.authorized ? "#1a7f37" : "#c60", r = jsx("button", {
-                    class: "cbi-button cbi-button-action",
-                    type: "button",
-                    children: _("Details")
-                }), d = jsx("button", {
-                    class: "cbi-button cbi-button-save",
-                    type: "button",
-                    children: _("Edit")
-                });
-                return r.onclick = ()=>{
-                    var l, a, c;
-                    let r;
-                    return r = i.nodeKey ? jsxs("div", {
-                        children: [
-                            jsx("code", {
-                                style: "word-break: break-all;",
-                                children: i.nodeKey
-                            }),
-                            " "
-                        ]
-                    }) : "-", void devices_s.showModal(_("Device Details"), jsxs(Fragment, {
-                        children: [
-                            jsxs("div", {
-                                children: [
-                                    devices_p(_("Name"), u(i)),
-                                    devices_p(_("Hostname"), i.hostname || "-"),
-                                    devices_p(_("User"), i.user || "-"),
-                                    devices_p(_("Node ID"), i.nodeId || "-"),
-                                    devices_p(_("Node Key"), r),
-                                    devices_p(_("Platform"), [
-                                        i.os,
-                                        i.clientVersion
-                                    ].filter(Boolean).join(" / ") || "-"),
-                                    devices_p(_("Addresses"), (null == (l = i.addresses) ? void 0 : l.join(", ")) || "-"),
-                                    devices_p(_("Last Seen"), h(i.lastSeen)),
-                                    devices_p(_("Key Expiry"), h(i.expires)),
-                                    devices_p(_("Tags"), (null == (a = i.tags) ? void 0 : a.join(", ")) || "-"),
-                                    devices_p(_("Sources"), (null == (c = i.sources) ? void 0 : c.join(", ")) || "-"),
-                                    devices_p(_("Authorized"), m(i.authorized)),
-                                    devices_p(_("Connected to Control"), m(i.connectedToControl)),
-                                    devices_p(_("External"), m(i.isExternal)),
-                                    devices_p(_("Ephemeral"), m(i.isEphemeral)),
-                                    devices_p(_("Multiple Connections"), m(i.multipleConnections))
-                                ]
-                            }),
-                            " ",
-                            jsx("div", {
-                                style: "margin-top: 0.75em; text-align: right;",
-                                children: jsx("button", {
-                                    class: "cbi-button cbi-button-neutral",
-                                    type: "button",
-                                    onclick: devices_s.hideModal,
-                                    children: _("Close")
-                                })
-                            })
-                        ]
-                    }));
-                }, d.disabled = !i.nodeId, d.onclick = ()=>{
-                    let n, a, c;
-                    return n = jsx("input", {
-                        class: "cbi-input-text",
-                        type: "text",
-                        value: b(i),
-                        placeholder: "100.64.0.1",
-                        style: "width: 100%; box-sizing: border-box;"
-                    }), a = jsx("div", {
-                        style: "min-height: 1.2em; margin-top: 0.75em;"
-                    }), void ((c = jsx("button", {
-                        class: "cbi-button cbi-button-save",
+            ]
+        }),
+        selected: ()=>i.find((e)=>"".concat(e.instance, "\0").concat(e.nodeId) === l.value),
+        select: l
+    };
+}
+function N(e) {
+    setMessage(e, _("No API source is available for this device."), !0);
+}
+function P(n, i, l, c, o) {
+    let r;
+    (r = jsx("button", {
+        class: "cbi-button cbi-button-negative",
+        type: "button",
+        children: _("Confirm")
+    })).onclick = ()=>{
+        w.hideModal(), l().then((e)=>{
+            if (null == e ? void 0 : e.error) throw Error(e.error);
+            return c.refresh();
+        }).then(()=>c.notify(o)).catch((e)=>c.notify(dialogs_S(e, _("Device update failed.")), !0));
+    }, w.showModal(n, jsxs("div", {
+        children: [
+            jsx("p", {
+                children: i
+            }),
+            jsxs("div", {
+                style: "margin-top: 0.75em; text-align: right;",
+                children: [
+                    jsx("button", {
+                        class: "cbi-button cbi-button-neutral",
                         type: "button",
-                        children: _("Save")
-                    })).disabled = !i.nodeId, c.onclick = ()=>(function(e, t, n, i, a, c) {
-                            let s = e.selectedInstance, r = n.value.trim();
-                            if (!s) {
-                                a.style.color = "#cf222e", a.textContent = _("Select an API instance before changing an address.");
-                                return;
-                            }
-                            if (!t.nodeId || !v(r)) {
-                                a.style.color = "#cf222e", a.textContent = _("Enter a valid IPv4 address.");
-                                return;
-                            }
-                            i.disabled = !0, a.style.color = "", a.textContent = _("Updating device IPv4 address..."), callSetDeviceIPv4(s, t.nodeId, r).then((e)=>{
-                                if (null == e ? void 0 : e.error) throw Error(e.error);
-                                return devices_o();
-                            }).then((t)=>{
-                                devices_f(e, t || {}), e.messageEl.style.color = "#1a7f37", e.messageEl.textContent = _("Device IPv4 address updated."), c();
-                            }).catch((e)=>{
-                                a.style.color = "#cf222e", a.textContent = e instanceof Error ? e.message : _("Unable to update device IPv4 address.");
-                            }).finally(()=>{
-                                i.disabled = !1;
-                            });
-                        })(S, i, n, c, a, devices_s.hideModal), devices_s.showModal(_("Edit Device"), jsxs("div", {
-                        children: [
-                            jsx("p", {
-                                children: _("Change the IPv4 address for this device through the selected API instance.")
-                            }),
-                            devices_p(_("Device"), u(i)),
-                            jsxs("div", {
-                                class: "cbi-value",
-                                children: [
-                                    jsx("label", {
-                                        class: "cbi-value-title",
-                                        children: _("IPv4 Address")
-                                    }),
-                                    jsx("div", {
-                                        class: "cbi-value-field",
-                                        children: n
-                                    })
-                                ]
-                            }),
-                            a,
-                            jsxs("div", {
-                                style: "margin-top: 0.75em; text-align: right;",
-                                children: [
-                                    jsx("button", {
-                                        class: "cbi-button cbi-button-neutral",
-                                        type: "button",
-                                        onclick: devices_s.hideModal,
-                                        children: _("Cancel")
-                                    }),
-                                    " ",
-                                    c
-                                ]
-                            })
-                        ]
-                    })));
+                        onclick: w.hideModal,
+                        children: _("Cancel")
+                    }),
+                    " ",
+                    r
+                ]
+            })
+        ]
+    }));
+}
+function showDeviceDetails(n) {
+    var i, l, c;
+    let o = n.nodeKey ? jsx("code", {
+        style: "word-break: break-all;",
+        children: n.nodeKey
+    }) : "-";
+    w.showModal(_("Device Details"), jsxs("div", {
+        children: [
+            detailField(_("Name"), formatDeviceName(n)),
+            detailField(_("Hostname"), n.hostname || "-"),
+            detailField(_("User"), n.user || "-"),
+            detailField(_("Node ID"), n.nodeId || "-"),
+            detailField(_("Node Key"), o),
+            detailField(_("Platform"), [
+                n.os,
+                n.clientVersion
+            ].filter(Boolean).join(" / ") || "-"),
+            detailField(_("Addresses"), (null == (i = n.addresses) ? void 0 : i.join(", ")) || "-"),
+            detailField(_("Last Seen"), formatTime(n.lastSeen)),
+            detailField(_("Key Expiry"), n.keyExpiryDisabled ? _("Disabled") : formatTime(n.expires)),
+            detailField(_("Tags"), (null == (l = n.tags) ? void 0 : l.join(", ")) || "-"),
+            detailField(_("Sources"), (null == (c = n.sources) ? void 0 : c.join(", ")) || "-"),
+            detailField(_("Authorized"), formatOptionalBoolean(n.authorized)),
+            detailField(_("Connected to Control"), formatOptionalBoolean(n.connectedToControl)),
+            detailField(_("External"), formatOptionalBoolean(n.isExternal)),
+            detailField(_("Ephemeral"), formatOptionalBoolean(n.isEphemeral)),
+            detailField(_("Multiple Connections"), formatOptionalBoolean(n.multipleConnections)),
+            jsx("div", {
+                style: "margin-top: 0.75em; text-align: right;",
+                children: jsx("button", {
+                    class: "cbi-button cbi-button-neutral",
+                    type: "button",
+                    onclick: w.hideModal,
+                    children: _("Close")
+                })
+            })
+        ]
+    }));
+}
+function showDeviceEditor(l, c) {
+    let o = A(l), s = jsx("input", {
+        class: "cbi-input-text",
+        type: "text",
+        value: l.name || ""
+    }), h = jsx("input", {
+        class: "cbi-input-text",
+        type: "text",
+        value: deviceIPv4(l),
+        placeholder: "100.64.0.1"
+    }), y = jsx("textarea", {
+        class: "cbi-input-text",
+        rows: 3
+    });
+    y.value = (l.tags || []).join("\n");
+    let x = jsx("input", {
+        type: "checkbox"
+    });
+    x.checked = !!l.authorized;
+    let f = jsx("input", {
+        type: "checkbox"
+    });
+    f.checked = !!l.keyExpiryDisabled;
+    let g = jsx("div", {
+        style: "min-height: 1.2em; margin-top: 0.75em;"
+    }), k = jsx("button", {
+        class: "cbi-button cbi-button-save",
+        type: "button",
+        children: _("Save Name")
+    }), S = jsx("button", {
+        class: "cbi-button cbi-button-save",
+        type: "button",
+        children: _("Save IPv4")
+    }), M = jsx("button", {
+        class: "cbi-button cbi-button-save",
+        type: "button",
+        children: _("Save Tags")
+    }), j = jsx("button", {
+        class: "cbi-button cbi-button-save",
+        type: "button",
+        children: _("Save Authorization")
+    }), R = jsx("button", {
+        class: "cbi-button cbi-button-save",
+        type: "button",
+        children: _("Save Key Setting")
+    });
+    k.onclick = ()=>{
+        let e = o.selected();
+        if (!e) return N(g);
+        let t = s.value.trim();
+        if (!t) return setMessage(g, _("Device name is required."), !0);
+        C(k, g, ()=>callSetDeviceName(e.instance, e.nodeId, t), c, _("Device name updated."));
+    }, S.onclick = ()=>{
+        let e = o.selected(), t = h.value.trim();
+        return e ? isIPv4(t) ? void C(S, g, ()=>callSetDeviceIPv4(e.instance, e.nodeId, t), c, _("Device IPv4 address updated.")) : setMessage(g, _("Enter a valid IPv4 address."), !0) : N(g);
+    }, M.onclick = ()=>{
+        let e = o.selected();
+        if (!e) return N(g);
+        C(M, g, ()=>callSetDeviceTags(e.instance, e.nodeId, splitValues(y.value)), c, _("Device tags updated."));
+    }, j.onclick = ()=>{
+        let e = o.selected();
+        if (!e) return N(g);
+        C(j, g, ()=>callSetDeviceAuthorized(e.instance, e.nodeId, x.checked), c, _("Device authorization updated."));
+    }, R.onclick = ()=>{
+        let e = o.selected();
+        if (!e) return N(g);
+        C(R, g, ()=>callSetDeviceKey(e.instance, e.nodeId, f.checked), c, _("Device key setting updated."));
+    };
+    let K = jsx("button", {
+        class: "cbi-button cbi-button-action",
+        type: "button",
+        children: _("Subnet Routes")
+    });
+    K.onclick = ()=>showRoutesEditor(l, c);
+    let z = jsx("button", {
+        class: "cbi-button cbi-button-action",
+        type: "button",
+        children: _("Posture Attributes")
+    });
+    z.onclick = ()=>showAttributesEditor(l, c);
+    let O = jsx("button", {
+        class: "cbi-button cbi-button-negative",
+        type: "button",
+        children: _("Expire Key")
+    });
+    O.onclick = ()=>{
+        let e = o.selected();
+        if (!e) return N(g);
+        P(_("Expire Device Key"), _("This immediately expires the device key. The device must reauthenticate to reconnect."), ()=>callExpireDevice(e.instance, e.nodeId), c, _("Device key expired."));
+    };
+    let T = jsx("button", {
+        class: "cbi-button cbi-button-negative",
+        type: "button",
+        children: _("Delete Device")
+    });
+    T.onclick = ()=>{
+        let e = o.selected();
+        if (!e) return N(g);
+        P(_("Delete Device"), _("This permanently removes the device from this tailnet."), ()=>callDeleteDevice(e.instance, e.nodeId), c, _("Device deleted."));
+    }, w.showModal(_("Edit Device"), jsxs("div", {
+        children: [
+            o.element,
+            detailField(_("Name"), jsxs(Fragment, {
+                children: [
+                    s,
+                    " ",
+                    k
+                ]
+            })),
+            detailField(_("IPv4 Address"), jsxs(Fragment, {
+                children: [
+                    h,
+                    " ",
+                    S
+                ]
+            })),
+            detailField(_("Tags"), jsxs(Fragment, {
+                children: [
+                    y,
+                    " ",
+                    M
+                ]
+            })),
+            detailField(_("Authorized"), jsxs(Fragment, {
+                children: [
+                    x,
+                    " ",
+                    j
+                ]
+            })),
+            detailField(_("Disable Key Expiry"), jsxs(Fragment, {
+                children: [
+                    f,
+                    " ",
+                    R
+                ]
+            })),
+            detailField(_("Advanced"), jsxs(Fragment, {
+                children: [
+                    K,
+                    " ",
+                    z
+                ]
+            })),
+            detailField(_("Danger Zone"), jsxs(Fragment, {
+                children: [
+                    O,
+                    " ",
+                    T
+                ]
+            })),
+            g,
+            jsx("div", {
+                style: "margin-top: 0.75em; text-align: right;",
+                children: jsx("button", {
+                    class: "cbi-button cbi-button-neutral",
+                    type: "button",
+                    onclick: w.hideModal,
+                    children: _("Close")
+                })
+            })
+        ]
+    }));
+}
+function showRoutesEditor(n, i) {
+    let l = A(n), c = jsx("div", {
+        children: "-"
+    }), r = jsx("textarea", {
+        class: "cbi-input-text",
+        rows: 6,
+        style: "width: 100%; box-sizing: border-box;"
+    }), s = jsx("div", {
+        style: "min-height: 1.2em; margin-top: 0.75em;"
+    }), a = jsx("button", {
+        class: "cbi-button cbi-button-save",
+        type: "button",
+        children: _("Save Routes")
+    }), d = ()=>{
+        let e = l.selected();
+        if (!e) return N(s);
+        s.textContent = _("Loading routes..."), callDeviceRoutes(e.instance, e.nodeId).then((e)=>{
+            if (null == e ? void 0 : e.error) throw Error(e.error);
+            r.value = (e.enabledRoutes || []).join("\n"), c.textContent = (e.advertisedRoutes || []).join(", ") || "-", s.textContent = "";
+        }).catch((e)=>setMessage(s, dialogs_S(e, _("Unable to load routes.")), !0));
+    };
+    l.select && (l.select.onchange = d), a.onclick = ()=>{
+        let e = l.selected();
+        if (!e) return N(s);
+        C(a, s, ()=>callSetDeviceRoutes(e.instance, e.nodeId, splitValues(r.value)), i, _("Device routes updated."));
+    }, w.showModal(_("Subnet Routes"), jsxs("div", {
+        children: [
+            l.element,
+            detailField(_("Advertised Routes"), c),
+            detailField(_("Enabled Routes"), r),
+            jsx("p", {
+                children: _("Enter one CIDR route per line. Saving replaces the enabled route list.")
+            }),
+            s,
+            jsxs("div", {
+                style: "margin-top: 0.75em; text-align: right;",
+                children: [
+                    jsx("button", {
+                        class: "cbi-button cbi-button-neutral",
+                        type: "button",
+                        onclick: w.hideModal,
+                        children: _("Close")
+                    }),
+                    " ",
+                    a
+                ]
+            })
+        ]
+    })), d();
+}
+function showAttributesEditor(n, i) {
+    let o = A(n), r = jsx("tbody", {}), a = jsx("input", {
+        class: "cbi-input-text",
+        type: "text",
+        placeholder: "com.example.attribute"
+    }), d = jsx("textarea", {
+        class: "cbi-input-text",
+        rows: 3,
+        placeholder: '{"value": true}'
+    }), u = jsx("input", {
+        class: "cbi-input-text",
+        type: "text",
+        value: new Date(Date.now() + 2592000000).toISOString()
+    }), b = jsx("input", {
+        class: "cbi-input-text",
+        type: "text"
+    }), h = jsx("div", {
+        style: "min-height: 1.2em; margin-top: 0.75em;"
+    }), v = jsx("button", {
+        class: "cbi-button cbi-button-save",
+        type: "button",
+        children: _("Set Attribute")
+    }), m = ()=>{
+        let n = o.selected();
+        if (!n) return N(h);
+        h.textContent = _("Loading posture attributes..."), callDeviceAttributes(n.instance, n.nodeId).then((n)=>{
+            var c, s;
+            let a;
+            if (null == n ? void 0 : n.error) throw Error(n.error);
+            c = n.attributes || {}, s = n.expiries || {}, 0 === (a = Object.entries(c).sort((e, t)=>{
+                let [n] = e, [i] = t;
+                return n.localeCompare(i);
+            })).length ? r.replaceChildren(jsx("tr", {
+                class: "tr",
+                children: jsx("td", {
+                    class: "td",
+                    colSpan: 4,
+                    children: _("No posture attributes configured.")
+                })
+            })) : r.replaceChildren(...a.map((n)=>{
+                let [c, r] = n, a = jsx("button", {
+                    class: "cbi-button cbi-button-negative",
+                    type: "button",
+                    children: _("Delete")
+                });
+                return a.onclick = ()=>{
+                    let e = o.selected();
+                    if (!e) return N(h);
+                    C(a, h, ()=>callDeleteDeviceAttribute(e.instance, e.nodeId, c), i, _("Posture attribute deleted."), m);
                 }, jsxs("tr", {
                     class: "tr",
                     children: [
                         jsx("td", {
                             class: "td",
-                            style: "color: ".concat(c, "; white-space: nowrap;"),
+                            children: jsx("code", {
+                                children: c
+                            })
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            children: jsx("code", {
+                                style: "word-break: break-all;",
+                                children: JSON.stringify(r)
+                            })
+                        }),
+                        jsx("td", {
+                            class: "td",
+                            children: formatTime(s[c])
+                        }),
+                        jsx("td", {
+                            class: "td",
                             children: a
-                        }),
-                        jsxs("td", {
-                            class: "td",
-                            children: [
-                                jsx("strong", {
-                                    children: u(i)
-                                }),
-                                i.hostname && i.hostname !== u(i) ? jsx("small", {
-                                    style: "display: block;",
-                                    children: i.hostname
-                                }) : null,
-                                i.user ? jsx("small", {
-                                    style: "display: block;",
-                                    children: i.user
-                                }) : null
-                            ]
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            style: "font-family: monospace; white-space: nowrap;",
-                            children: b(i) || "-"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            children: h(i.lastSeen)
-                        }),
-                        jsxs("td", {
-                            class: "td",
-                            style: "white-space: nowrap;",
-                            children: [
-                                r,
-                                " ",
-                                d
-                            ]
                         })
                     ]
                 });
-            })));
-        }, C.oninput = S.updateTable, E.onchange = ()=>{
-            S.selectedInstance = E.value, S.updateTable();
-        }, w.onclick = ()=>{
-            w.disabled = !0, x.style.color = "", x.textContent = _("Refreshing Official API devices..."), devices_d().then((e)=>{
+            })), h.textContent = "";
+        }).catch((e)=>setMessage(h, dialogs_S(e, _("Unable to load posture attributes.")), !0));
+    };
+    o.select && (o.select.onchange = m), v.onclick = ()=>{
+        let e = o.selected(), t = a.value.trim(), n = d.value.trim(), l = u.value.trim();
+        if (!e) return N(h);
+        if (!t || !n || !l) return setMessage(h, _("Attribute key, JSON value, and expiry are required."), !0);
+        try {
+            JSON.parse(n);
+        } catch (e) {
+            return setMessage(h, _("Attribute value must be valid JSON."), !0);
+        }
+        C(v, h, ()=>callSetDeviceAttribute(e.instance, e.nodeId, t, n, l, b.value.trim()), i, _("Posture attribute updated."), m);
+    }, w.showModal(_("Posture Attributes"), jsxs("div", {
+        children: [
+            o.element,
+            jsx("div", {
+                style: "overflow-x: auto;",
+                children: jsxs("table", {
+                    class: "table",
+                    children: [
+                        jsx("thead", {
+                            children: jsxs("tr", {
+                                class: "tr",
+                                children: [
+                                    jsx("th", {
+                                        class: "th",
+                                        children: _("Key")
+                                    }),
+                                    jsx("th", {
+                                        class: "th",
+                                        children: _("Value")
+                                    }),
+                                    jsx("th", {
+                                        class: "th",
+                                        children: _("Expiry")
+                                    }),
+                                    jsx("th", {
+                                        class: "th",
+                                        children: _("Actions")
+                                    })
+                                ]
+                            })
+                        }),
+                        r
+                    ]
+                })
+            }),
+            jsx("h4", {
+                children: _("Set Attribute")
+            }),
+            detailField(_("Key"), a),
+            detailField(_("Value (JSON)"), d),
+            detailField(_("Expiry (RFC3339)"), u),
+            detailField(_("Comment"), b),
+            h,
+            jsxs("div", {
+                style: "margin-top: 0.75em; text-align: right;",
+                children: [
+                    jsx("button", {
+                        class: "cbi-button cbi-button-neutral",
+                        type: "button",
+                        onclick: w.hideModal,
+                        children: _("Close")
+                    }),
+                    " ",
+                    v
+                ]
+            })
+        ]
+    })), m();
+}
+
+;// CONCATENATED MODULE: ./src/views/devices/rows.tsx
+
+
+
+function buildDeviceRows(c, i, r) {
+    let d = i.trim().toLowerCase(), h = c.filter((t)=>!d || [
+            t.name,
+            t.hostname,
+            t.user,
+            t.nodeId,
+            t.nodeKey,
+            ...t.tags || []
+        ].some((t)=>null == t ? void 0 : t.toLowerCase().includes(d)));
+    return 0 === h.length ? [
+        jsx("tr", {
+            class: "tr",
+            children: jsx("td", {
+                class: "td",
+                colSpan: 5,
+                style: "text-align: center;",
+                children: d ? _("No matching devices") : _("No devices available")
+            })
+        })
+    ] : h.map((c)=>{
+        let i = c.authorized ? _("Authorized") : _("Not authorized"), d = c.authorized ? "#1a7f37" : "#c60", h = jsx("button", {
+            class: "cbi-button cbi-button-action",
+            type: "button",
+            children: _("Details")
+        }), u = jsx("button", {
+            class: "cbi-button cbi-button-save",
+            type: "button",
+            children: _("Manage")
+        });
+        return h.onclick = ()=>showDeviceDetails(c), u.onclick = ()=>showDeviceEditor(c, r), jsxs("tr", {
+            class: "tr",
+            children: [
+                jsx("td", {
+                    class: "td",
+                    style: "color: ".concat(d, "; white-space: nowrap;"),
+                    children: i
+                }),
+                jsxs("td", {
+                    class: "td",
+                    children: [
+                        jsx("strong", {
+                            children: formatDeviceName(c)
+                        }),
+                        c.hostname && c.hostname !== formatDeviceName(c) ? jsx("small", {
+                            style: "display: block;",
+                            children: c.hostname
+                        }) : null,
+                        c.user ? jsx("small", {
+                            style: "display: block;",
+                            children: c.user
+                        }) : null
+                    ]
+                }),
+                jsx("td", {
+                    class: "td",
+                    style: "font-family: monospace; white-space: nowrap;",
+                    children: deviceIPv4(c) || "-"
+                }),
+                jsx("td", {
+                    class: "td",
+                    children: formatTime(c.lastSeen)
+                }),
+                jsxs("td", {
+                    class: "td",
+                    style: "white-space: nowrap;",
+                    children: [
+                        h,
+                        " ",
+                        u
+                    ]
+                })
+            ]
+        });
+    });
+}
+
+;// CONCATENATED MODULE: ./src/views/devices.tsx
+
+
+
+
+let devices_c = L.view, devices_s = L.Poll;
+function devices_a(i, n) {
+    var r;
+    i.devices = n.devices || [], i.countEl.textContent = _("%d device(s)").format(i.devices.length), i.updatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString()), i.instancesEl.replaceChildren(...0 === (r = n.instances || []).length ? [
+        jsx("p", {
+            children: _("No Official API instances are configured.")
+        })
+    ] : r.map((i)=>{
+        let n = i.configured ? i.fresh ? _("Fresh") : _("Stale or not synchronized") : _("Not configured"), r = i.fresh ? "#1a7f37" : "#c60";
+        return jsxs("div", {
+            class: "cbi-section-node",
+            style: "margin-bottom: 0.5em;",
+            children: [
+                jsx("strong", {
+                    children: i.label || i.name || _("Unnamed instance")
+                }),
+                " - ",
+                i.tailnet || "-",
+                " - ",
+                jsx("span", {
+                    style: "color: ".concat(r, ";"),
+                    children: n
+                }),
+                " - ",
+                _("%d device(s)").format(i.deviceCount || 0),
+                i.error ? jsx("span", {
+                    style: "color: #cf222e;",
+                    children: " - ".concat(i.error)
+                }) : null
+            ]
+        });
+    })), i.updateTable();
+}
+function devices_o(e) {
+    return callDevices().then((t)=>{
+        if (null == t ? void 0 : t.error) throw Error(t.error);
+        devices_a(e, t || {});
+    }).catch((t)=>{
+        setMessage(e.messageEl, t instanceof Error ? t.message : _("Backend unavailable"), !0);
+    });
+}
+const main = devices_c.extend({
+    load: ()=>callDevices().catch(()=>({
+                devices: [],
+                instances: []
+            })),
+    render (i) {
+        let c = jsx("tbody", {}), d = jsx("div", {
+            style: "margin-bottom: 0.5em;"
+        }), h = jsx("div", {
+            style: "font-size: 0.9em; margin-bottom: 0.5em;"
+        }), m = jsx("div", {
+            style: "min-height: 1.2em; margin-bottom: 0.5em;"
+        }), v = jsx("div", {}), f = jsx("input", {
+            class: "cbi-input-text",
+            type: "search",
+            placeholder: _("Search devices..."),
+            style: "width: 100%;"
+        }), u = jsx("button", {
+            class: "cbi-button cbi-button-action",
+            type: "button",
+            children: _("Refresh")
+        }), b = {
+            tableBody: c,
+            countEl: d,
+            updatedEl: h,
+            messageEl: m,
+            instancesEl: v,
+            searchEl: f,
+            refreshEl: u,
+            devices: [],
+            updateTable: ()=>void 0,
+            refresh: ()=>Promise.resolve()
+        }, p = {
+            refresh: ()=>devices_o(b),
+            notify: function(e) {
+                let t = arguments.length > 1 && void 0 !== arguments[1] && arguments[1];
+                return setMessage(m, e, t);
+            }
+        };
+        return b.updateTable = ()=>c.replaceChildren(...buildDeviceRows(b.devices, f.value, p)), b.refresh = ()=>devices_o(b), f.oninput = b.updateTable, u.onclick = ()=>{
+            u.disabled = !0, m.style.color = "", m.textContent = _("Refreshing Official API devices..."), callRefreshDevices().then((e)=>{
                 if (null == e ? void 0 : e.error) throw Error(e.error);
-                x.style.color = "#1a7f37", x.textContent = _("Device data refreshed."), devices_f(S, e || {});
-            }).catch((e)=>{
-                x.style.color = "#cf222e", x.textContent = e instanceof Error ? e.message : _("Refresh failed");
-            }).finally(()=>{
-                w.disabled = !1;
+                devices_a(b, e || {}), setMessage(m, _("Device data refreshed."));
+            }).catch((e)=>setMessage(m, e instanceof Error ? e.message : _("Refresh failed"), !0)).finally(()=>{
+                u.disabled = !1;
             });
-        }, S.tailnets = ((i[1] || {}).instances || []).filter((e)=>e.configured && e.name), a = S.selectedInstance, S.tailnetSelect.replaceChildren(jsx("option", {
-            value: "",
-            children: _("Select an API instance")
-        }), ...S.tailnets.map((t)=>jsx("option", {
-                value: t.name || "",
-                children: t.label || t.name
-            }))), S.tailnetSelect.value = S.tailnets.some((e)=>e.name === a) ? a : "", S.selectedInstance = S.tailnetSelect.value, S.updateTable(), devices_f(S, i[0] || {}), devices_r.add(()=>devices_o().then((e)=>{
-                if (null == e ? void 0 : e.error) throw Error(e.error);
-                S.messageEl.textContent = "", devices_f(S, e || {});
-            }).catch((e)=>{
-                S.messageEl.textContent = e instanceof Error ? e.message : _("Backend unavailable");
-            }), 15), jsxs("div", {
+        }, devices_a(b, i || {}), devices_s.add(()=>devices_o(b), 15), jsxs("div", {
             children: [
                 jsx("h2", {
                     children: _("Tailscale Devices")
@@ -566,21 +1037,11 @@ const main = devices_a.extend({
                         jsx("h3", {
                             children: _("Official API Synchronization")
                         }),
-                        I,
-                        g,
-                        jsxs("div", {
-                            style: "margin-bottom: 0.75em;",
-                            children: [
-                                jsx("label", {
-                                    children: _("API instance for device edits")
-                                }),
-                                jsx("br", {}),
-                                E
-                            ]
-                        }),
-                        w,
+                        v,
+                        h,
+                        u,
                         " ",
-                        x
+                        m
                     ]
                 }),
                 jsxs("div", {
@@ -589,10 +1050,10 @@ const main = devices_a.extend({
                         jsx("h3", {
                             children: _("Devices")
                         }),
-                        y,
+                        d,
                         jsx("div", {
                             style: "margin-bottom: 0.75em;",
-                            children: C
+                            children: f
                         }),
                         jsx("div", {
                             style: "overflow-x: auto;",

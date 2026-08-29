@@ -40,13 +40,6 @@ export const callTailnetACL = rpc.declare<TailnetACLResponse, [string]>({
 	reject: true,
 });
 
-export const callSetDeviceIPv4 = rpc.declare<TailnetActionResponse, [string, string, string]>({
-	object: "luci.tailscale-derp",
-	method: "set_device_ipv4",
-	params: ["instance", "device_id", "ipv4"],
-	reject: true,
-});
-
 export const callValidateTailnetACL = rpc.declare<TailnetActionResponse, [string, string]>({
 	object: "luci.tailscale-derp",
 	method: "validate_tailnet_acl",

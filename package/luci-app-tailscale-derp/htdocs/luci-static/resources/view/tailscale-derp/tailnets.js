@@ -193,16 +193,6 @@ const callTailnetACL = tailnets_e.declare({
     ],
     reject: !0
 });
-const callSetDeviceIPv4 = tailnets_e.declare({
-    object: "luci.tailscale-derp",
-    method: "set_device_ipv4",
-    params: [
-        "instance",
-        "device_id",
-        "ipv4"
-    ],
-    reject: !0
-});
 const callValidateTailnetACL = tailnets_e.declare({
     object: "luci.tailscale-derp",
     method: "validate_tailnet_acl",
