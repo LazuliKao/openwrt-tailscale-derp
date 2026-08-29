@@ -7,69 +7,11 @@ USE_PROCD=1
 
 PROG=/usr/bin/tailscale-derp
 CONFIG_FILE=/etc/config/tailscale-derp
-SECRETS_FILE=/etc/config/tailscale-derp-secrets
-
-migrate_api_secrets() {
-    legacy_api_secret_changed=0
-    legacy_api_secret_error=0
-    config_load tailscale-derp
-    config_foreach migrate_api_secret_section verify_api
-
-    [ "$legacy_api_secret_error" = "0" ] || return 1
-    [ "$legacy_api_secret_changed" = "1" ] || return 0
-    uci -q commit tailscale-derp || return 1
-    uci -q commit tailscale-derp-secrets || return 1
-    chmod 600 "$SECRETS_FILE" 2>/dev/null || return 1
-}
-
-migrate_api_secret_section() {
-    local section="$1"
-    local api_key
-
-    config_get api_key "$section" api_key ''
-    [ -n "$api_key" ] || return 0
-
-    case "$section" in
-        ''|*[!A-Za-z0-9_]*|.*)
-            legacy_api_secret_error=1
-            return 0
-            ;;
-    esac
-
-    umask 077
-    [ -e "$SECRETS_FILE" ] || : > "$SECRETS_FILE" || {
-        legacy_api_secret_error=1
-        return 0
-    }
-    chmod 600 "$SECRETS_FILE" 2>/dev/null || {
-        legacy_api_secret_error=1
-        return 0
-    }
-
-    if ! uci -q get "tailscale-derp-secrets.${section}.api_key" >/dev/null 2>&1; then
-        uci -q set "tailscale-derp-secrets.${section}=secret" || {
-            legacy_api_secret_error=1
-            return 0
-        }
-        uci -q set "tailscale-derp-secrets.${section}.api_key=${api_key}" || {
-            legacy_api_secret_error=1
-            return 0
-        }
-    fi
-
-    uci -q delete "tailscale-derp.${section}.api_key" || {
-        legacy_api_secret_error=1
-        return 0
-    }
-    legacy_api_secret_changed=1
-}
 
 start_service() {
     local enabled listen stun certfile keyfile mesh mesh_key metrics health
 
-    migrate_api_secrets || return 1
     config_load tailscale-derp
-
     config_get enabled global enabled '0'
     [ "$enabled" = "1" ] || return 0
 
@@ -100,7 +42,7 @@ start_service() {
     procd_append_param command --ops "$metrics"
     procd_append_param command --health "$health"
 
-    procd_set_param file "$CONFIG_FILE" "$SECRETS_FILE"
+    procd_set_param file "$CONFIG_FILE"
     procd_set_param respawn 3600 5 5
     procd_set_param stdout 1
     procd_set_param stderr 1

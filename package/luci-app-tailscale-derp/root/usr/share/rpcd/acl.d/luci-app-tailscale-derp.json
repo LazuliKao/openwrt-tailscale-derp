@@ -25,7 +25,6 @@
           "restart",
           "reload_config",
           "refresh_devices",
-          "set_api_key",
           "set_device_ipv4",
           "validate_tailnet_acl",
           "set_tailnet_acl"

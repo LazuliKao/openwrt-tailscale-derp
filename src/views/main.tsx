@@ -40,89 +40,8 @@ type SaveApplyContext = {
   super: (method: string, args: unknown[]) => Promise<unknown>;
 };
 
-type APICredentialsChange = {
-  authType: string;
-  apiKey: string;
-  oauthClientID: string;
-  oauthClientSecret: string;
-  clear: boolean;
-};
+type MainViewContext = SaveApplyContext;
 
-type MainViewContext = SaveApplyContext & {
-  pendingAPICredentialsChanges: Map<string, APICredentialsChange>;
-  originalAPISectionNames: Set<string>;
-};
-
-type APIKeyResponse = {
-  result?: string;
-  error?: string;
-};
-
-const callSetAPICredentials = rpc.declare<APIKeyResponse, [string, string, string, string, string, string]>({
-  object: "luci.tailscale-derp",
-  method: "set_api_credentials",
-  params: ["name", "auth_type", "api_key", "oauth_client_id", "oauth_client_secret", "clear"],
-  reject: true,
-});
-
-function apiSectionNames(): string[] {
-  return uci.sections("tailscale-derp", "verify_api")
-    .map((section) => String(section[".name"]));
-}
-
-function newAPICredentialsChange(): APICredentialsChange {
-  return {
-    authType: "api_key",
-    apiKey: "",
-    oauthClientID: "",
-    oauthClientSecret: "",
-    clear: false,
-  };
-}
-
-function pendingAPICredentialsChange(view: MainViewContext, name: string): APICredentialsChange {
-  let change = view.pendingAPICredentialsChanges.get(name);
-  if (!change) {
-    change = newAPICredentialsChange();
-    view.pendingAPICredentialsChanges.set(name, change);
-  }
-  return change;
-}
-
-function saveAPICredentialsChanges(view: MainViewContext): Promise<void> {
-  const currentNames = new Set(apiSectionNames());
-  for (const name of view.originalAPISectionNames) {
-    if (!currentNames.has(name)) {
-      const change = newAPICredentialsChange();
-      change.clear = true;
-      view.pendingAPICredentialsChanges.set(name, change);
-    }
-  }
-
-  for (const name of currentNames) {
-    const change = pendingAPICredentialsChange(view, name);
-    change.authType = String(uci.get("tailscale-derp", name, "auth_type") || "api_key");
-  }
-
-  const changes = Array.from(view.pendingAPICredentialsChanges.entries());
-  return changes.reduce(
-    (promise, [name, change]) => promise.then(() => callSetAPICredentials(
-      name,
-      change.authType,
-      change.apiKey,
-      change.oauthClientID,
-      change.oauthClientSecret,
-      change.clear ? "1" : "0",
-    ).then((response) => {
-      if (response?.error) {
-        throw new Error(response.error);
-      }
-    })),
-    Promise.resolve(),
-  ).then(() => {
-    view.pendingAPICredentialsChanges.clear();
-  });
-}
 
 type StatusResponse = {
   verifyClients?: string[];
@@ -239,8 +158,6 @@ function pollStatus(view: SettingsView): Promise<void> {
 
 export const main = (view as any).extend({
   map: null as FormMap | null,
-  pendingAPICredentialsChanges: new Map<string, APICredentialsChange>(),
-  originalAPISectionNames: new Set<string>(),
 
   load() {
     return Promise.all([
@@ -254,7 +171,6 @@ export const main = (view as any).extend({
     const expectedStatus = captureExpectedStatus(this.map);
 
     return this.super("handleSaveApply", [ev, mode])
-      .then(() => saveAPICredentialsChanges(this))
       .then(() => callReloadConfig())
       .then(() => {
         savePendingStatus(expectedStatus);
@@ -269,8 +185,6 @@ export const main = (view as any).extend({
   },
 
   render(this: MainViewContext, data: [unknown, StatusResponse | null, VersionResponse | null]) {
-    this.pendingAPICredentialsChanges.clear();
-    this.originalAPISectionNames = new Set(apiSectionNames());
 
     const status = data[1] || {};
     const version = data[2] || {};
@@ -744,7 +658,7 @@ export const main = (view as any).extend({
     o.default = "api_key";
     o.rmempty = false;
 
-    o = apiSection.option(form.Value, "api_key", _("API Access Token"), _("Enter a new API access token to replace the stored secret; leave empty to keep it"));
+    o = apiSection.option(form.Value, "api_key", _("API Access Token"), _("Enter a new API access token; leave empty to keep the current value"));
     o.password = true;
     o.rmempty = true;
     o.placeholder = _("Leave empty to keep the current key");
@@ -754,39 +668,39 @@ export const main = (view as any).extend({
       const value = Array.isArray(formvalue) ? formvalue[0] : formvalue;
       const apiKey = String(value || "").trim();
       if (apiKey) {
-        pendingAPICredentialsChange(this, sectionId).apiKey = apiKey;
+        uci.set("tailscale-derp", sectionId, "api_key", apiKey);
       }
       return null;
     };
     o.remove = () => {
-      // An empty field preserves the existing secret. Remove the instance to clear it.
+      // An empty field preserves the existing value. Removing the instance removes its credentials.
     };
 
-    o = apiSection.option(form.Value, "oauth_client_id", _("OAuth Client ID"), _("Enter a new client ID to replace the stored secret; leave empty to keep it"));
+    o = apiSection.option(form.Value, "oauth_client_id", _("OAuth Client ID"), _("Enter a new client ID; leave empty to keep the current value"));
     o.rmempty = true;
-    o.placeholder = _("Leave empty to keep the current key");
+    o.placeholder = _("Leave empty to keep the current client ID");
     o.depends("auth_type", "oauth");
     o.load = () => "";
     o.write = (sectionId: string, formvalue: string | string[]) => {
       const value = Array.isArray(formvalue) ? formvalue[0] : formvalue;
       const clientID = String(value || "").trim();
       if (clientID) {
-        pendingAPICredentialsChange(this, sectionId).oauthClientID = clientID;
+        uci.set("tailscale-derp", sectionId, "oauth_client_id", clientID);
       }
       return null;
     };
 
-    o = apiSection.option(form.Value, "oauth_client_secret", _("OAuth Client Secret"), _("Enter a new client secret to replace the stored secret; leave empty to keep it"));
+    o = apiSection.option(form.Value, "oauth_client_secret", _("OAuth Client Secret"), _("Enter a new client secret; leave empty to keep the current value"));
     o.password = true;
     o.rmempty = true;
-    o.placeholder = _("Leave empty to keep the current key");
+    o.placeholder = _("Leave empty to keep the current client secret");
     o.depends("auth_type", "oauth");
     o.load = () => "";
     o.write = (sectionId: string, formvalue: string | string[]) => {
       const value = Array.isArray(formvalue) ? formvalue[0] : formvalue;
       const clientSecret = String(value || "").trim();
       if (clientSecret) {
-        pendingAPICredentialsChange(this, sectionId).oauthClientSecret = clientSecret;
+        uci.set("tailscale-derp", sectionId, "oauth_client_secret", clientSecret);
       }
       return null;
     };
