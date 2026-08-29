@@ -1,4 +1,9 @@
-import { callSetDeviceIPv4, callTailnets, type TailnetInstance, type TailnetsResponse } from "@/shared/tailnets";
+import {
+	callSetDeviceIPv4,
+	callTailnets,
+	type TailnetInstance,
+	type TailnetsResponse,
+} from "@/shared/tailnets";
 
 type Device = {
 	nodeId?: string;
@@ -68,10 +73,6 @@ const callRefreshDevices = rpc.declare<DevicesResponse>({
 	method: "refresh_devices",
 });
 
-function truncate(value: string, length = 20): string {
-	return value.length > length ? `${value.substring(0, length)}...` : value;
-}
-
 function formatTime(value?: string): string {
 	if (!value) return "-";
 	const date = new Date(value);
@@ -84,30 +85,108 @@ function formatDeviceName(device: Device): string {
 
 function isIPv4(value: string): boolean {
 	const octets = value.split(".");
-	return octets.length === 4 && octets.every((octet) => /^\d+$/.test(octet) && Number(octet) <= 255);
+	return (
+		octets.length === 4 &&
+		octets.every((octet) => /^\d+$/.test(octet) && Number(octet) <= 255)
+	);
 }
 
 function deviceIPv4(device: Device): string {
 	return device.addresses?.find(isIPv4) || "";
 }
+ 
+function formatOptionalBoolean(value?: boolean): string {
+	if (value === undefined) return "-";
+	return value ? _("Yes") : _("No");
+}
 
-function updateDeviceIPv4(viewState: DevicesView, device: Device, input: HTMLInputElement, button: HTMLButtonElement): void {
+function detailField(label: string, value: string | HTMLElement): HTMLElement {
+	return (
+		<div class="cbi-value">
+			<label class="cbi-value-title">{label}</label>
+			<div class="cbi-value-field">{value}</div>
+		</div>
+	);
+}
+
+function showDeviceDetails(device: Device): void {
+	const nodeKey = device.nodeKey ? (
+		<div>
+			<code style="word-break: break-all;">{device.nodeKey}</code>{" "}
+		</div>
+	) : (
+		"-"
+	);
+
+	ui.showModal(
+		_("Device Details"),
+		<>
+			<div>
+				{detailField(_("Name"), formatDeviceName(device))}
+				{detailField(_("Hostname"), device.hostname || "-")}
+				{detailField(_("User"), device.user || "-")}
+				{detailField(_("Node ID"), device.nodeId || "-")}
+				{detailField(_("Node Key"), nodeKey)}
+				{detailField(
+					_("Platform"),
+					[device.os, device.clientVersion].filter(Boolean).join(" / ") || "-",
+				)}
+				{detailField(_("Addresses"), device.addresses?.join(", ") || "-")}
+				{detailField(_("Last Seen"), formatTime(device.lastSeen))}
+				{detailField(_("Key Expiry"), formatTime(device.expires))}
+				{detailField(_("Tags"), device.tags?.join(", ") || "-")}
+				{detailField(_("Sources"), device.sources?.join(", ") || "-")}
+				{detailField(_("Authorized"), formatOptionalBoolean(device.authorized))}
+				{detailField(
+					_("Connected to Control"),
+					formatOptionalBoolean(device.connectedToControl),
+				)}
+				{detailField(_("External"), formatOptionalBoolean(device.isExternal))}
+				{detailField(_("Ephemeral"), formatOptionalBoolean(device.isEphemeral))}
+				{detailField(
+					_("Multiple Connections"),
+					formatOptionalBoolean(device.multipleConnections),
+				)}
+			</div>{" "}
+			<div style="margin-top: 0.75em; text-align: right;">
+				<button
+					class="cbi-button cbi-button-neutral"
+					type="button"
+					onclick={ui.hideModal}
+				>
+					{_("Close")}
+				</button>
+			</div>
+		</>,
+	);
+}
+
+function updateDeviceIPv4(
+	viewState: DevicesView,
+	device: Device,
+	input: HTMLInputElement,
+	button: HTMLButtonElement,
+	messageEl: HTMLElement,
+	onSuccess: () => void,
+): void {
 	const instance = viewState.selectedInstance;
 	const ipv4 = input.value.trim();
 	if (!instance) {
-		viewState.messageEl.style.color = "#cf222e";
-		viewState.messageEl.textContent = _("Select an API instance before changing an address.");
+		messageEl.style.color = "#cf222e";
+		messageEl.textContent = _(
+			"Select an API instance before changing an address.",
+		);
 		return;
 	}
 	if (!device.nodeId || !isIPv4(ipv4)) {
-		viewState.messageEl.style.color = "#cf222e";
-		viewState.messageEl.textContent = _("Enter a valid IPv4 address.");
+		messageEl.style.color = "#cf222e";
+		messageEl.textContent = _("Enter a valid IPv4 address.");
 		return;
 	}
 
 	button.disabled = true;
-	viewState.messageEl.style.color = "";
-	viewState.messageEl.textContent = _("Updating device IPv4 address...");
+	messageEl.style.color = "";
+	messageEl.textContent = _("Updating device IPv4 address...");
 	callSetDeviceIPv4(instance, device.nodeId, ipv4)
 		.then((result) => {
 			if (result?.error) throw new Error(result.error);
@@ -117,14 +196,73 @@ function updateDeviceIPv4(viewState: DevicesView, device: Device, input: HTMLInp
 			applyData(viewState, data || {});
 			viewState.messageEl.style.color = "#1a7f37";
 			viewState.messageEl.textContent = _("Device IPv4 address updated.");
+			onSuccess();
 		})
 		.catch((err: unknown) => {
-			viewState.messageEl.style.color = "#cf222e";
-			viewState.messageEl.textContent = err instanceof Error ? err.message : _("Unable to update device IPv4 address.");
+			messageEl.style.color = "#cf222e";
+			messageEl.textContent =
+				err instanceof Error
+					? err.message
+					: _("Unable to update device IPv4 address.");
 		})
 		.finally(() => {
 			button.disabled = false;
 		});
+}
+
+function showDeviceEditor(viewState: DevicesView, device: Device): void {
+	const input = (
+		<input
+			class="cbi-input-text"
+			type="text"
+			value={deviceIPv4(device)}
+			placeholder="100.64.0.1"
+			style="width: 100%; box-sizing: border-box;"
+		/>
+	) as HTMLInputElement;
+	const messageEl = <div style="min-height: 1.2em; margin-top: 0.75em;"></div>;
+	const saveButton = (
+		<button class="cbi-button cbi-button-save" type="button">
+			{_("Save")}
+		</button>
+	) as HTMLButtonElement;
+	saveButton.disabled = !device.nodeId;
+	saveButton.onclick = () =>
+		updateDeviceIPv4(
+			viewState,
+			device,
+			input,
+			saveButton,
+			messageEl,
+			ui.hideModal,
+		);
+
+	ui.showModal(
+		_("Edit Device"),
+		<div>
+			<p>
+				{_(
+					"Change the IPv4 address for this device through the selected API instance.",
+				)}
+			</p>
+			{detailField(_("Device"), formatDeviceName(device))}
+			<div class="cbi-value">
+				<label class="cbi-value-title">{_("IPv4 Address")}</label>
+				<div class="cbi-value-field">{input}</div>
+			</div>
+			{messageEl}
+			<div style="margin-top: 0.75em; text-align: right;">
+				<button
+					class="cbi-button cbi-button-neutral"
+					type="button"
+					onclick={ui.hideModal}
+				>
+					{_("Cancel")}
+				</button>{" "}
+				{saveButton}
+			</div>
+		</div>,
+	);
 }
 
 function buildRows(viewState: DevicesView): HTMLElement[] {
@@ -144,7 +282,7 @@ function buildRows(viewState: DevicesView): HTMLElement[] {
 	if (devices.length === 0) {
 		return [
 			<tr class="tr">
-				<td class="td" colSpan={9} style="text-align: center;">
+				<td class="td" colSpan={5} style="text-align: center;">
 					{query ? _("No matching devices") : _("No devices available")}
 				</td>
 			</tr>,
@@ -152,45 +290,43 @@ function buildRows(viewState: DevicesView): HTMLElement[] {
 	}
 
 	return devices.map((device) => {
-		const key = device.nodeKey || "-";
 		const status = device.authorized ? _("Authorized") : _("Not authorized");
 		const statusColor = device.authorized ? "#1a7f37" : "#c60";
-		const copyButton = device.nodeKey ? (
-			<button
-				class="cbi-button cbi-button-action"
-				type="button"
-				onclick={() => {
-					navigator.clipboard.writeText(device.nodeKey || "").then(() => {
-						ui.addNotification(null, <p>{_("Node key copied")}</p>);
-					}).catch(() => {
-						ui.addNotification(null, <p>{_("Unable to copy node key")}</p>);
-					});
-				}}
-			>
-				{_("Copy")}
+		const detailsButton = (
+			<button class="cbi-button cbi-button-action" type="button">
+				{_("Details")}
 			</button>
-		) : null;
-		const ipv4Input = <input class="cbi-input-text" type="text" value={deviceIPv4(device)} placeholder="100.64.0.1" style="width: 8.5em;" /> as HTMLInputElement;
-		const updateButton = <button class="cbi-button cbi-button-action" type="button">{_("Set IPv4")}</button> as HTMLButtonElement;
-		updateButton.disabled = !device.nodeId;
-		updateButton.onclick = () => updateDeviceIPv4(viewState, device, ipv4Input, updateButton);
+		) as HTMLButtonElement;
+		const editButton = (
+			<button class="cbi-button cbi-button-save" type="button">
+				{_("Edit")}
+			</button>
+		) as HTMLButtonElement;
+		detailsButton.onclick = () => showDeviceDetails(device);
+		editButton.disabled = !device.nodeId;
+		editButton.onclick = () => showDeviceEditor(viewState, device);
 
 		return (
 			<tr class="tr">
-				<td class="td" style={`color: ${statusColor}; white-space: nowrap;`}>{status}</td>
+				<td class="td" style={`color: ${statusColor}; white-space: nowrap;`}>
+					{status}
+				</td>
 				<td class="td">
 					<strong>{formatDeviceName(device)}</strong>
-					{device.hostname && device.hostname !== formatDeviceName(device) ? <small style="display: block;">{device.hostname}</small> : null}
+					{device.hostname && device.hostname !== formatDeviceName(device) ? (
+						<small style="display: block;">{device.hostname}</small>
+					) : null}
+					{device.user ? (
+						<small style="display: block;">{device.user}</small>
+					) : null}
 				</td>
-				<td class="td" style="font-family: monospace; white-space: nowrap;" title={key}>
-					{truncate(key)} {copyButton}
+				<td class="td" style="font-family: monospace; white-space: nowrap;">
+					{deviceIPv4(device) || "-"}
 				</td>
-				<td class="td">{device.user || "-"}</td>
-				<td class="td">{[device.os, device.clientVersion].filter(Boolean).join(" / ") || "-"}</td>
-				<td class="td">{device.addresses?.join(", ") || "-"}</td>
 				<td class="td">{formatTime(device.lastSeen)}</td>
-				<td class="td">{device.sources?.join(", ") || "-"}</td>
-				<td class="td" style="white-space: nowrap;">{device.nodeId ? <>{ipv4Input} {updateButton}</> : "-"}</td>
+				<td class="td" style="white-space: nowrap;">
+					{detailsButton} {editButton}
+				</td>
 			</tr>
 		);
 	});
@@ -209,33 +345,56 @@ function renderInstances(instances: DeviceSyncStatus[]): HTMLElement[] {
 		const stateColor = instance.fresh ? "#1a7f37" : "#c60";
 		return (
 			<div class="cbi-section-node" style="margin-bottom: 0.5em;">
-				<strong>{instance.label || instance.name || _("Unnamed instance")}</strong>
-				{" - "}{instance.tailnet || "-"}{" - "}
+				<strong>
+					{instance.label || instance.name || _("Unnamed instance")}
+				</strong>
+				{" - "}
+				{instance.tailnet || "-"}
+				{" - "}
 				<span style={`color: ${stateColor};`}>{state}</span>
-				{" - "}{_('%d device(s)').format(instance.deviceCount || 0)}
-				{instance.error ? <span style="color: #cf222e;">{` - ${instance.error}`}</span> : null}
+				{" - "}
+				{_("%d device(s)").format(instance.deviceCount || 0)}
+				{instance.error ? (
+					<span style="color: #cf222e;">{` - ${instance.error}`}</span>
+				) : null}
 			</div>
 		);
 	});
 }
 
 function applyTailnets(viewState: DevicesView, data: TailnetsResponse): void {
-	viewState.tailnets = (data.instances || []).filter((instance) => instance.configured && instance.name);
+	viewState.tailnets = (data.instances || []).filter(
+		(instance) => instance.configured && instance.name,
+	);
 	const previous = viewState.selectedInstance;
 	viewState.tailnetSelect.replaceChildren(
 		<option value="">{_("Select an API instance")}</option>,
-		...viewState.tailnets.map((instance) => <option value={instance.name || ""}>{instance.label || instance.name}</option>),
+		...viewState.tailnets.map((instance) => (
+			<option value={instance.name || ""}>
+				{instance.label || instance.name}
+			</option>
+		)),
 	);
-	viewState.tailnetSelect.value = viewState.tailnets.some((instance) => instance.name === previous) ? previous : "";
+	viewState.tailnetSelect.value = viewState.tailnets.some(
+		(instance) => instance.name === previous,
+	)
+		? previous
+		: "";
 	viewState.selectedInstance = viewState.tailnetSelect.value;
 	viewState.updateTable();
 }
 
 function applyData(viewState: DevicesView, data: DevicesResponse): void {
 	viewState.devices = data?.devices || [];
-	viewState.countEl.textContent = _("%d device(s)").format(viewState.devices.length);
-	viewState.updatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString());
-	viewState.instancesEl.replaceChildren(...renderInstances(data?.instances || []));
+	viewState.countEl.textContent = _("%d device(s)").format(
+		viewState.devices.length,
+	);
+	viewState.updatedEl.textContent = _("Last updated: %s").format(
+		new Date().toLocaleTimeString(),
+	);
+	viewState.instancesEl.replaceChildren(
+		...renderInstances(data?.instances || []),
+	);
 	viewState.updateTable();
 }
 
@@ -247,7 +406,8 @@ function pollDevices(viewState: DevicesView): Promise<void> {
 			applyData(viewState, data || {});
 		})
 		.catch((err: unknown) => {
-			viewState.messageEl.textContent = err instanceof Error ? err.message : _("Backend unavailable");
+			viewState.messageEl.textContent =
+				err instanceof Error ? err.message : _("Backend unavailable");
 		});
 }
 
@@ -262,12 +422,29 @@ export const main = (view as any).extend({
 	render(this: DevicesView, data: [DevicesResponse, TailnetsResponse]) {
 		const tableBody = <tbody></tbody>;
 		const countEl = <div style="margin-bottom: 0.5em;"></div>;
-		const updatedEl = <div style="font-size: 0.9em; margin-bottom: 0.5em;"></div>;
-		const messageEl = <div style="color: #cf222e; min-height: 1.2em; margin-bottom: 0.5em;"></div>;
+		const updatedEl = (
+			<div style="font-size: 0.9em; margin-bottom: 0.5em;"></div>
+		);
+		const messageEl = (
+			<div style="color: #cf222e; min-height: 1.2em; margin-bottom: 0.5em;"></div>
+		);
 		const instancesEl = <div></div>;
-		const searchEl = <input class="cbi-input-text" type="search" placeholder={_("Search devices...")} style="width: 100%;" /> as HTMLInputElement;
-		const tailnetSelect = <select class="cbi-input-select" style="min-width: 18em;"></select> as HTMLSelectElement;
-		const refreshEl = <button class="cbi-button cbi-button-action" type="button">{_("Refresh")}</button> as HTMLButtonElement;
+		const searchEl = (
+			<input
+				class="cbi-input-text"
+				type="search"
+				placeholder={_("Search devices...")}
+				style="width: 100%;"
+			/>
+		) as HTMLInputElement;
+		const tailnetSelect = (
+			<select class="cbi-input-select" style="min-width: 18em;"></select>
+		) as HTMLSelectElement;
+		const refreshEl = (
+			<button class="cbi-button cbi-button-action" type="button">
+				{_("Refresh")}
+			</button>
+		) as HTMLButtonElement;
 
 		const viewState: DevicesView = {
 			tableBody,
@@ -305,7 +482,8 @@ export const main = (view as any).extend({
 				})
 				.catch((err: unknown) => {
 					messageEl.style.color = "#cf222e";
-					messageEl.textContent = err instanceof Error ? err.message : _("Refresh failed");
+					messageEl.textContent =
+						err instanceof Error ? err.message : _("Refresh failed");
 				})
 				.finally(() => {
 					refreshEl.disabled = false;
@@ -324,7 +502,8 @@ export const main = (view as any).extend({
 					{instancesEl}
 					{updatedEl}
 					<div style="margin-bottom: 0.75em;">
-						<label>{_("API instance for IPv4 changes")}</label><br />
+						<label>{_("API instance for device edits")}</label>
+						<br />
 						{tailnetSelect}
 					</div>
 					{refreshEl} {messageEl}
@@ -339,13 +518,9 @@ export const main = (view as any).extend({
 								<tr class="tr">
 									<th class="th">{_("Status")}</th>
 									<th class="th">{_("Device")}</th>
-									<th class="th">{_("Node Key")}</th>
-									<th class="th">{_("User")}</th>
-									<th class="th">{_("Platform")}</th>
-									<th class="th">{_("Addresses")}</th>
+									<th class="th">{_("IPv4")}</th>
 									<th class="th">{_("Last Seen")}</th>
-									<th class="th">{_("Sources")}</th>
-									<th class="th">{_("IPv4 Management")}</th>
+									<th class="th">{_("Actions")}</th>
 								</tr>
 							</thead>
 							{tableBody}

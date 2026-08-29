@@ -226,28 +226,55 @@ const callSetTailnetACL = tailnets_e.declare({
 ;// CONCATENATED MODULE: ./src/views/devices.tsx
 
 
-let devices_s = L.view, devices_c = L.rpc, devices_i = L.ui, devices_r = L.Poll, d = devices_c.declare({
+let devices_a = L.view, devices_c = L.rpc, devices_s = L.ui, devices_r = L.Poll, devices_o = devices_c.declare({
     object: "luci.tailscale-derp",
     method: "get_devices"
-}), devices_o = devices_c.declare({
+}), devices_d = devices_c.declare({
     object: "luci.tailscale-derp",
     method: "refresh_devices"
 });
 function h(e) {
-    return e.name || e.hostname || e.nodeId || _("Unnamed device");
+    if (!e) return "-";
+    let t = new Date(e);
+    return Number.isNaN(t.getTime()) ? e : t.toLocaleString();
 }
 function u(e) {
+    return e.name || e.hostname || e.nodeId || _("Unnamed device");
+}
+function v(e) {
     let t = e.split(".");
     return 4 === t.length && t.every((e)=>/^\d+$/.test(e) && 255 >= Number(e));
 }
-function m(n, l) {
-    var a;
-    n.devices = (null == l ? void 0 : l.devices) || [], n.countEl.textContent = _("%d device(s)").format(n.devices.length), n.updatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString()), n.instancesEl.replaceChildren(...0 === (a = (null == l ? void 0 : l.instances) || []).length ? [
+function b(e) {
+    var t;
+    return (null == (t = e.addresses) ? void 0 : t.find(v)) || "";
+}
+function m(e) {
+    return void 0 === e ? "-" : e ? _("Yes") : _("No");
+}
+function devices_p(n, l) {
+    return jsxs("div", {
+        class: "cbi-value",
+        children: [
+            jsx("label", {
+                class: "cbi-value-title",
+                children: n
+            }),
+            jsx("div", {
+                class: "cbi-value-field",
+                children: l
+            })
+        ]
+    });
+}
+function devices_f(n, l) {
+    var i;
+    n.devices = (null == l ? void 0 : l.devices) || [], n.countEl.textContent = _("%d device(s)").format(n.devices.length), n.updatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString()), n.instancesEl.replaceChildren(...0 === (i = (null == l ? void 0 : l.instances) || []).length ? [
         jsx("p", {
             children: _("No Official API instances are configured.")
         })
-    ] : a.map((n)=>{
-        let l = n.configured ? n.fresh ? _("Fresh") : _("Stale or not synchronized") : _("Not configured"), a = n.fresh ? "#1a7f37" : "#c60";
+    ] : i.map((n)=>{
+        let l = n.configured ? n.fresh ? _("Fresh") : _("Stale or not synchronized") : _("Not configured"), i = n.fresh ? "#1a7f37" : "#c60";
         return jsxs("div", {
             class: "cbi-section-node",
             style: "margin-bottom: 0.5em;",
@@ -259,11 +286,11 @@ function m(n, l) {
                 n.tailnet || "-",
                 " - ",
                 jsx("span", {
-                    style: "color: ".concat(a, ";"),
+                    style: "color: ".concat(i, ";"),
                     children: l
                 }),
                 " - ",
-                _('%d device(s)').format(n.deviceCount || 0),
+                _("%d device(s)").format(n.deviceCount || 0),
                 n.error ? jsx("span", {
                     style: "color: #cf222e;",
                     children: " - ".concat(n.error)
@@ -272,9 +299,9 @@ function m(n, l) {
         });
     })), n.updateTable();
 }
-const main = devices_s.extend({
+const main = devices_a.extend({
     load: ()=>Promise.all([
-            d().catch(()=>({
+            devices_o().catch(()=>({
                     devices: [],
                     instances: []
                 })),
@@ -282,202 +309,252 @@ const main = devices_s.extend({
                     instances: []
                 }))
         ]),
-    render (a) {
-        let s, c = jsx("tbody", {}), v = jsx("div", {
+    render (i) {
+        let a, c = jsx("tbody", {}), y = jsx("div", {
             style: "margin-bottom: 0.5em;"
-        }), f = jsx("div", {
+        }), g = jsx("div", {
             style: "font-size: 0.9em; margin-bottom: 0.5em;"
-        }), b = jsx("div", {
+        }), x = jsx("div", {
             style: "color: #cf222e; min-height: 1.2em; margin-bottom: 0.5em;"
-        }), p = jsx("div", {}), g = jsx("input", {
+        }), I = jsx("div", {}), C = jsx("input", {
             class: "cbi-input-text",
             type: "search",
             placeholder: _("Search devices..."),
             style: "width: 100%;"
-        }), y = jsx("select", {
+        }), E = jsx("select", {
             class: "cbi-input-select",
             style: "min-width: 18em;"
-        }), I = jsx("button", {
+        }), w = jsx("button", {
             class: "cbi-button cbi-button-action",
             type: "button",
             children: _("Refresh")
-        }), x = {
+        }), S = {
             tableBody: c,
-            countEl: v,
-            updatedEl: f,
-            messageEl: b,
-            instancesEl: p,
-            searchEl: g,
-            tailnetSelect: y,
-            refreshEl: I,
+            countEl: y,
+            updatedEl: g,
+            messageEl: x,
+            instancesEl: I,
+            searchEl: C,
+            tailnetSelect: E,
+            refreshEl: w,
             devices: [],
             tailnets: [],
             selectedInstance: "",
             updateTable: ()=>void 0
         };
-        return x.updateTable = ()=>{
-            let a, s;
-            x.tableBody.replaceChildren(...(a = x.searchEl.value.trim().toLowerCase(), 0 === (s = x.devices.filter((e)=>!a || [
+        return S.updateTable = ()=>{
+            let i, a;
+            S.tableBody.replaceChildren(...(i = S.searchEl.value.trim().toLowerCase(), 0 === (a = S.devices.filter((e)=>!i || [
                     e.name,
                     e.hostname,
                     e.user,
                     e.nodeId,
                     e.nodeKey,
                     ...e.tags || []
-                ].some((e)=>null == e ? void 0 : e.toLowerCase().includes(a)))).length ? [
+                ].some((e)=>null == e ? void 0 : e.toLowerCase().includes(i)))).length ? [
                 jsx("tr", {
                     class: "tr",
                     children: jsx("td", {
                         class: "td",
-                        colSpan: 9,
+                        colSpan: 5,
                         style: "text-align: center;",
-                        children: a ? _("No matching devices") : _("No devices available")
+                        children: i ? _("No matching devices") : _("No devices available")
                     })
                 })
-            ] : s.map((a)=>{
-                var s, c, r;
-                let o = a.nodeKey || "-", v = a.authorized ? _("Authorized") : _("Not authorized"), f = a.authorized ? "#1a7f37" : "#c60", b = a.nodeKey ? jsx("button", {
+            ] : a.map((i)=>{
+                let a = i.authorized ? _("Authorized") : _("Not authorized"), c = i.authorized ? "#1a7f37" : "#c60", r = jsx("button", {
                     class: "cbi-button cbi-button-action",
                     type: "button",
-                    onclick: ()=>{
-                        navigator.clipboard.writeText(a.nodeKey || "").then(()=>{
-                            devices_i.addNotification(null, jsx("p", {
-                                children: _("Node key copied")
-                            }));
-                        }).catch(()=>{
-                            devices_i.addNotification(null, jsx("p", {
-                                children: _("Unable to copy node key")
-                            }));
-                        });
-                    },
-                    children: _("Copy")
-                }) : null, p = jsx("input", {
-                    class: "cbi-input-text",
-                    type: "text",
-                    value: (null == (r = a.addresses) ? void 0 : r.find(u)) || "",
-                    placeholder: "100.64.0.1",
-                    style: "width: 8.5em;"
-                }), g = jsx("button", {
-                    class: "cbi-button cbi-button-action",
+                    children: _("Details")
+                }), d = jsx("button", {
+                    class: "cbi-button cbi-button-save",
                     type: "button",
-                    children: _("Set IPv4")
+                    children: _("Edit")
                 });
-                return g.disabled = !a.nodeId, g.onclick = ()=>(function(e, t, n, a) {
-                        let s = e.selectedInstance, c = n.value.trim();
-                        if (!s) {
-                            e.messageEl.style.color = "#cf222e", e.messageEl.textContent = _("Select an API instance before changing an address.");
-                            return;
-                        }
-                        if (!t.nodeId || !u(c)) {
-                            e.messageEl.style.color = "#cf222e", e.messageEl.textContent = _("Enter a valid IPv4 address.");
-                            return;
-                        }
-                        a.disabled = !0, e.messageEl.style.color = "", e.messageEl.textContent = _("Updating device IPv4 address..."), callSetDeviceIPv4(s, t.nodeId, c).then((e)=>{
-                            if (null == e ? void 0 : e.error) throw Error(e.error);
-                            return d();
-                        }).then((t)=>{
-                            m(e, t || {}), e.messageEl.style.color = "#1a7f37", e.messageEl.textContent = _("Device IPv4 address updated.");
-                        }).catch((t)=>{
-                            e.messageEl.style.color = "#cf222e", e.messageEl.textContent = t instanceof Error ? t.message : _("Unable to update device IPv4 address.");
-                        }).finally(()=>{
-                            a.disabled = !1;
-                        });
-                    })(x, a, p, g), jsxs("tr", {
+                return r.onclick = ()=>{
+                    var l, a, c;
+                    let r;
+                    return r = i.nodeKey ? jsxs("div", {
+                        children: [
+                            jsx("code", {
+                                style: "word-break: break-all;",
+                                children: i.nodeKey
+                            }),
+                            " "
+                        ]
+                    }) : "-", void devices_s.showModal(_("Device Details"), jsxs(Fragment, {
+                        children: [
+                            jsxs("div", {
+                                children: [
+                                    devices_p(_("Name"), u(i)),
+                                    devices_p(_("Hostname"), i.hostname || "-"),
+                                    devices_p(_("User"), i.user || "-"),
+                                    devices_p(_("Node ID"), i.nodeId || "-"),
+                                    devices_p(_("Node Key"), r),
+                                    devices_p(_("Platform"), [
+                                        i.os,
+                                        i.clientVersion
+                                    ].filter(Boolean).join(" / ") || "-"),
+                                    devices_p(_("Addresses"), (null == (l = i.addresses) ? void 0 : l.join(", ")) || "-"),
+                                    devices_p(_("Last Seen"), h(i.lastSeen)),
+                                    devices_p(_("Key Expiry"), h(i.expires)),
+                                    devices_p(_("Tags"), (null == (a = i.tags) ? void 0 : a.join(", ")) || "-"),
+                                    devices_p(_("Sources"), (null == (c = i.sources) ? void 0 : c.join(", ")) || "-"),
+                                    devices_p(_("Authorized"), m(i.authorized)),
+                                    devices_p(_("Connected to Control"), m(i.connectedToControl)),
+                                    devices_p(_("External"), m(i.isExternal)),
+                                    devices_p(_("Ephemeral"), m(i.isEphemeral)),
+                                    devices_p(_("Multiple Connections"), m(i.multipleConnections))
+                                ]
+                            }),
+                            " ",
+                            jsx("div", {
+                                style: "margin-top: 0.75em; text-align: right;",
+                                children: jsx("button", {
+                                    class: "cbi-button cbi-button-neutral",
+                                    type: "button",
+                                    onclick: devices_s.hideModal,
+                                    children: _("Close")
+                                })
+                            })
+                        ]
+                    }));
+                }, d.disabled = !i.nodeId, d.onclick = ()=>{
+                    let n, a, c;
+                    return n = jsx("input", {
+                        class: "cbi-input-text",
+                        type: "text",
+                        value: b(i),
+                        placeholder: "100.64.0.1",
+                        style: "width: 100%; box-sizing: border-box;"
+                    }), a = jsx("div", {
+                        style: "min-height: 1.2em; margin-top: 0.75em;"
+                    }), void ((c = jsx("button", {
+                        class: "cbi-button cbi-button-save",
+                        type: "button",
+                        children: _("Save")
+                    })).disabled = !i.nodeId, c.onclick = ()=>(function(e, t, n, i, a, c) {
+                            let s = e.selectedInstance, r = n.value.trim();
+                            if (!s) {
+                                a.style.color = "#cf222e", a.textContent = _("Select an API instance before changing an address.");
+                                return;
+                            }
+                            if (!t.nodeId || !v(r)) {
+                                a.style.color = "#cf222e", a.textContent = _("Enter a valid IPv4 address.");
+                                return;
+                            }
+                            i.disabled = !0, a.style.color = "", a.textContent = _("Updating device IPv4 address..."), callSetDeviceIPv4(s, t.nodeId, r).then((e)=>{
+                                if (null == e ? void 0 : e.error) throw Error(e.error);
+                                return devices_o();
+                            }).then((t)=>{
+                                devices_f(e, t || {}), e.messageEl.style.color = "#1a7f37", e.messageEl.textContent = _("Device IPv4 address updated."), c();
+                            }).catch((e)=>{
+                                a.style.color = "#cf222e", a.textContent = e instanceof Error ? e.message : _("Unable to update device IPv4 address.");
+                            }).finally(()=>{
+                                i.disabled = !1;
+                            });
+                        })(S, i, n, c, a, devices_s.hideModal), devices_s.showModal(_("Edit Device"), jsxs("div", {
+                        children: [
+                            jsx("p", {
+                                children: _("Change the IPv4 address for this device through the selected API instance.")
+                            }),
+                            devices_p(_("Device"), u(i)),
+                            jsxs("div", {
+                                class: "cbi-value",
+                                children: [
+                                    jsx("label", {
+                                        class: "cbi-value-title",
+                                        children: _("IPv4 Address")
+                                    }),
+                                    jsx("div", {
+                                        class: "cbi-value-field",
+                                        children: n
+                                    })
+                                ]
+                            }),
+                            a,
+                            jsxs("div", {
+                                style: "margin-top: 0.75em; text-align: right;",
+                                children: [
+                                    jsx("button", {
+                                        class: "cbi-button cbi-button-neutral",
+                                        type: "button",
+                                        onclick: devices_s.hideModal,
+                                        children: _("Cancel")
+                                    }),
+                                    " ",
+                                    c
+                                ]
+                            })
+                        ]
+                    })));
+                }, jsxs("tr", {
                     class: "tr",
                     children: [
                         jsx("td", {
                             class: "td",
-                            style: "color: ".concat(f, "; white-space: nowrap;"),
-                            children: v
+                            style: "color: ".concat(c, "; white-space: nowrap;"),
+                            children: a
                         }),
                         jsxs("td", {
                             class: "td",
                             children: [
                                 jsx("strong", {
-                                    children: h(a)
+                                    children: u(i)
                                 }),
-                                a.hostname && a.hostname !== h(a) ? jsx("small", {
+                                i.hostname && i.hostname !== u(i) ? jsx("small", {
                                     style: "display: block;",
-                                    children: a.hostname
+                                    children: i.hostname
+                                }) : null,
+                                i.user ? jsx("small", {
+                                    style: "display: block;",
+                                    children: i.user
                                 }) : null
                             ]
                         }),
-                        jsxs("td", {
+                        jsx("td", {
                             class: "td",
                             style: "font-family: monospace; white-space: nowrap;",
-                            title: o,
-                            children: [
-                                function(e) {
-                                    let t = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : 20;
-                                    return e.length > t ? "".concat(e.substring(0, t), "...") : e;
-                                }(o),
-                                " ",
-                                b
-                            ]
+                            children: b(i) || "-"
                         }),
                         jsx("td", {
                             class: "td",
-                            children: a.user || "-"
+                            children: h(i.lastSeen)
                         }),
-                        jsx("td", {
-                            class: "td",
-                            children: [
-                                a.os,
-                                a.clientVersion
-                            ].filter(Boolean).join(" / ") || "-"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            children: (null == (s = a.addresses) ? void 0 : s.join(", ")) || "-"
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            children: function(e) {
-                                if (!e) return "-";
-                                let t = new Date(e);
-                                return Number.isNaN(t.getTime()) ? e : t.toLocaleString();
-                            }(a.lastSeen)
-                        }),
-                        jsx("td", {
-                            class: "td",
-                            children: (null == (c = a.sources) ? void 0 : c.join(", ")) || "-"
-                        }),
-                        jsx("td", {
+                        jsxs("td", {
                             class: "td",
                             style: "white-space: nowrap;",
-                            children: a.nodeId ? jsxs(Fragment, {
-                                children: [
-                                    p,
-                                    " ",
-                                    g
-                                ]
-                            }) : "-"
+                            children: [
+                                r,
+                                " ",
+                                d
+                            ]
                         })
                     ]
                 });
             })));
-        }, g.oninput = x.updateTable, y.onchange = ()=>{
-            x.selectedInstance = y.value, x.updateTable();
-        }, I.onclick = ()=>{
-            I.disabled = !0, b.style.color = "", b.textContent = _("Refreshing Official API devices..."), devices_o().then((e)=>{
+        }, C.oninput = S.updateTable, E.onchange = ()=>{
+            S.selectedInstance = E.value, S.updateTable();
+        }, w.onclick = ()=>{
+            w.disabled = !0, x.style.color = "", x.textContent = _("Refreshing Official API devices..."), devices_d().then((e)=>{
                 if (null == e ? void 0 : e.error) throw Error(e.error);
-                b.style.color = "#1a7f37", b.textContent = _("Device data refreshed."), m(x, e || {});
+                x.style.color = "#1a7f37", x.textContent = _("Device data refreshed."), devices_f(S, e || {});
             }).catch((e)=>{
-                b.style.color = "#cf222e", b.textContent = e instanceof Error ? e.message : _("Refresh failed");
+                x.style.color = "#cf222e", x.textContent = e instanceof Error ? e.message : _("Refresh failed");
             }).finally(()=>{
-                I.disabled = !1;
+                w.disabled = !1;
             });
-        }, x.tailnets = ((a[1] || {}).instances || []).filter((e)=>e.configured && e.name), s = x.selectedInstance, x.tailnetSelect.replaceChildren(jsx("option", {
+        }, S.tailnets = ((i[1] || {}).instances || []).filter((e)=>e.configured && e.name), a = S.selectedInstance, S.tailnetSelect.replaceChildren(jsx("option", {
             value: "",
             children: _("Select an API instance")
-        }), ...x.tailnets.map((t)=>jsx("option", {
+        }), ...S.tailnets.map((t)=>jsx("option", {
                 value: t.name || "",
                 children: t.label || t.name
-            }))), x.tailnetSelect.value = x.tailnets.some((e)=>e.name === s) ? s : "", x.selectedInstance = x.tailnetSelect.value, x.updateTable(), m(x, a[0] || {}), devices_r.add(()=>d().then((e)=>{
+            }))), S.tailnetSelect.value = S.tailnets.some((e)=>e.name === a) ? a : "", S.selectedInstance = S.tailnetSelect.value, S.updateTable(), devices_f(S, i[0] || {}), devices_r.add(()=>devices_o().then((e)=>{
                 if (null == e ? void 0 : e.error) throw Error(e.error);
-                x.messageEl.textContent = "", m(x, e || {});
+                S.messageEl.textContent = "", devices_f(S, e || {});
             }).catch((e)=>{
-                x.messageEl.textContent = e instanceof Error ? e.message : _("Backend unavailable");
+                S.messageEl.textContent = e instanceof Error ? e.message : _("Backend unavailable");
             }), 15), jsxs("div", {
             children: [
                 jsx("h2", {
@@ -489,21 +566,21 @@ const main = devices_s.extend({
                         jsx("h3", {
                             children: _("Official API Synchronization")
                         }),
-                        p,
-                        f,
+                        I,
+                        g,
                         jsxs("div", {
                             style: "margin-bottom: 0.75em;",
                             children: [
                                 jsx("label", {
-                                    children: _("API instance for IPv4 changes")
+                                    children: _("API instance for device edits")
                                 }),
                                 jsx("br", {}),
-                                y
+                                E
                             ]
                         }),
-                        I,
+                        w,
                         " ",
-                        b
+                        x
                     ]
                 }),
                 jsxs("div", {
@@ -512,10 +589,10 @@ const main = devices_s.extend({
                         jsx("h3", {
                             children: _("Devices")
                         }),
-                        v,
+                        y,
                         jsx("div", {
                             style: "margin-bottom: 0.75em;",
-                            children: g
+                            children: C
                         }),
                         jsx("div", {
                             style: "overflow-x: auto;",
@@ -536,19 +613,7 @@ const main = devices_s.extend({
                                                 }),
                                                 jsx("th", {
                                                     class: "th",
-                                                    children: _("Node Key")
-                                                }),
-                                                jsx("th", {
-                                                    class: "th",
-                                                    children: _("User")
-                                                }),
-                                                jsx("th", {
-                                                    class: "th",
-                                                    children: _("Platform")
-                                                }),
-                                                jsx("th", {
-                                                    class: "th",
-                                                    children: _("Addresses")
+                                                    children: _("IPv4")
                                                 }),
                                                 jsx("th", {
                                                     class: "th",
@@ -556,11 +621,7 @@ const main = devices_s.extend({
                                                 }),
                                                 jsx("th", {
                                                     class: "th",
-                                                    children: _("Sources")
-                                                }),
-                                                jsx("th", {
-                                                    class: "th",
-                                                    children: _("IPv4 Management")
+                                                    children: _("Actions")
                                                 })
                                             ]
                                         })
