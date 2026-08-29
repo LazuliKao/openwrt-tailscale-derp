@@ -1,4 +1,5 @@
 import { captureExpectedStatus, clearPendingStatus, savePendingStatus, validateLoopbackSocketAddress, validateSocketAddress } from "@/shared/config";
+import { copyText } from "@/shared/utils";
 
 type ReloadConfigResponse = Record<string, never>;
 type FormMap = LuCI.form.Map;
@@ -87,6 +88,7 @@ type SettingsView = {
   currentListenPort: number;
   currentStunEnabled: boolean;
 };
+
 
 const poll = L.Poll;
 
@@ -265,7 +267,7 @@ export const main = (view as any).extend({
 
     copyBtn.onclick = (ev: MouseEvent) => {
       ev.preventDefault();
-      navigator.clipboard.writeText(jsonPre.textContent || "")
+      copyText(jsonPre.textContent || "")
         .then(() => {
           copyBtn.textContent = _("Copied!");
           setTimeout(() => {
