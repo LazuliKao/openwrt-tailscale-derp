@@ -214,70 +214,72 @@ const callSetTailnetACL = tailnets_e.declare({
 });
 
 ;// CONCATENATED MODULE: ./src/shared/monaco.ts
-let monaco_e, monaco_t;
+let monaco_e, monaco_t, monaco_o;
 
 
-let monaco_r = "https://cdn.jsdelivr.net/npm/monaco-editor@".concat("0.56.0", "/esm");
-function monaco_a(e) {
-    let t = "import ".concat(JSON.stringify("".concat(monaco_r, "/").concat(e)), ";");
+let monaco_a = "https://cdn.jsdelivr.net/npm/monaco-editor@".concat("0.56.0"), monaco_s = "".concat(monaco_a, "/+esm"), monaco_i = "".concat(monaco_a, "/esm/vs/editor/standalone/browser/standalone-tokens.css");
+function monaco_l(e) {
+    let t = "import ".concat(JSON.stringify("".concat(monaco_a, "/esm/").concat(e)), ";");
     return URL.createObjectURL(new Blob([
         t
     ], {
         type: "text/javascript"
     }));
 }
-function monaco_i(e) {
-    return Function("url", "return import(url);")(e);
-}
-async function createMonacoTextEditor(s, c, l) {
+async function createMonacoTextEditor(a, c, d) {
     let u = await function() {
         if (monaco_e) return monaco_e;
         !function() {
             if (monaco_t) return;
-            let e = monaco_a("vs/editor/editor.worker.js"), r = monaco_a("vs/language/json/json.worker.js");
+            let e = monaco_l("vs/editor/editor.worker.js"), o = monaco_l("vs/language/json/json.worker.js");
             monaco_t = [
                 e,
-                r
+                o
             ];
-            let i = globalThis, s = i.MonacoEnvironment;
-            i.MonacoEnvironment = _object_spread_props(_object_spread({}, s), {
-                getWorker: (t, o)=>(null == s ? void 0 : s.getWorker) ? s.getWorker(t, o) : new Worker("json" === o ? r : e, {
+            let a = globalThis, s = a.MonacoEnvironment;
+            a.MonacoEnvironment = _object_spread_props(_object_spread({}, s), {
+                getWorker: (t, n)=>(null == s ? void 0 : s.getWorker) ? s.getWorker(t, n) : new Worker("json" === n ? o : e, {
                         type: "module"
                     })
             });
         }();
-        let s = Promise.all([
-            monaco_i("".concat(monaco_r, "/vs/editor/editor.api.js")),
-            monaco_i("".concat(monaco_r, "/vs/language/json/monaco.contribution.js"))
+        let a = Promise.all([
+            Function("url", "return import(url);")(monaco_s),
+            (monaco_o || (monaco_o = new Promise((e, t)=>{
+                let o = document.createElement("link");
+                o.rel = "stylesheet", o.href = monaco_i, o.onload = ()=>e(), o.onerror = ()=>t(Error("Unable to load Monaco stylesheet.")), document.head.appendChild(o);
+            })).catch(()=>{
+                monaco_o = void 0;
+            }), monaco_o)
         ]).then((e)=>{
-            let [t, o] = e;
-            return o.jsonDefaults.setDiagnosticsOptions({
+            let [t] = e;
+            return t.json.jsonDefaults.setDiagnosticsOptions({
                 allowComments: !0,
                 enableSchemaRequest: !1,
                 trailingCommas: "ignore",
                 validate: !0
             }), t;
         });
-        return monaco_e = s, s.catch(()=>{
-            monaco_e === s && (monaco_e = void 0);
-        }), s;
-    }(), d = u.editor.createModel(c(), "json"), p = u.editor.create(s, {
+        return monaco_e = a, a.catch(()=>{
+            monaco_e === a && (monaco_e = void 0);
+        }), a;
+    }(), m = u.editor.createModel(c(), "json"), p = u.editor.create(a, {
         automaticLayout: !0,
         minimap: {
             enabled: !1
         },
-        model: d,
+        model: m,
         scrollBeyondLastLine: !1,
         tabSize: 2,
         wordWrap: "on"
-    }), m = d.onDidChangeContent(()=>l(d.getValue()));
+    }), g = m.onDidChangeContent(()=>d(m.getValue()));
     return {
-        getValue: ()=>d.getValue(),
+        getValue: ()=>m.getValue(),
         setValue (e) {
-            d.setValue(e);
+            m.setValue(e);
         },
         dispose () {
-            m.dispose(), p.dispose(), d.dispose();
+            g.dispose(), p.dispose(), m.dispose();
         }
     };
 }

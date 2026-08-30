@@ -1,5 +1,7 @@
 const MONACO_VERSION = "0.56.0";
-const MONACO_BASE_URL = `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_VERSION}/esm`;
+const MONACO_BASE_URL = `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_VERSION}`;
+const MONACO_MODULE_URL = `${MONACO_BASE_URL}/+esm`;
+const MONACO_STYLE_URL = `${MONACO_BASE_URL}/esm/vs/editor/standalone/browser/standalone-tokens.css`;
 
 type MonacoModel = {
 	getValue(): string;
@@ -17,11 +19,10 @@ type MonacoAPI = {
 		createModel(value: string, language: string): MonacoModel;
 		create(container: HTMLElement, options: Record<string, unknown>): MonacoEditor;
 	};
-};
-
-type JSONContribution = {
-	jsonDefaults: {
-		setDiagnosticsOptions(options: Record<string, unknown>): void;
+	json: {
+		jsonDefaults: {
+			setDiagnosticsOptions(options: Record<string, unknown>): void;
+		};
 	};
 };
 
@@ -41,10 +42,29 @@ export type MonacoTextEditor = {
 
 let monacoPromise: Promise<MonacoAPI> | undefined;
 let workerURLs: string[] | undefined;
+let stylesheetPromise: Promise<void> | undefined;
 
 function createWorkerURL(path: string): string {
-	const source = `import ${JSON.stringify(`${MONACO_BASE_URL}/${path}`)};`;
+	const source = `import ${JSON.stringify(`${MONACO_BASE_URL}/esm/${path}`)};`;
 	return URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+}
+
+function loadStylesheet(): Promise<void> {
+	if (stylesheetPromise) return stylesheetPromise;
+
+	stylesheetPromise = new Promise<void>((resolve, reject) => {
+		const link = document.createElement("link");
+		link.rel = "stylesheet";
+		link.href = MONACO_STYLE_URL;
+		link.onload = () => resolve();
+		link.onerror = () => reject(new Error("Unable to load Monaco stylesheet."));
+		document.head.appendChild(link);
+	});
+
+	void stylesheetPromise.catch(() => {
+		stylesheetPromise = undefined;
+	});
+	return stylesheetPromise;
 }
 
 function configureWorkers(): void {
@@ -74,11 +94,8 @@ function loadMonaco(): Promise<MonacoAPI> {
 	if (monacoPromise) return monacoPromise;
 
 	configureWorkers();
-	const promise = Promise.all([
-		importRemoteModule<MonacoAPI>(`${MONACO_BASE_URL}/vs/editor/editor.api.js`),
-		importRemoteModule<JSONContribution>(`${MONACO_BASE_URL}/vs/language/json/monaco.contribution.js`),
-	]).then(([monaco, json]) => {
-		json.jsonDefaults.setDiagnosticsOptions({
+	const promise = Promise.all([importRemoteModule<MonacoAPI>(MONACO_MODULE_URL), loadStylesheet()]).then(([monaco]) => {
+		monaco.json.jsonDefaults.setDiagnosticsOptions({
 			allowComments: true,
 			enableSchemaRequest: false,
 			trailingCommas: "ignore",
