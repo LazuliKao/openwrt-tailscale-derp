@@ -234,15 +234,15 @@ function readPendingStatus() {
 }
 
 ;// CONCATENATED MODULE: ./src/shared/sections.ts
-function ensureNamedSections(e, o, t) {
-    for (let [n, d] of t)e.get(o, n) || e.add(o, d, n);
+function ensureNamedSections(e, t, o) {
+    for (let [f, n, r] of o)if (!e.get(t, f)) for (let [o, i] of (e.add(t, n, f), Object.entries(null != r ? r : {})))e.set(t, f, o, i);
 }
 
 ;// CONCATENATED MODULE: ./src/views/main.tsx
 
 
 
-let main_l = L.view, main_n = L.form, main_d = L.rpc, main_c = L.uci, main_p = L.ui, m = main_d.declare({
+let main_l = L.view, main_n = L.form, d = L.rpc, main_c = L.uci, main_p = L.ui, m = d.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });

@@ -234,15 +234,15 @@ function readPendingStatus() {
 }
 
 ;// CONCATENATED MODULE: ./src/shared/sections.ts
-function ensureNamedSections(e, o, t) {
-    for (let [n, d] of t)e.get(o, n) || e.add(o, d, n);
+function ensureNamedSections(e, t, o) {
+    for (let [f, n, r] of o)if (!e.get(t, f)) for (let [o, i] of (e.add(t, n, f), Object.entries(null != r ? r : {})))e.set(t, f, o, i);
 }
 
 ;// CONCATENATED MODULE: ./src/views/authentication.tsx
 
 
 
-let authentication_n = L.view, authentication_i = L.form, authentication_l = L.rpc, authentication_o = L.uci, authentication_r = L.ui, authentication_d = authentication_l.declare({
+let authentication_n = L.view, authentication_i = L.form, authentication_l = L.rpc, authentication_o = L.uci, authentication_r = L.ui, d = authentication_l.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
@@ -276,7 +276,7 @@ const main = authentication_n.extend({
         return this.super("handleSaveApply", [
             t,
             a
-        ]).then(()=>authentication_d()).then(()=>{
+        ]).then(()=>d()).then(()=>{
             window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((t)=>{
             let a = t instanceof Error ? t.message : "unknown error";

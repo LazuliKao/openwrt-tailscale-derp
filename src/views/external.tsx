@@ -74,7 +74,17 @@ export const main = (view as any).extend({
     return uci.load("tailscale-derp").then(() => {
       ensureNamedSections(uci, "tailscale-derp", [
         ["tls", "tls"],
-        ["external", "external"],
+        ["external", "external", {
+          enabled: "0",
+          method: ["pcp", "natpmp", "upnp"],
+          wan_interface: "auto",
+          derp_port: "auto",
+          stun_port: "auto",
+          lease_seconds: "7200",
+          retry_seconds: "60",
+          sync_interval: "300",
+          validate_endpoint: "0",
+        }],
       ]);
     });
   },

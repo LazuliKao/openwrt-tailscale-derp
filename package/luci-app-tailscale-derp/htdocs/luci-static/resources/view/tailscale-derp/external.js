@@ -179,8 +179,8 @@ function jsxDEV(e, t) {
 
 
 ;// CONCATENATED MODULE: ./src/shared/sections.ts
-function ensureNamedSections(e, o, t) {
-    for (let [n, d] of t)e.get(o, n) || e.add(o, d, n);
+function ensureNamedSections(e, t, o) {
+    for (let [f, n, r] of o)if (!e.get(t, f)) for (let [o, i] of (e.add(t, n, f), Object.entries(null != r ? r : {})))e.set(t, f, o, i);
 }
 
 ;// CONCATENATED MODULE: ./src/views/external.tsx
@@ -190,20 +190,20 @@ let external_a = L.view, external_n = L.form, external_r = L.rpc, external_l = L
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
-function external_d(e, t, a) {
+function external_p(e, t, a) {
     let n = e.map.lookupOption(t, a);
     return null == n ? void 0 : n[0].formvalue(n[1]);
 }
-function external_p(e, t, a) {
+function d(e, t, a) {
     let n, r = (n = this.section.formvalue(e, a) || "", (!t || !!n) && (!!t || !n) || _("Certificate and key must be provided together"));
     if (!0 !== r) return r;
-    let l = external_d(this, "enabled", "external");
+    let l = external_p(this, "enabled", "external");
     return "1" !== l && !0 !== l || !!t.trim() || _("Certificate and key are required when the external endpoint is enabled");
 }
 function external_s(e, t) {
     var a, n;
     if ("1" !== t && !0 !== t) return !0;
-    let r = String(null != (a = external_d(this, "certfile", "tls")) ? a : "").trim(), l = String(null != (n = external_d(this, "keyfile", "tls")) ? n : "").trim();
+    let r = String(null != (a = external_p(this, "certfile", "tls")) ? a : "").trim(), l = String(null != (n = external_p(this, "keyfile", "tls")) ? n : "").trim();
     return !!r && !!l || _("Configure the TLS certificate and key before enabling the external endpoint");
 }
 function u(e, t) {
@@ -221,7 +221,22 @@ const main = external_a.extend({
                 ],
                 [
                     "external",
-                    "external"
+                    "external",
+                    {
+                        enabled: "0",
+                        method: [
+                            "pcp",
+                            "natpmp",
+                            "upnp"
+                        ],
+                        wan_interface: "auto",
+                        derp_port: "auto",
+                        stun_port: "auto",
+                        lease_seconds: "7200",
+                        retry_seconds: "60",
+                        sync_interval: "300",
+                        validate_endpoint: "0"
+                    }
                 ]
             ]);
         }),
@@ -245,9 +260,9 @@ const main = external_a.extend({
     render () {
         let e = new external_n.Map("tailscale-derp", _("External Endpoint"), _("Publish this DERP relay through a WAN gateway. Tailscale does not officially support custom DERP servers behind NAT.")), t = e.section(external_n.NamedSection, "tls", "tls", _("TLS Settings")), a = t.option(external_n.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"));
         return a.placeholder = "/etc/ssl/certs/derp.pem", a.rmempty = !0, a.validate = function(e, t) {
-            return external_p.call(this, e, t, "keyfile");
+            return d.call(this, e, t, "keyfile");
         }, (a = t.option(external_n.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"))).placeholder = "/etc/ssl/private/derp.key", a.rmempty = !0, a.validate = function(e, t) {
-            return external_p.call(this, e, t, "certfile");
+            return d.call(this, e, t, "certfile");
         }, (a = (t = e.section(external_n.NamedSection, "external", "external", _("External Endpoint (Experimental)"), _("Acquire router port mappings and optionally publish the mapped endpoint into selected Tailnet policies."))).option(external_n.Flag, "enabled", _("Enable External Endpoint"), _("Acquire router port mappings and allow selected API instances to publish this endpoint"))).default = "0", a.rmempty = !1, a.validate = external_s, (a = t.option(external_n.DynamicList, "method", _("Mapping Methods"), _("Methods are attempted in this order"))).value("pcp", "PCP"), a.value("natpmp", "NAT-PMP"), a.value("upnp", "UPnP IGD"), a.default = [
             "pcp",
             "natpmp",
