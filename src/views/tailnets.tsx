@@ -209,7 +209,7 @@ export const main = (view as any).extend({
 					return;
 				}
 				viewState.policyEditor = editor;
-				policyEl.hidden = true;
+				policyEl.style.display = "none";
 				editorEl.style.display = "block";
 			})
 			.catch(() => {

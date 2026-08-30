@@ -1,7 +1,11 @@
 const MONACO_VERSION = "0.56.0";
 const MONACO_BASE_URL = `https://cdn.jsdelivr.net/npm/monaco-editor@${MONACO_VERSION}`;
-const MONACO_MODULE_URL = `${MONACO_BASE_URL}/+esm`;
-const MONACO_STYLE_URL = `${MONACO_BASE_URL}/esm/vs/editor/standalone/browser/standalone-tokens.css`;
+const MONACO_MODULE_URL = `https://esm.sh/monaco-editor@${MONACO_VERSION}?bundle`;
+const MONACO_EDITOR_WORKER_URL = `https://esm.sh/monaco-editor@${MONACO_VERSION}/esm/vs/editor/editor.worker?worker`;
+const MONACO_JSON_WORKER_URL = `https://esm.sh/monaco-editor@${MONACO_VERSION}/esm/vs/language/json/json.worker?worker`;
+const MONACO_STYLE_URL = `${MONACO_BASE_URL}/min/vs/editor/editor.main.css`;
+const ACL_SCHEMA_URL = "https://raw.githubusercontent.com/joneskoo/tailscale/claude/tailscale-acl-json-schema-v2/acl-schema.json";
+// Tailscale's request for an official ACL schema: https://github.com/tailscale/tailscale/issues/10794
 
 type MonacoModel = {
 	getValue(): string;
@@ -18,6 +22,7 @@ type MonacoAPI = {
 	editor: {
 		createModel(value: string, language: string): MonacoModel;
 		create(container: HTMLElement, options: Record<string, unknown>): MonacoEditor;
+		setTheme(theme: string): void;
 	};
 	json: {
 		jsonDefaults: {
@@ -28,6 +33,10 @@ type MonacoAPI = {
 
 type MonacoEnvironment = {
 	getWorker?: (moduleId: string, label: string) => Worker;
+};
+
+type MonacoWorkerModule = {
+	default(): Worker;
 };
 
 type MonacoGlobal = typeof globalThis & {
@@ -41,13 +50,8 @@ export type MonacoTextEditor = {
 };
 
 let monacoPromise: Promise<MonacoAPI> | undefined;
-let workerURLs: string[] | undefined;
 let stylesheetPromise: Promise<void> | undefined;
-
-function createWorkerURL(path: string): string {
-	const source = `import ${JSON.stringify(`${MONACO_BASE_URL}/esm/${path}`)};`;
-	return URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
-}
+let schemaPromise: Promise<Record<string, unknown> | undefined> | undefined;
 
 function loadStylesheet(): Promise<void> {
 	if (stylesheetPromise) return stylesheetPromise;
@@ -67,20 +71,14 @@ function loadStylesheet(): Promise<void> {
 	return stylesheetPromise;
 }
 
-function configureWorkers(): void {
-	if (workerURLs) return;
-
-	const editorWorkerURL = createWorkerURL("vs/editor/editor.worker.js");
-	const jsonWorkerURL = createWorkerURL("vs/language/json/json.worker.js");
-	workerURLs = [editorWorkerURL, jsonWorkerURL];
-
+function configureWorkers(editorWorker: MonacoWorkerModule, jsonWorker: MonacoWorkerModule): void {
 	const runtime = globalThis as MonacoGlobal;
 	const previousEnvironment = runtime.MonacoEnvironment;
 	runtime.MonacoEnvironment = {
 		...previousEnvironment,
 		getWorker(moduleId, label) {
 			if (previousEnvironment?.getWorker) return previousEnvironment.getWorker(moduleId, label);
-			return new Worker(label === "json" ? jsonWorkerURL : editorWorkerURL, { type: "module" });
+			return (label === "json" ? jsonWorker : editorWorker).default();
 		},
 	};
 }
@@ -90,14 +88,33 @@ function importRemoteModule<T>(url: string): Promise<T> {
 	return dynamicImport(url);
 }
 
+function loadSchema(): Promise<Record<string, unknown> | undefined> {
+	if (schemaPromise) return schemaPromise;
+
+	schemaPromise = fetch(ACL_SCHEMA_URL)
+		.then((response) => {
+			if (!response.ok) throw new Error("Unable to load the Tailscale ACL schema.");
+			return response.json() as Promise<Record<string, unknown>>;
+		})
+		.catch(() => undefined);
+	return schemaPromise;
+}
+
 function loadMonaco(): Promise<MonacoAPI> {
 	if (monacoPromise) return monacoPromise;
 
-	configureWorkers();
-	const promise = Promise.all([importRemoteModule<MonacoAPI>(MONACO_MODULE_URL), loadStylesheet()]).then(([monaco]) => {
+	const promise = Promise.all([
+		importRemoteModule<MonacoAPI>(MONACO_MODULE_URL),
+		importRemoteModule<MonacoWorkerModule>(MONACO_EDITOR_WORKER_URL),
+		importRemoteModule<MonacoWorkerModule>(MONACO_JSON_WORKER_URL),
+		loadStylesheet(),
+		loadSchema(),
+	]).then(([monaco, editorWorker, jsonWorker, , schema]) => {
+		configureWorkers(editorWorker, jsonWorker);
 		monaco.json.jsonDefaults.setDiagnosticsOptions({
 			allowComments: true,
 			enableSchemaRequest: false,
+			schemas: schema ? [{ fileMatch: ["*"], schema, uri: ACL_SCHEMA_URL }] : [],
 			trailingCommas: "ignore",
 			validate: true,
 		});
@@ -111,6 +128,20 @@ function loadMonaco(): Promise<MonacoAPI> {
 	return promise;
 }
 
+function backgroundLuminance(element: HTMLElement): number | undefined {
+	const color = getComputedStyle(element).backgroundColor.match(/\d+/g)?.map(Number);
+	if (!color || color.length < 3 || color[3] === 0) return undefined;
+	return color[0] * 0.299 + color[1] * 0.587 + color[2] * 0.114;
+}
+
+function prefersDarkTheme(): boolean {
+	for (const element of [document.body, document.documentElement]) {
+		const luminance = backgroundLuminance(element);
+		if (luminance !== undefined) return luminance < 128;
+	}
+	return matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
 export async function createMonacoTextEditor(
 	container: HTMLElement,
 	initialValue: () => string,
@@ -118,6 +149,7 @@ export async function createMonacoTextEditor(
 ): Promise<MonacoTextEditor> {
 	const monaco = await loadMonaco();
 	const model = monaco.editor.createModel(initialValue(), "json");
+	monaco.editor.setTheme(prefersDarkTheme() ? "vs-dark" : "vs");
 	const editor = monaco.editor.create(container, {
 		automaticLayout: true,
 		minimap: { enabled: false },
