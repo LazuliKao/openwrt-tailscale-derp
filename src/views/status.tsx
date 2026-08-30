@@ -3,8 +3,14 @@ import {
 	readPendingStatus,
 	type ExpectedStatus,
 } from "@/shared/config";
+import {
+	callExternalStatus,
+	externalActionCalls,
+	type ExternalStatus,
+} from "@/shared/external";
 
 type ActionName = "start" | "stop" | "restart" | "reload";
+type ExternalActionName = "reconcile" | "check" | "sync";
 const view = L.view;
 const rpc = L.rpc;
 const ui = L.ui;
@@ -166,6 +172,62 @@ function invokeAction(action: ActionName): Promise<ActionResponse> {
 	return actionCalls[action]();
 }
 
+function externalActionLabel(action: ExternalActionName): string {
+	switch (action) {
+		case "reconcile":
+			return _("Remap Now");
+		case "check":
+			return _("Check Locally");
+		case "sync":
+			return _("Sync DERP Map");
+	}
+}
+
+function formatExternalEndpoint(status: ExternalStatus): string {
+	const endpoint = status.endpoint;
+	if (!endpoint?.ipv4 || !endpoint.derpPort) {
+		return _("Not mapped");
+	}
+	const stun = endpoint.stunPort === -1
+		? _("STUN disabled")
+		: `UDP ${endpoint.ipv4}:${endpoint.stunPort || 3478}`;
+	return `TCP ${endpoint.ipv4}:${endpoint.derpPort}; ${stun}`;
+}
+
+function formatValidation(status: ExternalStatus): string {
+	const validation = status.validation || {};
+	if (!status.validationEnabled && (!validation.state || validation.state === "disabled")) {
+		return `${_("Disabled")} (${_("local NAT loopback only")})`;
+	}
+	const state = validation.state || _("Unknown");
+	const scope = validation.scope || "local_nat_loopback";
+	return `${state} (${scope})${validation.error ? `: ${validation.error}` : ""}`;
+}
+
+function renderExternalInstances(status: ExternalStatus): HTMLElement[] {
+	const instances = status.instances || [];
+	if (!instances.length) {
+		return [<span>{_("No synchronized instances")}</span>];
+	}
+	return instances.map((instance) => (
+		<div>
+			<strong>{instance.label || instance.name || _("Unnamed instance")}</strong>
+			{`: ${instance.state || _("Unknown")}${instance.error ? ` - ${instance.error}` : ""}`}
+		</div>
+	));
+}
+
+function updateExternalStatus(view: StatusView, status: ExternalStatus): void {
+	view.externalStateEl.textContent = status.state || (status.enabled ? _("Unknown") : _("Disabled"));
+	view.externalEndpointEl.textContent = formatExternalEndpoint(status);
+	view.externalMethodEl.textContent = status.endpoint?.method || _("N/A");
+	view.externalLeaseEl.textContent = status.endpoint?.leaseUntil || _("N/A");
+	view.externalValidationEl.textContent = formatValidation(status);
+	view.externalFailuresEl.textContent = `${status.failureCount || 0}/${status.failureThreshold || 3}`;
+	view.externalErrorEl.textContent = status.error || _("None");
+	view.externalInstancesEl.replaceChildren(...renderExternalInstances(status));
+}
+
 function normalizeAddress(value: string): string {
 	if (!value) {
 		return "";
@@ -266,12 +328,29 @@ type StatusView = {
 	syncEl: HTMLElement;
 	resultEl: HTMLElement;
 	actionButtons: HTMLButtonElement[];
+	externalStateEl: HTMLElement;
+	externalEndpointEl: HTMLElement;
+	externalMethodEl: HTMLElement;
+	externalLeaseEl: HTMLElement;
+	externalValidationEl: HTMLElement;
+	externalFailuresEl: HTMLElement;
+	externalErrorEl: HTMLElement;
+	externalInstancesEl: HTMLElement;
+	externalButtons: HTMLButtonElement[];
 	handleAction: (action: ActionName) => Promise<void>;
+	handleExternalAction: (action: ExternalActionName) => Promise<void>;
 };
 
 function pollStatus(view: StatusView): Promise<void> {
-	return Promise.all([callStatus(), callVersion()])
-		.then(([status, version]) => {
+	return Promise.all([
+		callStatus(),
+		callVersion(),
+		callExternalStatus().catch((err: unknown) => ({
+			state: "unavailable",
+			error: err instanceof Error ? err.message : _("External endpoint backend unavailable"),
+		})),
+	])
+		.then(([status, version, external]) => {
 			const normalized = normalizeStatus(status || {});
 				view.statusEl.textContent = normalized.running ? _("Running") : _("Stopped");
 				view.versionEl.textContent = normalized.error
@@ -312,6 +391,7 @@ function pollStatus(view: StatusView): Promise<void> {
 			}
 			view.syncEl.style.color = syncState.color;
 			view.syncEl.textContent = syncState.text;
+			updateExternalStatus(view, external || {});
 		})
 		.catch((err: unknown) => {
 				const message =
@@ -336,6 +416,7 @@ function pollStatus(view: StatusView): Promise<void> {
 			}
 			view.syncEl.style.color = syncState.color;
 			view.syncEl.textContent = syncState.text;
+			updateExternalStatus(view, { state: "unavailable", error: message });
 		});
 }
 
@@ -385,6 +466,36 @@ export const main = (view as any).extend({
 			});
 	},
 
+	handleExternalAction(this: StatusView, action: ExternalActionName) {
+		const label = externalActionLabel(action);
+		for (const btn of this.externalButtons) {
+			btn.disabled = true;
+		}
+		this.resultEl.style.color = "#1a7f37";
+		this.resultEl.textContent = `${label} ${_("in progress...")}`;
+
+		return externalActionCalls[action]()
+			.then((response) => {
+				if (response?.result !== "ok" || response.error) {
+					throw new Error(response?.error || `${label} ${_("failed")}`);
+				}
+				this.resultEl.style.color = "#1a7f37";
+				this.resultEl.textContent = `${label} ${_("completed successfully.")}`;
+				return pollStatus(this);
+			})
+			.catch((err: unknown) => {
+				const message = err instanceof Error ? err.message : _("unknown error");
+				this.resultEl.style.color = "#cf222e";
+				this.resultEl.textContent = `${label} ${_("failed:")} ${message}`;
+				return pollStatus(this);
+			})
+			.finally(() => {
+				for (const btn of this.externalButtons) {
+					btn.disabled = false;
+				}
+			});
+	},
+
 	load() {
 		return Promise.all([
 			callStatus().catch((err: unknown) => ({
@@ -392,13 +503,18 @@ export const main = (view as any).extend({
 					err instanceof Error ? err.message : _("Status backend unavailable"),
 			})),
 			callVersion().catch(() => ({ version: _("Unavailable") })),
+			callExternalStatus().catch((err: unknown) => ({
+				state: "unavailable",
+				error: err instanceof Error ? err.message : _("External endpoint backend unavailable"),
+			})),
 		]);
 	},
 
-	render(this: StatusView, data: [StatusResponse, VersionResponse]) {
+	render(this: StatusView, data: [StatusResponse, VersionResponse, ExternalStatus]) {
 		const status = data[0] || {};
 		const version = data[1] || {};
 		const normalized = normalizeStatus(status);
+		const external = data[2] || {};
 		const initialSyncState = getSyncState(normalized, normalized.error);
 
 		if (initialSyncState.clear) {
@@ -409,6 +525,9 @@ export const main = (view as any).extend({
 		const handleStop = ui.createHandlerFn(this, "handleAction", "stop");
 		const handleRestart = ui.createHandlerFn(this, "handleAction", "restart");
 		const handleReload = ui.createHandlerFn(this, "handleAction", "reload");
+		const handleReconcile = ui.createHandlerFn(this, "handleExternalAction", "reconcile");
+		const handleCheck = ui.createHandlerFn(this, "handleExternalAction", "check");
+		const handleSync = ui.createHandlerFn(this, "handleExternalAction", "sync");
 
 		const statusEl = <td class="td">{normalized.running ? _("Running") : _("Stopped")}</td>;
 		const versionEl = <td class="td">{normalized.error ? _("Unavailable") : version.version || _("Unknown")}</td>;
@@ -422,6 +541,14 @@ export const main = (view as any).extend({
 		const clientsEl = <td class="td">{`${normalized.clients} ${_("connected")} (${normalized.accepts} ${_("total accepted")})`}</td>;
 		const trafficEl = <td class="td">{`↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`}</td>;
 		const trafficTotalEl = <td class="td" style="display: none;"></td>;
+		const externalStateEl = <td class="td">{external.state || (external.enabled ? _("Unknown") : _("Disabled"))}</td>;
+		const externalEndpointEl = <td class="td">{formatExternalEndpoint(external)}</td>;
+		const externalMethodEl = <td class="td">{external.endpoint?.method || _("N/A")}</td>;
+		const externalLeaseEl = <td class="td">{external.endpoint?.leaseUntil || _("N/A")}</td>;
+		const externalValidationEl = <td class="td">{formatValidation(external)}</td>;
+		const externalFailuresEl = <td class="td">{`${external.failureCount || 0}/${external.failureThreshold || 3}`}</td>;
+		const externalErrorEl = <td class="td">{external.error || _("None")}</td>;
+		const externalInstancesEl = <td class="td">{renderExternalInstances(external)}</td>;
 
 		if (normalized.trafficPersist) {
 			trafficEl.textContent = `Session: ↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`;
@@ -455,6 +582,14 @@ export const main = (view as any).extend({
 		this.trafficTotalEl = trafficTotalEl;
 		this.syncEl = syncEl;
 		this.resultEl = resultEl;
+		this.externalStateEl = externalStateEl;
+		this.externalEndpointEl = externalEndpointEl;
+		this.externalMethodEl = externalMethodEl;
+		this.externalLeaseEl = externalLeaseEl;
+		this.externalValidationEl = externalValidationEl;
+		this.externalFailuresEl = externalFailuresEl;
+		this.externalErrorEl = externalErrorEl;
+		this.externalInstancesEl = externalInstancesEl;
 
 		const btnStart = (
 			<button
@@ -488,8 +623,12 @@ export const main = (view as any).extend({
 				{_("Reload Config")}
 			</button>
 		);
+		const btnReconcile = <button class="cbi-button cbi-button-action" onclick={handleReconcile}>{_("Remap Now")}</button>;
+		const btnCheck = <button class="cbi-button cbi-button-action" onclick={handleCheck}>{_("Check Locally")}</button>;
+		const btnSync = <button class="cbi-button cbi-button-action" onclick={handleSync}>{_("Sync DERP Map")}</button>;
 
 		this.actionButtons = [btnStart, btnStop, btnRestart, btnReload] as HTMLButtonElement[];
+		this.externalButtons = [btnReconcile, btnCheck, btnSync] as HTMLButtonElement[];
 
 		poll.add(() => pollStatus(this), 5);
 
@@ -549,6 +688,23 @@ export const main = (view as any).extend({
 							{errorEl}
 						</tr>
 					</table>
+				</div>
+				<div class="cbi-section" style="margin-top: 1em;">
+					<h3>{_("External Endpoint (Experimental)")}</h3>
+					<p>{_("The optional availability check runs from this router through NAT loopback. A pass does not prove Internet reachability, and a failure may only mean that the gateway does not support hairpin NAT.")}</p>
+					<table class="table">
+						<tr class="tr"><td class="td">{_("State")}</td>{externalStateEl}</tr>
+						<tr class="tr"><td class="td">{_("Mapped Endpoint")}</td>{externalEndpointEl}</tr>
+						<tr class="tr"><td class="td">{_("Mapping Method")}</td>{externalMethodEl}</tr>
+						<tr class="tr"><td class="td">{_("Lease Until")}</td>{externalLeaseEl}</tr>
+						<tr class="tr"><td class="td">{_("Local NAT-loopback Check")}</td>{externalValidationEl}</tr>
+						<tr class="tr"><td class="td">{_("Consecutive Failures")}</td>{externalFailuresEl}</tr>
+						<tr class="tr"><td class="td">{_("Tailnet Instances")}</td>{externalInstancesEl}</tr>
+						<tr class="tr"><td class="td">{_("External Error")}</td>{externalErrorEl}</tr>
+					</table>
+					<div class="cbi-section-node" style="margin-top: 0.75em;">
+						{btnReconcile} {" "} {btnCheck} {" "} {btnSync}
+					</div>
 				</div>
 				<div class="cbi-section" style="margin-top: 1em;">
 					<h3>{_("Service Actions")}</h3>

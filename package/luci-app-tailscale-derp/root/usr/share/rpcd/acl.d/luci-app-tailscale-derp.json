@@ -5,6 +5,7 @@
       "ubus": {
         "luci.tailscale-derp": [
           "get_status",
+          "get_external_status",
           "get_version",
           "get_clients",
           "get_peers",
@@ -26,6 +27,9 @@
           "stop",
           "restart",
           "reload_config",
+          "reconcile_external",
+          "check_external",
+          "sync_derpmap",
           "refresh_devices",
           "set_device_ipv4",
           "set_device_authorized",

@@ -1,4 +1,5 @@
 import { captureExpectedStatus, clearPendingStatus, savePendingStatus, validateSocketAddress, validateUnixSocketPath } from "@/shared/config";
+import { callExternalStatus, type ExternalStatus } from "@/shared/external";
 import { copyText } from "@/shared/utils";
 
 type ReloadConfigResponse = Record<string, never>;
@@ -34,6 +35,67 @@ function validateTLSPair(sectionId: string, value: string, option: FormOption, s
   }
 
   return true;
+}
+
+function formValue(option: FormOption, name: string, sectionId: string): unknown {
+  const match = option.map.lookupOption(name, sectionId);
+  return match?.[0].formvalue(match[1]);
+}
+
+function validateTLSForExternal(this: FormOption, sectionId: string, value: string, sibling: string): true | string {
+  const pairResult = validateTLSPair(sectionId, value, this, sibling);
+  if (pairResult !== true) {
+    return pairResult;
+  }
+
+  const externalEnabled = formValue(this, "enabled", "external");
+  if ((externalEnabled === "1" || externalEnabled === true) && !String(value ?? "").trim()) {
+    return _("Certificate and key are required when the external endpoint is enabled");
+  }
+
+  return true;
+}
+
+function validateExternalEnabled(this: FormOption, _sectionId: string, value: unknown): true | string {
+  if (value !== "1" && value !== true) {
+    return true;
+  }
+
+  const certfile = String(formValue(this, "certfile", "tls") ?? "").trim();
+  const keyfile = String(formValue(this, "keyfile", "tls") ?? "").trim();
+  return certfile && keyfile
+    ? true
+    : _("Configure the TLS certificate and key before enabling the external endpoint");
+}
+
+function validateExternalPort(_sectionId: string, value: unknown): true | string {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (text === "auto") {
+    return true;
+  }
+  const port = Number(text);
+  return Number.isInteger(port) && port >= 1 && port <= 65535
+    ? true
+    : _("Port must be auto or an integer from 1 to 65535");
+}
+
+function validateRequiredForDERPMap(this: FormOption, sectionId: string, value: unknown): true | string {
+  const enabled = this.section.formvalue(sectionId, "derpmap_sync");
+  if ((enabled === "1" || enabled === true) && !String(value ?? "").trim()) {
+    return _("This field is required when DERP map synchronization is enabled");
+  }
+  return true;
+}
+
+function validateDERPMapSync(this: FormOption, _sectionId: string, value: unknown): true | string {
+  if (value !== "1" && value !== true) {
+    return true;
+  }
+
+  const externalEnabled = formValue(this, "enabled", "external");
+  return externalEnabled === "1" || externalEnabled === true
+    ? true
+    : _("Enable the external endpoint before enabling DERP map synchronization");
 }
 
 type SaveApplyContext = {
@@ -80,6 +142,7 @@ type SettingsView = {
   configPlaceholderEl: HTMLElement;
   jsonPreEl: HTMLElement;
   hostInputEl: HTMLInputElement;
+  ipv4InputEl: HTMLInputElement;
   regionIdInputEl: HTMLInputElement;
   regionCodeInputEl: HTMLInputElement;
   regionNameInputEl: HTMLInputElement;
@@ -110,8 +173,8 @@ function formatBytes(n: number): string {
 }
 
 function pollStatus(view: SettingsView): Promise<void> {
-  return Promise.all([callStatus(), callVersion()])
-    .then(([statusData, versionData]) => {
+  return Promise.all([callStatus(), callVersion(), callExternalStatus().catch(() => null)])
+    .then(([statusData, versionData, externalData]) => {
       const status = statusData || {};
       const version = versionData || {};
       const isRunning = !!status.running;
@@ -143,6 +206,9 @@ function pollStatus(view: SettingsView): Promise<void> {
         const listenPort = parseInt(listenAddress.split(":").pop() || "3478") || 3478;
         view.currentListenPort = listenPort;
         view.currentStunEnabled = !!status.stun;
+        view.ipv4InputEl.value = externalData?.endpoint?.ipv4 || "";
+        view.derpPortInputEl.value = String(externalData?.endpoint?.derpPort ?? listenPort);
+        view.stunPortInputEl.value = String(externalData?.endpoint?.stunPort ?? (status.stun ? listenPort : -1));
         (view as any).updateJson();
       }
     })
@@ -166,6 +232,7 @@ export const main = (view as any).extend({
       uci.load("tailscale-derp"),
       callStatus().catch(() => null),
       callVersion().catch(() => null),
+      callExternalStatus().catch(() => null),
     ]);
   },
 
@@ -186,21 +253,23 @@ export const main = (view as any).extend({
       });
   },
 
-  render(this: MainViewContext, data: [unknown, StatusResponse | null, VersionResponse | null]) {
+  render(this: MainViewContext, data: [unknown, StatusResponse | null, VersionResponse | null, ExternalStatus | null]) {
 
     const status = data[1] || {};
     const version = data[2] || {};
+    const external = data[3] || {};
     const isRunning = !!status.running;
 
     const listenAddress = status.listen || ":3478";
     const listenPort = parseInt(listenAddress.split(":").pop() || "3478") || 3478;
 
-    const hostInput = <input type="text" class="cbi-input-text" style="width:100%" value={window.location.hostname} /> as HTMLInputElement;
+    const hostInput = <input type="text" class="cbi-input-text" style="width:100%" placeholder="derp.example.com" /> as HTMLInputElement;
+    const ipv4Input = <input type="text" class="cbi-input-text" style="width:100%" value={external.endpoint?.ipv4 || ""} readOnly /> as HTMLInputElement;
     const regionIdInput = <input type="number" class="cbi-input-text" style="width:100%" value="900" /> as HTMLInputElement;
     const regionCodeInput = <input type="text" class="cbi-input-text" style="width:100%" value="openwrt-derp" /> as HTMLInputElement;
     const regionNameInput = <input type="text" class="cbi-input-text" style="width:100%" value="OpenWrt DERP Relay" /> as HTMLInputElement;
-    const derpPortInput = <input type="number" class="cbi-input-text" style="width:100%" value={String(listenPort)} /> as HTMLInputElement;
-    const stunPortInput = <input type="number" class="cbi-input-text" style="width:100%" value={String(listenPort)} /> as HTMLInputElement;
+    const derpPortInput = <input type="number" class="cbi-input-text" style="width:100%" value={String(external.endpoint?.derpPort || listenPort)} readOnly /> as HTMLInputElement;
+    const stunPortInput = <input type="number" class="cbi-input-text" style="width:100%" value={String(external.endpoint?.stunPort ?? (status.stun ? listenPort : -1))} readOnly /> as HTMLInputElement;
 
     const jsonPre = <div class="derp-json-pre"></div> as HTMLElement;
     const copyBtn = <button class="cbi-button derp-copy-btn">{_("Copy")}</button> as HTMLButtonElement;
@@ -216,6 +285,7 @@ export const main = (view as any).extend({
       configPlaceholderEl: null as any,
       jsonPreEl: jsonPre,
       hostInputEl: hostInput,
+      ipv4InputEl: ipv4Input,
       regionIdInputEl: regionIdInput,
       regionCodeInputEl: regionCodeInput,
       regionNameInputEl: regionNameInput,
@@ -226,7 +296,8 @@ export const main = (view as any).extend({
     };
 
     const updateJson = () => {
-      const host = hostInput.value.trim() || window.location.hostname;
+      const host = hostInput.value.trim() || "derp.example.com";
+      const ipv4 = ipv4Input.value.trim();
       const regionId = parseInt(regionIdInput.value) || 900;
       const regionCode = regionCodeInput.value.trim() || "openwrt-derp";
       const regionName = regionNameInput.value.trim() || "OpenWrt DERP Relay";
@@ -245,8 +316,9 @@ export const main = (view as any).extend({
                 "Name": `${regionId}a`,
                 "RegionID": regionId,
                 "HostName": host,
+                ...(ipv4 ? { "IPv4": ipv4 } : {}),
                 "DERPPort": derpPort,
-                ...(hasStun ? { "STUNPort": stunPort } : {})
+                "STUNPort": hasStun ? stunPort : -1
               }
             ]
           }
@@ -453,8 +525,12 @@ export const main = (view as any).extend({
           </p>
           <div class="derp-config-inputs">
             <div class="derp-config-input-group">
-              <label>{_("Public HostName / IP")}</label>
+              <label>{_("TLS Hostname")}</label>
               {hostInput}
+            </div>
+            <div class="derp-config-input-group">
+              <label>{_("Mapped Public IPv4")}</label>
+              {ipv4Input}
             </div>
             <div class="derp-config-input-group">
               <label>{_("Region ID")}</label>
@@ -553,15 +629,71 @@ export const main = (view as any).extend({
     o.placeholder = "/etc/ssl/certs/derp.pem";
     o.rmempty = true;
     o.validate = function (this: FormOption, sectionId: string, value: any) {
-      return validateTLSPair(sectionId, value, this, "keyfile");
+      return validateTLSForExternal.call(this, sectionId, value, "keyfile");
     };
 
     o = s.option(form.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"));
     o.placeholder = "/etc/ssl/private/derp.key";
     o.rmempty = true;
     o.validate = function (this: FormOption, sectionId: string, value: any) {
-      return validateTLSPair(sectionId, value, this, "certfile");
+      return validateTLSForExternal.call(this, sectionId, value, "certfile");
     };
+
+    s = m.section(form.TypedSection, "external", _("External Endpoint (Experimental)"), _("Publish DERP and STUN through PCP, NAT-PMP, or UPnP and synchronize the mapped endpoint into selected Tailnet policies. Tailscale does not officially support custom DERP servers behind NAT."));
+    s.anonymous = true;
+
+    o = s.option(form.Flag, "enabled", _("Enable External Endpoint"), _("Acquire router port mappings and allow selected API instances to publish this endpoint"));
+    o.default = "0";
+    o.rmempty = false;
+    o.validate = validateExternalEnabled;
+
+    o = s.option(form.DynamicList, "method", _("Mapping Methods"), _("Methods are attempted in this order"));
+    o.value("pcp", "PCP");
+    o.value("natpmp", "NAT-PMP");
+    o.value("upnp", "UPnP IGD");
+    o.default = ["pcp", "natpmp", "upnp"];
+    o.rmempty = false;
+    o.depends("enabled", "1");
+
+    o = s.option(form.Value, "wan_interface", _("WAN Interface"), _("Use auto to follow the IPv4 default route, or enter a network interface name"));
+    o.default = "auto";
+    o.rmempty = false;
+    o.depends("enabled", "1");
+
+    o = s.option(form.Value, "derp_port", _("External DERP Port"), _("auto reads the actual local TCP listener and requests the same public port; the gateway may assign another port"));
+    o.default = "auto";
+    o.rmempty = false;
+    o.validate = validateExternalPort;
+    o.depends("enabled", "1");
+
+    o = s.option(form.Value, "stun_port", _("External STUN Port"), _("auto reads the actual local UDP listener and requests the same public port; the gateway may assign another port"));
+    o.default = "auto";
+    o.rmempty = false;
+    o.validate = validateExternalPort;
+    o.depends("enabled", "1");
+
+    o = s.option(form.Value, "lease_seconds", _("Mapping Lease (seconds)"));
+    o.default = "7200";
+    o.rmempty = false;
+    o.datatype = "uinteger";
+    o.depends("enabled", "1");
+
+    o = s.option(form.Value, "retry_seconds", _("Retry Interval (seconds)"));
+    o.default = "60";
+    o.rmempty = false;
+    o.datatype = "uinteger";
+    o.depends("enabled", "1");
+
+    o = s.option(form.Value, "sync_interval", _("DERP Map Sync Interval (seconds)"));
+    o.default = "300";
+    o.rmempty = false;
+    o.datatype = "uinteger";
+    o.depends("enabled", "1");
+
+    o = s.option(form.Flag, "validate_endpoint", _("Validate Endpoint Locally"), _("Require a local NAT-loopback DERP/TLS and STUN check before publishing. This does not prove Internet reachability. Three consecutive failures withdraw the managed nodes until recovery."));
+    o.default = "0";
+    o.rmempty = false;
+    o.depends("enabled", "1");
 
     s = m.section(form.TypedSection, "mesh", _("Mesh Settings"));
     s.anonymous = true;
@@ -706,6 +838,46 @@ export const main = (view as any).extend({
       }
       return null;
     };
+
+    o = apiSection.option(form.Flag, "derpmap_sync", _("Sync DERP Map"), _("Publish this router's mapped endpoint into this Tailnet policy. Credentials must have policy file write permission."));
+    o.default = "0";
+    o.rmempty = false;
+    o.validate = validateDERPMapSync;
+
+    o = apiSection.option(form.Value, "region_id", _("Region ID"), _("Custom DERP region ID (900-999)"));
+    o.placeholder = "900";
+    o.datatype = "range(900,999)";
+    o.rmempty = true;
+    o.depends("derpmap_sync", "1");
+    o.validate = validateRequiredForDERPMap;
+
+    o = apiSection.option(form.Value, "region_code", _("Region Code"));
+    o.placeholder = "openwrt-derp";
+    o.rmempty = true;
+    o.depends("derpmap_sync", "1");
+    o.validate = validateRequiredForDERPMap;
+
+    o = apiSection.option(form.Value, "region_name", _("Region Name"));
+    o.placeholder = _("OpenWrt DERP Relay");
+    o.rmempty = true;
+    o.depends("derpmap_sync", "1");
+    o.validate = validateRequiredForDERPMap;
+
+    o = apiSection.option(form.Value, "node_name", _("Node Name"), _("Stable ownership key used to update or withdraw only this managed node"));
+    o.placeholder = "900a";
+    o.rmempty = true;
+    o.depends("derpmap_sync", "1");
+    o.validate = validateRequiredForDERPMap;
+
+    o = apiSection.option(form.Value, "hostname", _("TLS Hostname"), _("Stable DNS name covered by the DERP server certificate"));
+    o.placeholder = "derp.example.com";
+    o.rmempty = true;
+    o.depends("derpmap_sync", "1");
+    o.validate = validateRequiredForDERPMap;
+
+    o = apiSection.option(form.Value, "cert_name", _("Certificate Name"), _("Optional TLS certificate verification name when it differs from the hostname"));
+    o.rmempty = true;
+    o.depends("derpmap_sync", "1");
 
     s = m.section(form.TypedSection, "ops", _("Operations"));
     s.anonymous = true;

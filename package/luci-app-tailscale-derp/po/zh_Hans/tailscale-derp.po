@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-tailscale-derp\n"
-"POT-Creation-Date: 2026-08-30 01:45+0800\n"
+"POT-Creation-Date: 2026-08-30 18:12+0800\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -45,6 +45,11 @@ msgid "ACL policy loaded."
 msgstr ""
 
 msgid "ACL policy validation failed."
+msgstr ""
+
+msgid ""
+"Acquire router port mappings and allow selected API instances to publish "
+"this endpoint"
 msgstr ""
 
 msgid "Actions"
@@ -106,6 +111,16 @@ msgstr "认证方式"
 msgid "Authorized"
 msgstr ""
 
+msgid ""
+"auto reads the actual local TCP listener and requests the same public port; "
+"the gateway may assign another port"
+msgstr ""
+
+msgid ""
+"auto reads the actual local UDP listener and requests the same public port; "
+"the gateway may assign another port"
+msgstr ""
+
 msgid "Backend unavailable"
 msgstr ""
 
@@ -118,10 +133,19 @@ msgstr ""
 msgid "cancelled."
 msgstr ""
 
+msgid "Certificate and key are required when the external endpoint is enabled"
+msgstr ""
+
 msgid "Certificate and key must be provided together"
 msgstr ""
 
 msgid "Certificate File"
+msgstr ""
+
+msgid "Certificate Name"
+msgstr ""
+
+msgid "Check Locally"
 msgstr ""
 
 msgid ""
@@ -142,6 +166,9 @@ msgid "completed successfully."
 msgstr ""
 
 msgid "Configure the Tailscale DERP relay server."
+msgstr ""
+
+msgid "Configure the TLS certificate and key before enabling the external endpoint"
 msgstr ""
 
 msgid "Confirm"
@@ -165,10 +192,16 @@ msgstr ""
 msgid "Connected to Control"
 msgstr ""
 
+msgid "Consecutive Failures"
+msgstr ""
+
 msgid "Copied!"
 msgstr ""
 
 msgid "Copy"
+msgstr ""
+
+msgid "Custom DERP region ID (900-999)"
 msgstr ""
 
 msgid "Custom tailscaled Socket"
@@ -187,6 +220,9 @@ msgid "DERP configuration JSON will be available here when the service is runnin
 msgstr ""
 
 msgid "DERP Connected Peers"
+msgstr ""
+
+msgid "DERP Map Sync Interval (seconds)"
 msgstr ""
 
 msgid "DERP Port"
@@ -264,6 +300,9 @@ msgstr ""
 msgid "Enable DERP mesh mode"
 msgstr ""
 
+msgid "Enable External Endpoint"
+msgstr ""
+
 msgid "Enable Mesh"
 msgstr ""
 
@@ -283,6 +322,9 @@ msgid "Enable STUN server on the same port"
 msgstr ""
 
 msgid "Enable tailscaled Verification"
+msgstr ""
+
+msgid "Enable the external endpoint before enabling DERP map synchronization"
 msgstr ""
 
 msgid "Enable Verify URLs"
@@ -325,6 +367,21 @@ msgid "Expiry (RFC3339)"
 msgstr ""
 
 msgid "External"
+msgstr ""
+
+msgid "External DERP Port"
+msgstr ""
+
+msgid "External Endpoint (Experimental)"
+msgstr ""
+
+msgid "External endpoint backend unavailable"
+msgstr ""
+
+msgid "External Error"
+msgstr ""
+
+msgid "External STUN Port"
 msgstr ""
 
 msgid "failed"
@@ -395,6 +452,9 @@ msgstr ""
 msgid "Last updated: %s"
 msgstr ""
 
+msgid "Lease Until"
+msgstr ""
+
 msgid "Leave empty to keep the current client ID"
 msgstr ""
 
@@ -425,7 +485,28 @@ msgstr ""
 msgid "Loading routes..."
 msgstr ""
 
+msgid "local NAT loopback only"
+msgstr ""
+
+msgid "Local NAT-loopback Check"
+msgstr ""
+
 msgid "Manage"
+msgstr ""
+
+msgid "Mapped Endpoint"
+msgstr ""
+
+msgid "Mapped Public IPv4"
+msgstr ""
+
+msgid "Mapping Lease (seconds)"
+msgstr ""
+
+msgid "Mapping Method"
+msgstr ""
+
+msgid "Mapping Methods"
 msgstr ""
 
 msgid "Mesh Enabled"
@@ -440,6 +521,8 @@ msgstr ""
 msgid "Mesh Shared Key"
 msgstr ""
 
+msgid "Methods are attempted in this order"
+msgstr ""
 
 msgid "Multiple Connections"
 msgstr ""
@@ -477,10 +560,16 @@ msgstr ""
 msgid "No posture attributes configured."
 msgstr ""
 
+msgid "No synchronized instances"
+msgstr ""
+
 msgid "Node ID"
 msgstr ""
 
 msgid "Node Key"
+msgstr ""
+
+msgid "Node Name"
 msgstr ""
 
 msgid "None"
@@ -490,6 +579,9 @@ msgid "Not authorized"
 msgstr ""
 
 msgid "Not configured"
+msgstr ""
+
+msgid "Not mapped"
 msgstr ""
 
 msgid "OAuth Client Credentials"
@@ -513,13 +605,16 @@ msgstr ""
 msgid "Offline"
 msgstr "离线"
 
+msgid "OpenWrt DERP Relay"
+msgstr ""
+
 msgid "Operations"
 msgstr ""
 
 msgid "Ops Unix Socket"
 msgstr ""
 
-msgid "Unix socket used by LuCI and local management requests"
+msgid "Optional TLS certificate verification name when it differs from the hostname"
 msgstr ""
 
 msgid "Path to the local tailscaled socket"
@@ -537,6 +632,8 @@ msgstr ""
 msgid "Port for health check endpoint"
 msgstr ""
 
+msgid "Port must be auto or an integer from 1 to 65535"
+msgstr ""
 
 msgid "Posture attribute deleted."
 msgstr ""
@@ -547,10 +644,18 @@ msgstr ""
 msgid "Posture Attributes"
 msgstr ""
 
-msgid "Public HostName / IP"
+msgid "Public Key"
 msgstr ""
 
-msgid "Public Key"
+msgid ""
+"Publish DERP and STUN through PCP, NAT-PMP, or UPnP and synchronize the "
+"mapped endpoint into selected Tailnet policies. Tailscale does not "
+"officially support custom DERP servers behind NAT."
+msgstr ""
+
+msgid ""
+"Publish this router's mapped endpoint into this Tailnet policy. Credentials "
+"must have policy file write permission."
 msgstr ""
 
 msgid "Refresh"
@@ -577,13 +682,25 @@ msgstr ""
 msgid "Reload Config"
 msgstr ""
 
+msgid "Remap Now"
+msgstr ""
+
 msgid "Remote Address"
 msgstr ""
 
 msgid "Require a client to pass at least one enabled verification method"
 msgstr ""
 
+msgid ""
+"Require a local NAT-loopback DERP/TLS and STUN check before publishing. This "
+"does not prove Internet reachability. Three consecutive failures withdraw "
+"the managed nodes until recovery."
+msgstr ""
+
 msgid "Restart"
+msgstr ""
+
+msgid "Retry Interval (seconds)"
 msgstr ""
 
 msgid "Running"
@@ -655,6 +772,12 @@ msgstr ""
 msgid "Sources"
 msgstr ""
 
+msgid "Stable DNS name covered by the DERP server certificate"
+msgstr ""
+
+msgid "Stable ownership key used to update or withdraw only this managed node"
+msgstr ""
+
 msgid "Stale or not synchronized"
 msgstr ""
 
@@ -662,6 +785,9 @@ msgid "Start"
 msgstr ""
 
 msgid "Start DERP service on boot"
+msgstr ""
+
+msgid "State"
 msgstr ""
 
 msgid "Status"
@@ -679,6 +805,9 @@ msgstr ""
 msgid "Storage Path"
 msgstr ""
 
+msgid "STUN disabled"
+msgstr ""
+
 msgid "STUN Enabled"
 msgstr ""
 
@@ -688,6 +817,9 @@ msgstr ""
 msgid "Subnet Routes"
 msgstr ""
 
+msgid "Sync DERP Map"
+msgstr ""
+
 msgid "Tags"
 msgstr ""
 
@@ -695,6 +827,9 @@ msgid "Tailnet"
 msgstr ""
 
 msgid "Tailnet ACL Management"
+msgstr ""
+
+msgid "Tailnet Instances"
 msgstr ""
 
 msgid "Tailscale ACL Configuration (DERP Map)"
@@ -716,8 +851,17 @@ msgid "the DERP service?"
 msgstr ""
 
 msgid ""
+"The optional availability check runs from this router through NAT loopback. "
+"A pass does not prove Internet reachability, and a failure may only mean "
+"that the gateway does not support hairpin NAT."
+msgstr ""
+
+msgid ""
 "The server policy changed. Your draft was retained; review it before saving "
 "again."
+msgstr ""
+
+msgid "This field is required when DERP map synchronization is enabled"
 msgstr ""
 
 msgid ""
@@ -726,6 +870,9 @@ msgid ""
 msgstr ""
 
 msgid "This permanently removes the device from this tailnet."
+msgstr ""
+
+msgid "TLS Hostname"
 msgstr ""
 
 msgid "TLS Settings"
@@ -761,6 +908,9 @@ msgstr ""
 msgid "Unavailable"
 msgstr ""
 
+msgid "Unix socket used by LuCI and local management requests"
+msgstr ""
+
 msgid "Unknown"
 msgstr ""
 
@@ -782,6 +932,9 @@ msgstr "使用 - 表示该凭据的默认 tailnet，或输入 tailnet ID"
 msgid "Use a custom socket path instead of tailscaled's default socket"
 msgstr ""
 
+msgid "Use auto to follow the IPv4 default route, or enter a network interface name"
+msgstr ""
+
 msgid "Use Custom tailscaled Socket"
 msgstr ""
 
@@ -789,6 +942,9 @@ msgid "User"
 msgstr ""
 
 msgid "Validate"
+msgstr ""
+
+msgid "Validate Endpoint Locally"
 msgstr ""
 
 msgid "Validating ACL policy..."
@@ -818,6 +974,9 @@ msgid "Waiting for saved configuration to become active:"
 msgstr ""
 
 msgid "Waiting for saved configuration to become active..."
+msgstr ""
+
+msgid "WAN Interface"
 msgstr ""
 
 msgid "Yes"
