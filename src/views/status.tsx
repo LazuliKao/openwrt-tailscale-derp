@@ -17,52 +17,52 @@ type ActionResponse = {
 };
 
 type StatusResponse = {
-	verifyClients?: string[];
-	verifyEnabled?: boolean;
-	verifyURLsEnabled?: boolean;
-	verifyTailscaled?: boolean;
-	verifyAPIEnabled?: boolean;
-	verifyAPIInstances?: number;
-	running?: boolean;
-	listen?: string;
-	stun?: boolean;
-	mesh?: boolean;
-	metrics?: string;
-	health?: string;
-	error?: string;
-	clients?: number;
-	accepts?: number;
-	bytesRecv?: number;
-	bytesSent?: number;
-	bytesRecvTotal?: number;
-	bytesSentTotal?: number;
-	acceptsTotal?: number;
-	trafficPersist?: boolean;
-	trafficPath?: string;
-	trafficInterval?: number;
+  verifyClients?: string[];
+  verifyEnabled?: boolean;
+  verifyURLsEnabled?: boolean;
+  verifyTailscaled?: boolean;
+  verifyAPIEnabled?: boolean;
+  verifyAPIInstances?: number;
+  running?: boolean;
+  listen?: string;
+  stun?: boolean;
+  mesh?: boolean;
+  opsSocket?: string;
+  health?: string;
+  error?: string;
+  clients?: number;
+  accepts?: number;
+  bytesRecv?: number;
+  bytesSent?: number;
+  bytesRecvTotal?: number;
+  bytesSentTotal?: number;
+  acceptsTotal?: number;
+  trafficPersist?: boolean;
+  trafficPath?: string;
+  trafficInterval?: number;
 };
 
 type VersionResponse = {
-	version?: string;
+  version?: string;
 };
 
 type NormalizedStatus = {
-	verifyClients: string;
-	running: boolean;
-	listen: string;
-	stun: string;
-	mesh: string;
-	metrics: string;
-	health: string;
-	error: string;
-	clients: number;
-	accepts: number;
-	bytesRecv: number;
-	bytesSent: number;
-	bytesRecvTotal: number;
-	bytesSentTotal: number;
-	acceptsTotal: number;
-	trafficPersist: boolean;
+  verifyClients: string;
+  running: boolean;
+  listen: string;
+  stun: string;
+  mesh: string;
+  opsSocket: string;
+  health: string;
+  error: string;
+  clients: number;
+  accepts: number;
+  bytesRecv: number;
+  bytesSent: number;
+  bytesRecvTotal: number;
+  bytesSentTotal: number;
+  acceptsTotal: number;
+  trafficPersist: boolean;
 };
 
 type SyncState = {
@@ -128,11 +128,11 @@ function normalizeStatus(data: StatusResponse): NormalizedStatus {
 	return {
 		verifyClients,
 		running: !!data.running,
-	listen: data.listen || _("N/A"),
-	stun: data.stun ? _("Yes") : _("No"),
-	mesh: data.mesh ? _("Yes") : _("No"),
-	metrics: data.metrics || _("N/A"),
-	health: data.health || _("N/A"),
+		listen: data.listen || _("N/A"),
+		stun: data.stun ? _("Yes") : _("No"),
+		mesh: data.mesh ? _("Yes") : _("No"),
+		opsSocket: data.opsSocket || _("N/A"),
+		health: data.health || _("N/A"),
 		error: data.error || "",
 		clients: data.clients ?? 0,
 		accepts: data.accepts ?? 0,
@@ -206,7 +206,7 @@ function matchesPendingStatus(
 		normalizeAddress(normalized.listen) === normalizeAddress(pending.listen) &&
 		normalized.stun === (pending.stun ? _("Yes") : _("No")) &&
 		normalized.mesh === (pending.mesh ? _("Yes") : _("No")) &&
-		normalized.metrics === pending.metrics &&
+		normalized.opsSocket === pending.opsSocket &&
 		normalized.health === pending.health
 	);
 }
@@ -257,7 +257,7 @@ type StatusView = {
 	stunEl: HTMLElement;
 	meshEl: HTMLElement;
 	verifyClientsEl: HTMLElement;
-	metricsEl: HTMLElement;
+	opsSocketEl: HTMLElement;
 	healthEl: HTMLElement;
 	errorEl: HTMLElement;
 	clientsEl: HTMLElement;
@@ -289,9 +289,9 @@ function pollStatus(view: StatusView): Promise<void> {
 				view.verifyClientsEl.textContent = normalized.error
 					? _("Unknown")
 					: normalized.verifyClients;
-				view.metricsEl.textContent = normalized.error
+				view.opsSocketEl.textContent = normalized.error
 					? _("Unavailable")
-					: normalized.metrics;
+					: normalized.opsSocket;
 				view.healthEl.textContent = normalized.error
 					? _("Unavailable")
 					: normalized.health;
@@ -322,7 +322,7 @@ function pollStatus(view: StatusView): Promise<void> {
 				view.stunEl.textContent = _("Unknown");
 				view.meshEl.textContent = _("Unknown");
 				view.verifyClientsEl.textContent = _("Unknown");
-				view.metricsEl.textContent = _("Unavailable");
+				view.opsSocketEl.textContent = _("Unavailable");
 				view.healthEl.textContent = _("Unavailable");
 				view.errorEl.textContent = message || _("Status backend unavailable");
 				view.clientsEl.textContent = `0 ${_("connected")} (0 ${_("total accepted")})`;
@@ -416,7 +416,7 @@ export const main = (view as any).extend({
 		const stunEl = <td class="td">{normalized.error ? _("Unknown") : normalized.stun}</td>;
 		const meshEl = <td class="td">{normalized.error ? _("Unknown") : normalized.mesh}</td>;
 		const verifyClientsEl = <td class="td">{normalized.error ? _("Unknown") : normalized.verifyClients}</td>;
-		const metricsEl = <td class="td">{normalized.error ? _("Unavailable") : normalized.metrics}</td>;
+		const opsSocketEl = <td class="td">{normalized.error ? _("Unavailable") : normalized.opsSocket}</td>;
 		const healthEl = <td class="td">{normalized.error ? _("Unavailable") : normalized.health}</td>;
 		const errorEl = <td class="td">{normalized.error || _("None")}</td>;
 		const clientsEl = <td class="td">{`${normalized.clients} ${_("connected")} (${normalized.accepts} ${_("total accepted")})`}</td>;
@@ -447,7 +447,7 @@ export const main = (view as any).extend({
 		this.stunEl = stunEl;
 		this.meshEl = meshEl;
 		this.verifyClientsEl = verifyClientsEl;
-		this.metricsEl = metricsEl;
+		this.opsSocketEl = opsSocketEl;
 		this.healthEl = healthEl;
 		this.errorEl = errorEl;
 		this.clientsEl = clientsEl;
@@ -537,8 +537,8 @@ export const main = (view as any).extend({
 							{verifyClientsEl}
 						</tr>
 						<tr class="tr">
-							<td class="td">{_("Metrics Address")}</td>
-							{metricsEl}
+							<td class="td">{_("Ops Unix Socket")}</td>
+							{opsSocketEl}
 						</tr>
 						<tr class="tr">
 							<td class="td">{_("Health Address")}</td>

@@ -182,46 +182,43 @@ function jsxDEV(e, t) {
 
 
 const pendingStatusStorageKey = "tailscale-derp.pendingStatus";
-function isSocketAddress(t) {
-    return /^(:\d+|[^\s:]+:\d+)$/.test(t);
+function isSocketAddress(e) {
+    return /^(:\d+|[^\s:]+:\d+)$/.test(e);
 }
-function validateSocketAddress(t, e) {
-    return e ? !!isSocketAddress(e) || "".concat(t, " must be in :port or host:port format") : "".concat(t, " is required");
+function validateSocketAddress(e, t) {
+    return t ? !!isSocketAddress(t) || "".concat(e, " must be in :port or host:port format") : "".concat(e, " is required");
 }
-function isLoopbackSocketAddress(t) {
-    return /^(127\.0\.0\.1:\d+|localhost:\d+|\[::1\]:\d+)$/.test(t);
+function validateUnixSocketPath(e, t) {
+    return t ? !(!t.startsWith("/") || /[\r\n]/.test(t)) || "".concat(e, " must be an absolute Unix socket path") : "".concat(e, " is required");
 }
-function validateLoopbackSocketAddress(t, e) {
-    return e ? !!isLoopbackSocketAddress(e) || "".concat(t, " must stay on loopback (127.0.0.1:port, localhost:port, or [::1]:port)") : "".concat(t, " is required");
+function firstOption(e, t, o) {
+    let n = e.lookupOption(o, t);
+    return n ? n[0] : null;
 }
-function firstOption(t, e, o) {
-    let r = t.lookupOption(o, e);
-    return r ? r[0] : null;
+function optionFormValue(e, t, o, n) {
+    let r = firstOption(e, t, o), s = null == r ? void 0 : r.formvalue(t);
+    return null == s || "" === s ? n : String(s);
 }
-function optionFormValue(t, e, o, r) {
-    let n = firstOption(t, e, o), s = null == n ? void 0 : n.formvalue(e);
-    return null == s || "" === s ? r : String(s);
+function boolFormValue(e, t, o, n) {
+    let r = optionFormValue(e, t, o, n ? "1" : "0");
+    return "1" === r || "true" === r;
 }
-function boolFormValue(t, e, o, r) {
-    let n = optionFormValue(t, e, o, r ? "1" : "0");
-    return "1" === n || "true" === n;
-}
-function captureExpectedStatus(t) {
+function captureExpectedStatus(e) {
     return {
-        enabled: boolFormValue(t, "global", "enabled", !1),
-        listen: optionFormValue(t, "global", "listen", ":3478"),
-        stun: boolFormValue(t, "global", "stun", !0),
-        mesh: boolFormValue(t, "mesh", "enabled", !1),
-        metrics: optionFormValue(t, "ops", "metrics", "127.0.0.1:9911"),
-        health: optionFormValue(t, "ops", "health", ":9912")
+        enabled: boolFormValue(e, "global", "enabled", !0),
+        listen: optionFormValue(e, "global", "listen", ":3478"),
+        stun: boolFormValue(e, "global", "stun", !0),
+        mesh: boolFormValue(e, "mesh", "enabled", !1),
+        opsSocket: optionFormValue(e, "ops", "socket", "/var/run/tailscale-derp/ops.sock"),
+        health: optionFormValue(e, "ops", "health", ":9912")
     };
 }
 function savePendingStatus(o) {
     if (!window.sessionStorage) return;
-    let r = e(t({}, o), {
+    let n = t(e({}, o), {
         savedAt: Date.now()
     });
-    window.sessionStorage.setItem(pendingStatusStorageKey, JSON.stringify(r));
+    window.sessionStorage.setItem(pendingStatusStorageKey, JSON.stringify(n));
 }
 function clearPendingStatus() {
     window.sessionStorage && window.sessionStorage.removeItem(pendingStatusStorageKey);
@@ -229,9 +226,9 @@ function clearPendingStatus() {
 function readPendingStatus() {
     if (!window.sessionStorage) return null;
     try {
-        let t = window.sessionStorage.getItem(pendingStatusStorageKey);
-        return t ? JSON.parse(t) : null;
-    } catch (t) {
+        let e = window.sessionStorage.getItem(pendingStatusStorageKey);
+        return e ? JSON.parse(e) : null;
+    } catch (e) {
         return window.sessionStorage.removeItem(pendingStatusStorageKey), null;
     }
 }
@@ -239,27 +236,27 @@ function readPendingStatus() {
 ;// CONCATENATED MODULE: ./src/views/status.tsx
 
 
-let status_c = L.view, status_r = L.rpc, status_s = L.ui, status_a = L.Poll, status_o = {
-    start: status_r.declare({
+let status_c = L.view, status_a = L.rpc, status_s = L.ui, status_r = L.Poll, status_o = {
+    start: status_a.declare({
         object: "luci.tailscale-derp",
         method: "start"
     }),
-    stop: status_r.declare({
+    stop: status_a.declare({
         object: "luci.tailscale-derp",
         method: "stop"
     }),
-    restart: status_r.declare({
+    restart: status_a.declare({
         object: "luci.tailscale-derp",
         method: "restart"
     }),
-    reload: status_r.declare({
+    reload: status_a.declare({
         object: "luci.tailscale-derp",
         method: "reload_config"
     })
-}, status_i = status_r.declare({
+}, status_i = status_a.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
-}), status_d = status_r.declare({
+}), status_d = status_a.declare({
     object: "luci.tailscale-derp",
     method: "get_version"
 });
@@ -267,7 +264,7 @@ function h(t) {
     return t < 1024 ? "".concat(t, " B") : t < 1048576 ? "".concat((t / 1024).toFixed(1), " KB") : t < 1073741824 ? "".concat((t / 1048576).toFixed(1), " MB") : "".concat((t / 1073741824).toFixed(1), " GB");
 }
 function u(t) {
-    var e, n, l, c, r, s, a, o;
+    var e, n, l, c, a, s, r, o;
     let i = [];
     t.verifyURLsEnabled && i.push(_("URLs")), t.verifyTailscaled && i.push(_("tailscaled")), t.verifyAPIEnabled && i.push(_("Official API"));
     let d = t.verifyEnabled ? i.length ? i.join(", ") : _("Enabled, but no methods configured") : _("Disabled");
@@ -277,16 +274,16 @@ function u(t) {
         listen: t.listen || _("N/A"),
         stun: t.stun ? _("Yes") : _("No"),
         mesh: t.mesh ? _("Yes") : _("No"),
-        metrics: t.metrics || _("N/A"),
+        opsSocket: t.opsSocket || _("N/A"),
         health: t.health || _("N/A"),
         error: t.error || "",
         clients: null != (e = t.clients) ? e : 0,
         accepts: null != (n = t.accepts) ? n : 0,
         bytesRecv: null != (l = t.bytesRecv) ? l : 0,
         bytesSent: null != (c = t.bytesSent) ? c : 0,
-        bytesRecvTotal: null != (r = t.bytesRecvTotal) ? r : 0,
+        bytesRecvTotal: null != (a = t.bytesRecvTotal) ? a : 0,
         bytesSentTotal: null != (s = t.bytesSentTotal) ? s : 0,
-        acceptsTotal: null != (a = t.acceptsTotal) ? a : 0,
+        acceptsTotal: null != (r = t.acceptsTotal) ? r : 0,
         trafficPersist: !!t.trafficPersist
     };
 }
@@ -302,7 +299,7 @@ function b(t, e) {
         color: "#c60",
         text: _("Saved configuration status expired before it could be confirmed."),
         clear: !0
-    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && status_f(t.listen) === status_f(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.metrics === n.metrics && t.health === n.health) ? {
+    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && status_f(t.listen) === status_f(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.opsSocket === n.opsSocket && t.health === n.health) ? {
         color: "#1a7f37",
         text: _("Saved configuration is now active."),
         clear: !0
@@ -321,13 +318,13 @@ function v(t) {
         status_i(),
         status_d()
     ]).then((e)=>{
-        let [l, c] = e, r = u(l || {});
-        t.statusEl.textContent = r.running ? _("Running") : _("Stopped"), t.versionEl.textContent = r.error ? _("Unavailable") : (null == c ? void 0 : c.version) || _("Unknown"), t.listenEl.textContent = r.error ? _("Unavailable") : r.listen, t.stunEl.textContent = r.error ? _("Unknown") : r.stun, t.meshEl.textContent = r.error ? _("Unknown") : r.mesh, t.verifyClientsEl.textContent = r.error ? _("Unknown") : r.verifyClients, t.metricsEl.textContent = r.error ? _("Unavailable") : r.metrics, t.healthEl.textContent = r.error ? _("Unavailable") : r.health, t.errorEl.textContent = r.error || _("None"), t.clientsEl.textContent = "".concat(r.clients, " ").concat(_("connected"), " (").concat(r.accepts, " ").concat(_("total accepted"), ")"), r.trafficPersist ? (t.trafficEl.textContent = "Session: \u2193 ".concat(h(r.bytesRecv), " / \u2191 ").concat(h(r.bytesSent)), t.trafficTotalEl.textContent = "Total: \u2193 ".concat(h(r.bytesRecvTotal), " / \u2191 ").concat(h(r.bytesSentTotal)), t.trafficTotalEl.style.display = "") : (t.trafficEl.textContent = "\u2193 ".concat(h(r.bytesRecv), " / \u2191 ").concat(h(r.bytesSent)), t.trafficTotalEl.style.display = "none");
-        let s = b(r, r.error);
+        let [l, c] = e, a = u(l || {});
+        t.statusEl.textContent = a.running ? _("Running") : _("Stopped"), t.versionEl.textContent = a.error ? _("Unavailable") : (null == c ? void 0 : c.version) || _("Unknown"), t.listenEl.textContent = a.error ? _("Unavailable") : a.listen, t.stunEl.textContent = a.error ? _("Unknown") : a.stun, t.meshEl.textContent = a.error ? _("Unknown") : a.mesh, t.verifyClientsEl.textContent = a.error ? _("Unknown") : a.verifyClients, t.opsSocketEl.textContent = a.error ? _("Unavailable") : a.opsSocket, t.healthEl.textContent = a.error ? _("Unavailable") : a.health, t.errorEl.textContent = a.error || _("None"), t.clientsEl.textContent = "".concat(a.clients, " ").concat(_("connected"), " (").concat(a.accepts, " ").concat(_("total accepted"), ")"), a.trafficPersist ? (t.trafficEl.textContent = "Session: \u2193 ".concat(h(a.bytesRecv), " / \u2191 ").concat(h(a.bytesSent)), t.trafficTotalEl.textContent = "Total: \u2193 ".concat(h(a.bytesRecvTotal), " / \u2191 ").concat(h(a.bytesSentTotal)), t.trafficTotalEl.style.display = "") : (t.trafficEl.textContent = "\u2193 ".concat(h(a.bytesRecv), " / \u2191 ").concat(h(a.bytesSent)), t.trafficTotalEl.style.display = "none");
+        let s = b(a, a.error);
         s.clear && clearPendingStatus(), t.syncEl.style.color = s.color, t.syncEl.textContent = s.text;
     }).catch((e)=>{
         let l = e instanceof Error ? e.message : _("Status backend unavailable");
-        t.statusEl.textContent = _("Offline"), t.versionEl.textContent = _("Unavailable"), t.listenEl.textContent = _("Unavailable"), t.stunEl.textContent = _("Unknown"), t.meshEl.textContent = _("Unknown"), t.verifyClientsEl.textContent = _("Unknown"), t.metricsEl.textContent = _("Unavailable"), t.healthEl.textContent = _("Unavailable"), t.errorEl.textContent = l || _("Status backend unavailable"), t.clientsEl.textContent = "0 ".concat(_("connected"), " (0 ").concat(_("total accepted"), ")"), t.trafficEl.textContent = "\u2193 0 B / \u2191 0 B", t.trafficTotalEl.textContent = "", t.trafficTotalEl.style.display = "none";
+        t.statusEl.textContent = _("Offline"), t.versionEl.textContent = _("Unavailable"), t.listenEl.textContent = _("Unavailable"), t.stunEl.textContent = _("Unknown"), t.meshEl.textContent = _("Unknown"), t.verifyClientsEl.textContent = _("Unknown"), t.opsSocketEl.textContent = _("Unavailable"), t.healthEl.textContent = _("Unavailable"), t.errorEl.textContent = l || _("Status backend unavailable"), t.clientsEl.textContent = "0 ".concat(_("connected"), " (0 ").concat(_("total accepted"), ")"), t.trafficEl.textContent = "\u2193 0 B / \u2191 0 B", t.trafficTotalEl.textContent = "", t.trafficTotalEl.style.display = "none";
         let c = b(null, l || _("Status backend unavailable"));
         c.clear && clearPendingStatus(), t.syncEl.style.color = c.color, t.syncEl.textContent = c.text;
     });
@@ -371,46 +368,46 @@ const main = status_c.extend({
                 }))
         ]),
     render (l) {
-        let c = l[0] || {}, r = l[1] || {}, o = u(c), i = b(o, o.error);
+        let c = l[0] || {}, a = l[1] || {}, o = u(c), i = b(o, o.error);
         i.clear && clearPendingStatus();
-        let d = status_s.createHandlerFn(this, "handleAction", "start"), f = status_s.createHandlerFn(this, "handleAction", "stop"), E = status_s.createHandlerFn(this, "handleAction", "restart"), y = status_s.createHandlerFn(this, "handleAction", "reload"), m = jsx("td", {
+        let d = status_s.createHandlerFn(this, "handleAction", "start"), f = status_s.createHandlerFn(this, "handleAction", "stop"), E = status_s.createHandlerFn(this, "handleAction", "restart"), y = status_s.createHandlerFn(this, "handleAction", "reload"), p = jsx("td", {
             class: "td",
             children: o.running ? _("Running") : _("Stopped")
         }), x = jsx("td", {
             class: "td",
-            children: o.error ? _("Unavailable") : r.version || _("Unknown")
-        }), p = jsx("td", {
-            class: "td",
-            children: o.error ? _("Unavailable") : o.listen
+            children: o.error ? _("Unavailable") : a.version || _("Unknown")
         }), C = jsx("td", {
             class: "td",
-            children: o.error ? _("Unknown") : o.stun
-        }), g = jsx("td", {
+            children: o.error ? _("Unavailable") : o.listen
+        }), m = jsx("td", {
             class: "td",
-            children: o.error ? _("Unknown") : o.mesh
+            children: o.error ? _("Unknown") : o.stun
         }), S = jsx("td", {
             class: "td",
+            children: o.error ? _("Unknown") : o.mesh
+        }), g = jsx("td", {
+            class: "td",
             children: o.error ? _("Unknown") : o.verifyClients
-        }), U = jsx("td", {
-            class: "td",
-            children: o.error ? _("Unavailable") : o.metrics
-        }), T = jsx("td", {
-            class: "td",
-            children: o.error ? _("Unavailable") : o.health
         }), k = jsx("td", {
             class: "td",
+            children: o.error ? _("Unavailable") : o.opsSocket
+        }), U = jsx("td", {
+            class: "td",
+            children: o.error ? _("Unavailable") : o.health
+        }), T = jsx("td", {
+            class: "td",
             children: o.error || _("None")
-        }), A = jsx("td", {
+        }), R = jsx("td", {
             class: "td",
             children: "".concat(o.clients, " ").concat(_("connected"), " (").concat(o.accepts, " ").concat(_("total accepted"), ")")
-        }), R = jsx("td", {
+        }), A = jsx("td", {
             class: "td",
             children: "\u2193 ".concat(h(o.bytesRecv), " / \u2191 ").concat(h(o.bytesSent))
         }), w = jsx("td", {
             class: "td",
             style: "display: none;"
         });
-        o.trafficPersist && (R.textContent = "Session: \u2193 ".concat(h(o.bytesRecv), " / \u2191 ").concat(h(o.bytesSent)), w.textContent = "Total: \u2193 ".concat(h(o.bytesRecvTotal), " / \u2191 ").concat(h(o.bytesSentTotal)), w.style.display = "");
+        o.trafficPersist && (A.textContent = "Session: \u2193 ".concat(h(o.bytesRecv), " / \u2191 ").concat(h(o.bytesSent)), w.textContent = "Total: \u2193 ".concat(h(o.bytesRecvTotal), " / \u2191 ").concat(h(o.bytesSentTotal)), w.style.display = "");
         let P = jsx("div", {
             style: "margin-bottom: 0.75em; color: ".concat(i.color, ";"),
             children: i.text
@@ -418,7 +415,7 @@ const main = status_c.extend({
             style: "margin-top: 0.75em; min-height: 1.2em; color: #1a7f37;",
             children: _("No action executed yet.")
         });
-        this.statusEl = m, this.versionEl = x, this.listenEl = p, this.stunEl = C, this.meshEl = g, this.verifyClientsEl = S, this.metricsEl = U, this.healthEl = T, this.errorEl = k, this.clientsEl = A, this.trafficEl = R, this.trafficTotalEl = w, this.syncEl = P, this.resultEl = N;
+        this.statusEl = p, this.versionEl = x, this.listenEl = C, this.stunEl = m, this.meshEl = S, this.verifyClientsEl = g, this.opsSocketEl = k, this.healthEl = U, this.errorEl = T, this.clientsEl = R, this.trafficEl = A, this.trafficTotalEl = w, this.syncEl = P, this.resultEl = N;
         let j = jsx("button", {
             class: "cbi-button cbi-button-action",
             onclick: d,
@@ -441,7 +438,7 @@ const main = status_c.extend({
             B,
             I,
             F
-        ], status_a.add(()=>v(this), 5), jsxs("div", {
+        ], status_r.add(()=>v(this), 5), jsxs("div", {
             children: [
                 jsx("h2", {
                     children: _("Tailscale DERP Status")
@@ -463,7 +460,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Service Status")
                                         }),
-                                        m
+                                        p
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -483,7 +480,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Connected Clients")
                                         }),
-                                        A
+                                        R
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -493,7 +490,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Traffic")
                                         }),
-                                        R
+                                        A
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -513,7 +510,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Listen Address")
                                         }),
-                                        p
+                                        C
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -523,7 +520,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("STUN Enabled")
                                         }),
-                                        C
+                                        m
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -533,7 +530,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Mesh Enabled")
                                         }),
-                                        g
+                                        S
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -543,7 +540,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Verify Clients")
                                         }),
-                                        S
+                                        g
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -551,9 +548,9 @@ const main = status_c.extend({
                                     children: [
                                         jsx("td", {
                                             class: "td",
-                                            children: _("Metrics Address")
+                                            children: _("Ops Unix Socket")
                                         }),
-                                        U
+                                        k
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -563,7 +560,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Health Address")
                                         }),
-                                        T
+                                        U
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -573,7 +570,7 @@ const main = status_c.extend({
                                             class: "td",
                                             children: _("Last Error")
                                         }),
-                                        k
+                                        T
                                     ]
                                 })
                             ]

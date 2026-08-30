@@ -5,7 +5,7 @@ export type ExpectedStatus = {
   listen: string;
   stun: boolean;
   mesh: boolean;
-  metrics: string;
+  opsSocket: string;
   health: string;
   savedAt?: number;
 };
@@ -29,17 +29,13 @@ export function validateSocketAddress(title: string, value: string): true | stri
   return true;
 }
 
-export function isLoopbackSocketAddress(value: string): boolean {
-  return /^(127\.0\.0\.1:\d+|localhost:\d+|\[::1\]:\d+)$/.test(value);
-}
-
-export function validateLoopbackSocketAddress(title: string, value: string): true | string {
+export function validateUnixSocketPath(title: string, value: string): true | string {
   if (!value) {
     return `${title} is required`;
   }
 
-  if (!isLoopbackSocketAddress(value)) {
-    return `${title} must stay on loopback (127.0.0.1:port, localhost:port, or [::1]:port)`;
+  if (!value.startsWith("/") || /[\r\n]/.test(value)) {
+    return `${title} must be an absolute Unix socket path`;
   }
 
   return true;
@@ -63,11 +59,11 @@ export function boolFormValue(map: FormMap, sectionId: string, optionName: strin
 
 export function captureExpectedStatus(map: FormMap): ExpectedStatus {
   return {
-    enabled: boolFormValue(map, "global", "enabled", false),
+    enabled: boolFormValue(map, "global", "enabled", true),
     listen: optionFormValue(map, "global", "listen", ":3478"),
     stun: boolFormValue(map, "global", "stun", true),
     mesh: boolFormValue(map, "mesh", "enabled", false),
-    metrics: optionFormValue(map, "ops", "metrics", "127.0.0.1:9911"),
+    opsSocket: optionFormValue(map, "ops", "socket", "/var/run/tailscale-derp/ops.sock"),
     health: optionFormValue(map, "ops", "health", ":9912")
   };
 }

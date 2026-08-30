@@ -440,11 +440,6 @@ msgstr ""
 msgid "Mesh Shared Key"
 msgstr ""
 
-msgid "Metrics Address"
-msgstr ""
-
-msgid "Metrics Port"
-msgstr ""
 
 msgid "Multiple Connections"
 msgstr ""
@@ -521,6 +516,12 @@ msgstr "离线"
 msgid "Operations"
 msgstr ""
 
+msgid "Ops Unix Socket"
+msgstr ""
+
+msgid "Unix socket used by LuCI and local management requests"
+msgstr ""
+
 msgid "Path to the local tailscaled socket"
 msgstr ""
 
@@ -536,8 +537,6 @@ msgstr ""
 msgid "Port for health check endpoint"
 msgstr ""
 
-msgid "Port for Prometheus metrics endpoint"
-msgstr ""
 
 msgid "Posture attribute deleted."
 msgstr ""

@@ -1,4 +1,4 @@
-import { captureExpectedStatus, clearPendingStatus, savePendingStatus, validateLoopbackSocketAddress, validateSocketAddress } from "@/shared/config";
+import { captureExpectedStatus, clearPendingStatus, savePendingStatus, validateSocketAddress, validateUnixSocketPath } from "@/shared/config";
 import { copyText } from "@/shared/utils";
 
 type ReloadConfigResponse = Record<string, never>;
@@ -50,7 +50,7 @@ type StatusResponse = {
   listen?: string;
   stun?: boolean;
   mesh?: boolean;
-  metrics?: string;
+  opsSocket?: string;
   health?: string;
   error?: string;
   clients?: number;
@@ -533,7 +533,7 @@ export const main = (view as any).extend({
     s.anonymous = true;
 
     let o: FormOption = s.option(form.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
-    o.default = "0";
+    o.default = "1";
     o.rmempty = false;
 
     o = s.option(form.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"));
@@ -710,11 +710,11 @@ export const main = (view as any).extend({
     s = m.section(form.TypedSection, "ops", _("Operations"));
     s.anonymous = true;
 
-    o = s.option(form.Value, "metrics", _("Metrics Port"), _("Port for Prometheus metrics endpoint"));
-    o.default = "127.0.0.1:9911";
+    o = s.option(form.Value, "socket", _("Ops Unix Socket"), _("Unix socket used by LuCI and local management requests"));
+    o.default = "/var/run/tailscale-derp/ops.sock";
     o.rmempty = false;
-    o.placeholder = "127.0.0.1:9911";
-    o.validate = (_sectionId: string, value: any) => validateLoopbackSocketAddress("Metrics address", value);
+    o.placeholder = "/var/run/tailscale-derp/ops.sock";
+    o.validate = (_sectionId: string, value: unknown) => validateUnixSocketPath("Ops socket path", String(value ?? ""));
 
     o = s.option(form.Value, "health", _("Health Port"), _("Port for health check endpoint"));
     o.default = ":9912";
