@@ -233,27 +233,52 @@ function readPendingStatus() {
     }
 }
 
+;// CONCATENATED MODULE: ./src/shared/sections.ts
+function ensureNamedSections(e, o, t) {
+    for (let [n, d] of t)e.get(o, n) || e.add(o, d, n);
+}
+
 ;// CONCATENATED MODULE: ./src/views/main.tsx
 
 
-let main_r = L.view, main_n = L.form, main_l = L.rpc, d = L.uci, main_p = L.ui, main_c = main_l.declare({
+
+let main_l = L.view, main_n = L.form, main_d = L.rpc, main_c = L.uci, main_p = L.ui, m = main_d.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
-function m(e, t) {
+function h(e, t) {
     let a = this.section.formvalue(e, "enabled");
     return "1" !== a && !0 !== a || !!t || _("Mesh key is required when mesh mode is enabled");
 }
-const main = main_r.extend({
+const main = main_l.extend({
     map: null,
-    load: ()=>d.load("tailscale-derp"),
-    handleSaveApply (o, i) {
-        let r = captureExpectedStatus(this.map);
+    load: ()=>main_c.load("tailscale-derp").then(()=>{
+            ensureNamedSections(main_c, "tailscale-derp", [
+                [
+                    "global",
+                    "settings"
+                ],
+                [
+                    "mesh",
+                    "mesh"
+                ],
+                [
+                    "ops",
+                    "ops"
+                ],
+                [
+                    "traffic",
+                    "traffic"
+                ]
+            ]);
+        }),
+    handleSaveApply (i, r) {
+        let o = captureExpectedStatus(this.map);
         return this.super("handleSaveApply", [
-            o,
-            i
-        ]).then(()=>main_c()).then(()=>{
-            savePendingStatus(r), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
+            i,
+            r
+        ]).then(()=>m()).then(()=>{
+            savePendingStatus(o), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((t)=>{
             clearPendingStatus();
             let s = t instanceof Error ? t.message : "unknown error";
@@ -269,10 +294,8 @@ const main = main_r.extend({
     render () {
         let e = new main_n.Map("tailscale-derp", _("Service Configuration"), _("Configure the local Tailscale DERP relay service."));
         this.map = e;
-        let t = e.section(main_n.TypedSection, "settings", _("Global Settings"));
-        t.anonymous = !0;
-        let a = t.option(main_n.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
-        return a.default = "1", a.rmempty = !1, (a = t.option(main_n.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", a.rmempty = !1, a.placeholder = ":3478", a.validate = (e, t)=>validateSocketAddress("Listen address", t), (a = t.option(main_n.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", a.rmempty = !1, (t = e.section(main_n.TypedSection, "mesh", _("Mesh Settings"))).anonymous = !0, (a = t.option(main_n.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", a.rmempty = !1, (a = t.option(main_n.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, a.depends("enabled", "1"), a.password = !0, a.validate = m, (t = e.section(main_n.TypedSection, "ops", _("Operations"))).anonymous = !0, (a = t.option(main_n.Value, "socket", _("Ops Unix Socket"), _("Unix socket used by LuCI and local management requests"))).default = "/var/run/tailscale-derp/ops.sock", a.rmempty = !1, a.placeholder = "/var/run/tailscale-derp/ops.sock", a.validate = (e, t)=>validateUnixSocketPath("Ops Unix Socket", t), (a = t.option(main_n.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", a.rmempty = !1, a.placeholder = ":9912", a.validate = (e, t)=>validateSocketAddress("Health address", t), (t = e.section(main_n.TypedSection, "traffic", _("Traffic Statistics"))).anonymous = !0, (a = t.option(main_n.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", a.rmempty = !1, (a = t.option(main_n.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", a.rmempty = !0, a.placeholder = "/tmp/tailscale-derp-traffic.json", a.depends("persist", "1"), (a = t.option(main_n.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", a.rmempty = !0, a.placeholder = "60", a.datatype = "uinteger", a.depends("persist", "1"), e.render();
+        let t = e.section(main_n.NamedSection, "global", "settings", _("Global Settings")), a = t.option(main_n.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
+        return a.default = "1", a.rmempty = !1, (a = t.option(main_n.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", a.rmempty = !1, a.placeholder = ":3478", a.validate = (e, t)=>validateSocketAddress("Listen address", t), (a = t.option(main_n.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", a.rmempty = !1, (a = (t = e.section(main_n.NamedSection, "mesh", "mesh", _("Mesh Settings"))).option(main_n.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", a.rmempty = !1, (a = t.option(main_n.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, a.depends("enabled", "1"), a.password = !0, a.validate = h, (a = (t = e.section(main_n.NamedSection, "ops", "ops", _("Operations"))).option(main_n.Value, "socket", _("Ops Unix Socket"), _("Unix socket used by LuCI and local management requests"))).default = "/var/run/tailscale-derp/ops.sock", a.rmempty = !1, a.placeholder = "/var/run/tailscale-derp/ops.sock", a.validate = (e, t)=>validateUnixSocketPath("Ops Unix Socket", t), (a = t.option(main_n.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", a.rmempty = !1, a.placeholder = ":9912", a.validate = (e, t)=>validateSocketAddress("Health address", t), (a = (t = e.section(main_n.NamedSection, "traffic", "traffic", _("Traffic Statistics"))).option(main_n.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", a.rmempty = !1, (a = t.option(main_n.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", a.rmempty = !0, a.placeholder = "/tmp/tailscale-derp-traffic.json", a.depends("persist", "1"), (a = t.option(main_n.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", a.rmempty = !0, a.placeholder = "60", a.datatype = "uinteger", a.depends("persist", "1"), e.render();
     }
 });
 

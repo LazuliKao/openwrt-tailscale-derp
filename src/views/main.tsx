@@ -5,6 +5,7 @@ import {
   validateSocketAddress,
   validateUnixSocketPath,
 } from "@/shared/config";
+import { ensureNamedSections } from "@/shared/sections";
 
 type ReloadConfigResponse = Record<string, never>;
 type FormMap = LuCI.form.Map;
@@ -39,7 +40,14 @@ export const main = (view as any).extend({
   map: null as FormMap | null,
 
   load() {
-    return uci.load("tailscale-derp");
+    return uci.load("tailscale-derp").then(() => {
+      ensureNamedSections(uci, "tailscale-derp", [
+        ["global", "settings"],
+        ["mesh", "mesh"],
+        ["ops", "ops"],
+        ["traffic", "traffic"],
+      ]);
+    });
   },
 
   handleSaveApply(this: SaveApplyContext, ev: Event, mode: string) {
@@ -67,8 +75,7 @@ export const main = (view as any).extend({
     );
     this.map = m;
 
-    let s = m.section(form.TypedSection, "settings", _("Global Settings"));
-    s.anonymous = true;
+    let s = m.section(form.NamedSection, "global", "settings", _("Global Settings"));
 
     let o: FormOption = s.option(form.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
     o.default = "1";
@@ -84,8 +91,7 @@ export const main = (view as any).extend({
     o.default = "1";
     o.rmempty = false;
 
-    s = m.section(form.TypedSection, "mesh", _("Mesh Settings"));
-    s.anonymous = true;
+    s = m.section(form.NamedSection, "mesh", "mesh", _("Mesh Settings"));
 
     o = s.option(form.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"));
     o.default = "0";
@@ -97,8 +103,7 @@ export const main = (view as any).extend({
     o.password = true;
     o.validate = validateMeshKey;
 
-    s = m.section(form.TypedSection, "ops", _("Operations"));
-    s.anonymous = true;
+    s = m.section(form.NamedSection, "ops", "ops", _("Operations"));
 
     o = s.option(form.Value, "socket", _("Ops Unix Socket"), _("Unix socket used by LuCI and local management requests"));
     o.default = "/var/run/tailscale-derp/ops.sock";
@@ -112,8 +117,7 @@ export const main = (view as any).extend({
     o.placeholder = ":9912";
     o.validate = (_sectionId: string, value: string) => validateSocketAddress("Health address", value);
 
-    s = m.section(form.TypedSection, "traffic", _("Traffic Statistics"));
-    s.anonymous = true;
+    s = m.section(form.NamedSection, "traffic", "traffic", _("Traffic Statistics"));
 
     o = s.option(form.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"));
     o.default = "0";

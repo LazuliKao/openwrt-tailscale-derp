@@ -233,41 +233,54 @@ function readPendingStatus() {
     }
 }
 
+;// CONCATENATED MODULE: ./src/shared/sections.ts
+function ensureNamedSections(e, o, t) {
+    for (let [n, d] of t)e.get(o, n) || e.add(o, d, n);
+}
+
 ;// CONCATENATED MODULE: ./src/views/authentication.tsx
 
 
-let authentication_a = L.view, authentication_n = L.form, authentication_i = L.rpc, authentication_l = L.uci, authentication_o = L.ui, authentication_r = authentication_i.declare({
+
+let authentication_n = L.view, authentication_i = L.form, authentication_l = L.rpc, authentication_o = L.uci, authentication_r = L.ui, authentication_d = authentication_l.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
-function d(e, t) {
+function authentication_s(e, t) {
     let a = this.section.formvalue(e, "derpmap_sync");
     return "1" !== a && !0 !== a || !!String(null != t ? t : "").trim() || _("This field is required when DERP map synchronization is enabled");
 }
-function authentication_s(e, t) {
-    var a;
-    return "1" !== t && !0 !== t || "1" === String(null != (a = authentication_l.get("tailscale-derp", "external", "enabled")) ? a : "") || _("Enable the external endpoint before enabling DERP map synchronization");
-}
 function authentication_c(e, t) {
+    var a;
+    return "1" !== t && !0 !== t || "1" === String(null != (a = authentication_o.get("tailscale-derp", "external", "enabled")) ? a : "") || _("Enable the external endpoint before enabling DERP map synchronization");
+}
+function authentication_p(e, t) {
     e.load = ()=>"", e.write = (e, a)=>{
         let n = String((Array.isArray(a) ? a[0] : a) || "").trim();
-        return n && authentication_l.set("tailscale-derp", e, t, n), null;
+        return n && authentication_o.set("tailscale-derp", e, t, n), null;
     }, e.remove = ()=>void 0;
 }
-function authentication_p(e) {
+function u(e) {
     e.modalonly = !0;
 }
-const main = authentication_a.extend({
-    load: ()=>authentication_l.load("tailscale-derp"),
+const main = authentication_n.extend({
+    load: ()=>authentication_o.load("tailscale-derp").then(()=>{
+            ensureNamedSections(authentication_o, "tailscale-derp", [
+                [
+                    "verify",
+                    "verify"
+                ]
+            ]);
+        }),
     handleSaveApply (t, a) {
         return this.super("handleSaveApply", [
             t,
             a
-        ]).then(()=>authentication_r()).then(()=>{
+        ]).then(()=>authentication_d()).then(()=>{
             window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((t)=>{
             let a = t instanceof Error ? t.message : "unknown error";
-            throw authentication_o.addNotification(null, jsxs("p", {
+            throw authentication_r.addNotification(null, jsxs("p", {
                 children: [
                     _("Failed to reload DERP configuration:"),
                     " ",
@@ -277,22 +290,20 @@ const main = authentication_a.extend({
         });
     },
     render () {
-        let e = new authentication_n.Map("tailscale-derp", _("Authentication"), _("Configure client admission verification and Tailscale API credentials.")), a = e.section(authentication_n.TypedSection, "verify", _("Client Verification"));
-        a.anonymous = !0;
-        let i = a.option(authentication_n.Flag, "enabled", _("Enable Client Verification"), _("Require a client to pass at least one enabled verification method"));
-        i.default = "0", i.rmempty = !1, (i = a.option(authentication_n.Flag, "url_enabled", _("Enable Verify URLs"), _("Allow clients accepted by any configured admission controller URL"))).default = "0", i.rmempty = !1, i.depends("enabled", "1"), (i = a.option(authentication_n.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients"))).rmempty = !0, i.placeholder = "https://your-admission-controller/verify", i.depends({
+        let e = new authentication_i.Map("tailscale-derp", _("Authentication"), _("Configure client admission verification and Tailscale API credentials.")), a = e.section(authentication_i.NamedSection, "verify", "verify", _("Client Verification")), n = a.option(authentication_i.Flag, "enabled", _("Enable Client Verification"), _("Require a client to pass at least one enabled verification method"));
+        n.default = "0", n.rmempty = !1, (n = a.option(authentication_i.Flag, "url_enabled", _("Enable Verify URLs"), _("Allow clients accepted by any configured admission controller URL"))).default = "0", n.rmempty = !1, n.depends("enabled", "1"), (n = a.option(authentication_i.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients"))).rmempty = !0, n.placeholder = "https://your-admission-controller/verify", n.depends({
             "tailscale-derp.verify.enabled": "1",
             "tailscale-derp.verify.url_enabled": "1"
-        }), (i = a.option(authentication_n.Flag, "tailscaled_enabled", _("Enable tailscaled Verification"), _("Verify clients against the local tailscaled instance using its default socket"))).default = "0", i.rmempty = !1, i.depends("enabled", "1"), (i = a.option(authentication_n.Flag, "tailscaled_socket_enabled", _("Use Custom tailscaled Socket"), _("Use a custom socket path instead of tailscaled's default socket"))).default = "0", i.rmempty = !1, i.depends({
+        }), (n = a.option(authentication_i.Flag, "tailscaled_enabled", _("Enable tailscaled Verification"), _("Verify clients against the local tailscaled instance using its default socket"))).default = "0", n.rmempty = !1, n.depends("enabled", "1"), (n = a.option(authentication_i.Flag, "tailscaled_socket_enabled", _("Use Custom tailscaled Socket"), _("Use a custom socket path instead of tailscaled's default socket"))).default = "0", n.rmempty = !1, n.depends({
             "tailscale-derp.verify.enabled": "1",
             "tailscale-derp.verify.tailscaled_enabled": "1"
-        }), (i = a.option(authentication_n.Value, "tailscaled_socket", _("Custom tailscaled Socket"), _("Path to the local tailscaled socket"))).rmempty = !0, i.placeholder = "/var/run/tailscale/tailscaled.sock", i.validate = (e, a)=>!a || validateUnixSocketPath("tailscaled socket path", a), i.depends({
+        }), (n = a.option(authentication_i.Value, "tailscaled_socket", _("Custom tailscaled Socket"), _("Path to the local tailscaled socket"))).rmempty = !0, n.placeholder = "/var/run/tailscale/tailscaled.sock", n.validate = (e, a)=>!a || validateUnixSocketPath("tailscaled socket path", a), n.depends({
             "tailscale-derp.verify.enabled": "1",
             "tailscale-derp.verify.tailscaled_enabled": "1",
             "tailscale-derp.verify.tailscaled_socket_enabled": "1"
-        }), (i = a.option(authentication_n.Flag, "api_enabled", _("Enable Official API Verification"), _("Allow authorized, non-expired devices from configured Tailscale API instances"))).default = "0", i.rmempty = !1, i.depends("enabled", "1"), (i = a.option(authentication_n.Value, "sync_interval", _("API Sync Interval (seconds)"), _("How often to refresh configured Tailscale API instances"))).default = "300", i.rmempty = !1, i.datatype = "uinteger", i.depends("enabled", "1"), (i = a.option(authentication_n.Value, "cache_ttl", _("API Cache TTL (seconds)"), _("Cached devices older than this are not used for authentication"))).default = "900", i.rmempty = !1, i.datatype = "uinteger", i.depends("enabled", "1");
-        let l = e.section(authentication_n.GridSection, "verify_api", _("Official API Instances"), _("Add one instance per Tailscale API credential. Select Edit to configure credentials and optional DERP Map synchronization."));
-        return l.anonymous = !0, l.addremove = !0, l.sortable = !0, l.nodescriptions = !0, l.addbtntitle = _("Add API Instance"), l.delbtntitle = _("Delete"), (i = l.option(authentication_n.Value, "label", _("Name"), _("A display name used in LuCI and device sources"))).rmempty = !0, (i = l.option(authentication_n.Value, "tailnet", _("Tailnet"), _("Use - for the credential's default tailnet, or enter a tailnet ID"))).default = "-", i.rmempty = !1, (i = l.option(authentication_n.ListValue, "auth_type", _("Authentication"), _("Choose API access token or OAuth Client Credentials. OAuth access tokens are acquired and renewed automatically."))).value("api_key", _("API Access Token")), i.value("oauth", _("OAuth Client Credentials")), i.default = "api_key", i.rmempty = !1, (i = l.option(authentication_n.Flag, "derpmap_sync", _("Sync DERP Map"), _("Publish this router's mapped endpoint into this Tailnet policy. Credentials must have policy file write permission."))).default = "0", i.rmempty = !1, i.validate = authentication_s, (i = l.option(authentication_n.Value, "api_key", _("API Access Token"), _("Enter a new API access token; leave empty to keep the current value"))).password = !0, i.rmempty = !0, i.placeholder = _("Leave empty to keep the current key"), i.depends("auth_type", "api_key"), authentication_c(i, "api_key"), authentication_p(i), (i = l.option(authentication_n.Value, "oauth_client_id", _("OAuth Client ID"), _("Enter a new client ID; leave empty to keep the current value"))).rmempty = !0, i.placeholder = _("Leave empty to keep the current client ID"), i.depends("auth_type", "oauth"), authentication_c(i, "oauth_client_id"), authentication_p(i), (i = l.option(authentication_n.Value, "oauth_client_secret", _("OAuth Client Secret"), _("Enter a new client secret; leave empty to keep the current value"))).password = !0, i.rmempty = !0, i.placeholder = _("Leave empty to keep the current client secret"), i.depends("auth_type", "oauth"), authentication_c(i, "oauth_client_secret"), authentication_p(i), (i = l.option(authentication_n.Value, "region_id", _("Region ID"), _("Custom DERP region ID (900-999)"))).placeholder = "900", i.datatype = "range(900,999)", i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "region_code", _("Region Code"))).placeholder = "openwrt-derp", i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "region_name", _("Region Name"))).placeholder = _("OpenWrt DERP Relay"), i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "node_name", _("Node Name"), _("Stable ownership key used to update or withdraw only this managed node"))).placeholder = "900a", i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "hostname", _("TLS Hostname"), _("Stable DNS name covered by the DERP server certificate"))).placeholder = "derp.example.com", i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "cert_name", _("Certificate Name"), _("Optional TLS certificate verification name when it differs from the hostname"))).rmempty = !0, i.depends("derpmap_sync", "1"), authentication_p(i), e.render();
+        }), (n = a.option(authentication_i.Flag, "api_enabled", _("Enable Official API Verification"), _("Allow authorized, non-expired devices from configured Tailscale API instances"))).default = "0", n.rmempty = !1, n.depends("enabled", "1"), (n = a.option(authentication_i.Value, "sync_interval", _("API Sync Interval (seconds)"), _("How often to refresh configured Tailscale API instances"))).default = "300", n.rmempty = !1, n.datatype = "uinteger", n.depends("enabled", "1"), (n = a.option(authentication_i.Value, "cache_ttl", _("API Cache TTL (seconds)"), _("Cached devices older than this are not used for authentication"))).default = "900", n.rmempty = !1, n.datatype = "uinteger", n.depends("enabled", "1");
+        let l = e.section(authentication_i.GridSection, "verify_api", _("Official API Instances"), _("Add one instance per Tailscale API credential. Select Edit to configure credentials and optional DERP Map synchronization."));
+        return l.anonymous = !0, l.addremove = !0, l.sortable = !0, l.nodescriptions = !0, l.addbtntitle = _("Add API Instance"), l.delbtntitle = _("Delete"), (n = l.option(authentication_i.Value, "label", _("Name"), _("A display name used in LuCI and device sources"))).rmempty = !0, (n = l.option(authentication_i.Value, "tailnet", _("Tailnet"), _("Use - for the credential's default tailnet, or enter a tailnet ID"))).default = "-", n.rmempty = !1, (n = l.option(authentication_i.ListValue, "auth_type", _("Authentication"), _("Choose API access token or OAuth Client Credentials. OAuth access tokens are acquired and renewed automatically."))).value("api_key", _("API Access Token")), n.value("oauth", _("OAuth Client Credentials")), n.default = "api_key", n.rmempty = !1, (n = l.option(authentication_i.Flag, "derpmap_sync", _("Sync DERP Map"), _("Publish this router's mapped endpoint into this Tailnet policy. Credentials must have policy file write permission."))).default = "0", n.rmempty = !1, n.validate = authentication_c, (n = l.option(authentication_i.Value, "api_key", _("API Access Token"), _("Enter a new API access token; leave empty to keep the current value"))).password = !0, n.rmempty = !0, n.placeholder = _("Leave empty to keep the current key"), n.depends("auth_type", "api_key"), authentication_p(n, "api_key"), u(n), (n = l.option(authentication_i.Value, "oauth_client_id", _("OAuth Client ID"), _("Enter a new client ID; leave empty to keep the current value"))).rmempty = !0, n.placeholder = _("Leave empty to keep the current client ID"), n.depends("auth_type", "oauth"), authentication_p(n, "oauth_client_id"), u(n), (n = l.option(authentication_i.Value, "oauth_client_secret", _("OAuth Client Secret"), _("Enter a new client secret; leave empty to keep the current value"))).password = !0, n.rmempty = !0, n.placeholder = _("Leave empty to keep the current client secret"), n.depends("auth_type", "oauth"), authentication_p(n, "oauth_client_secret"), u(n), (n = l.option(authentication_i.Value, "region_id", _("Region ID"), _("Custom DERP region ID (900-999)"))).placeholder = "900", n.datatype = "range(900,999)", n.rmempty = !0, n.depends("derpmap_sync", "1"), n.validate = authentication_s, u(n), (n = l.option(authentication_i.Value, "region_code", _("Region Code"))).placeholder = "openwrt-derp", n.rmempty = !0, n.depends("derpmap_sync", "1"), n.validate = authentication_s, u(n), (n = l.option(authentication_i.Value, "region_name", _("Region Name"))).placeholder = _("OpenWrt DERP Relay"), n.rmempty = !0, n.depends("derpmap_sync", "1"), n.validate = authentication_s, u(n), (n = l.option(authentication_i.Value, "node_name", _("Node Name"), _("Stable ownership key used to update or withdraw only this managed node"))).placeholder = "900a", n.rmempty = !0, n.depends("derpmap_sync", "1"), n.validate = authentication_s, u(n), (n = l.option(authentication_i.Value, "hostname", _("TLS Hostname"), _("Stable DNS name covered by the DERP server certificate"))).placeholder = "derp.example.com", n.rmempty = !0, n.depends("derpmap_sync", "1"), n.validate = authentication_s, u(n), (n = l.option(authentication_i.Value, "cert_name", _("Certificate Name"), _("Optional TLS certificate verification name when it differs from the hostname"))).rmempty = !0, n.depends("derpmap_sync", "1"), u(n), e.render();
     }
 });
 

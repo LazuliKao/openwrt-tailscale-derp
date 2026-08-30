@@ -1,3 +1,5 @@
+import { ensureNamedSections } from "@/shared/sections";
+
 type ReloadConfigResponse = Record<string, never>;
 type FormOption = any;
 type ExternalViewContext = {
@@ -69,7 +71,12 @@ function validateExternalPort(_sectionId: string, value: unknown): true | string
 
 export const main = (view as any).extend({
   load() {
-    return uci.load("tailscale-derp");
+    return uci.load("tailscale-derp").then(() => {
+      ensureNamedSections(uci, "tailscale-derp", [
+        ["tls", "tls"],
+        ["external", "external"],
+      ]);
+    });
   },
 
   handleSaveApply(this: ExternalViewContext, ev: Event, mode: string) {
@@ -92,8 +99,7 @@ export const main = (view as any).extend({
       _("Publish this DERP relay through a WAN gateway. Tailscale does not officially support custom DERP servers behind NAT."),
     );
 
-    let s = m.section(form.TypedSection, "tls", _("TLS Settings"));
-    s.anonymous = true;
+    let s = m.section(form.NamedSection, "tls", "tls", _("TLS Settings"));
 
     let o: FormOption = s.option(form.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"));
     o.placeholder = "/etc/ssl/certs/derp.pem";
@@ -110,12 +116,12 @@ export const main = (view as any).extend({
     };
 
     s = m.section(
-      form.TypedSection,
+      form.NamedSection,
+      "external",
       "external",
       _("External Endpoint (Experimental)"),
       _("Acquire router port mappings and optionally publish the mapped endpoint into selected Tailnet policies."),
     );
-    s.anonymous = true;
 
     o = s.option(form.Flag, "enabled", _("Enable External Endpoint"), _("Acquire router port mappings and allow selected API instances to publish this endpoint"));
     o.default = "0";

@@ -1,4 +1,5 @@
 import { validateUnixSocketPath } from "@/shared/config";
+import { ensureNamedSections } from "@/shared/sections";
 
 type ReloadConfigResponse = Record<string, never>;
 type FormOption = any;
@@ -59,7 +60,9 @@ function modalOnly(option: FormOption): void {
 
 export const main = (view as any).extend({
   load() {
-    return uci.load("tailscale-derp");
+    return uci.load("tailscale-derp").then(() => {
+      ensureNamedSections(uci, "tailscale-derp", [["verify", "verify"]]);
+    });
   },
 
   handleSaveApply(this: AuthenticationViewContext, ev: Event, mode: string) {
@@ -82,8 +85,7 @@ export const main = (view as any).extend({
       _("Configure client admission verification and Tailscale API credentials."),
     );
 
-    let s = m.section(form.TypedSection, "verify", _("Client Verification"));
-    s.anonymous = true;
+    let s = m.section(form.NamedSection, "verify", "verify", _("Client Verification"));
 
     let o: FormOption = s.option(form.Flag, "enabled", _("Enable Client Verification"), _("Require a client to pass at least one enabled verification method"));
     o.default = "0";
