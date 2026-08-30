@@ -6,11 +6,13 @@ import {
 	type TailnetInstance,
 	type TailnetsResponse,
 } from "@/shared/tailnets";
+import { createMonacoTextEditor, type MonacoTextEditor } from "@/shared/monaco";
 
 type TailnetsView = {
 	selectEl: HTMLSelectElement;
 	metadataEl: HTMLElement;
 	policyEl: HTMLTextAreaElement;
+	policyEditor?: MonacoTextEditor;
 	messageEl: HTMLElement;
 	loadEl: HTMLButtonElement;
 	validateEl: HTMLButtonElement;
@@ -37,6 +39,15 @@ function setActionState(viewState: TailnetsView, disabled: boolean): void {
 	viewState.saveEl.disabled = disabled;
 }
 
+function getPolicy(viewState: TailnetsView): string {
+	return viewState.policyEditor?.getValue() ?? viewState.policyEl.value;
+}
+
+function setPolicy(viewState: TailnetsView, value: string): void {
+	viewState.policyEl.value = value;
+	viewState.policyEditor?.setValue(value);
+}
+
 function renderMetadata(viewState: TailnetsView): void {
 	const tailnet = selectedTailnet(viewState);
 	if (!tailnet) {
@@ -61,14 +72,14 @@ function loadPolicy(viewState: TailnetsView, preserveDraft = false): Promise<voi
 		return Promise.resolve();
 	}
 
-	const draft = viewState.policyEl.value;
+	const draft = getPolicy(viewState);
 	setActionState(viewState, true);
 	setMessage(viewState, _("Loading ACL policy..."));
 	return callTailnetACL(viewState.instance)
 		.then((response) => {
 			if (response?.error) throw new Error(response.error);
 			viewState.etag = response?.etag || "";
-			if (!preserveDraft) viewState.policyEl.value = response?.hujson || "";
+			if (!preserveDraft) setPolicy(viewState, response?.hujson || "");
 			setMessage(
 				viewState,
 				preserveDraft
@@ -78,7 +89,7 @@ function loadPolicy(viewState: TailnetsView, preserveDraft = false): Promise<voi
 			);
 		})
 		.catch((err: unknown) => {
-			viewState.policyEl.value = draft;
+			setPolicy(viewState, draft);
 			setMessage(viewState, err instanceof Error ? err.message : _("Unable to load ACL policy."), "#cf222e");
 		})
 		.finally(() => {
@@ -87,7 +98,7 @@ function loadPolicy(viewState: TailnetsView, preserveDraft = false): Promise<voi
 }
 
 function validatePolicy(viewState: TailnetsView): void {
-	const hujson = viewState.policyEl.value;
+	const hujson = getPolicy(viewState);
 	if (!viewState.instance) {
 		setMessage(viewState, _("Select an API instance first."), "#cf222e");
 		return;
@@ -113,7 +124,7 @@ function validatePolicy(viewState: TailnetsView): void {
 }
 
 function savePolicy(viewState: TailnetsView): void {
-	const hujson = viewState.policyEl.value;
+	const hujson = getPolicy(viewState);
 	if (!viewState.instance) {
 		setMessage(viewState, _("Select an API instance first."), "#cf222e");
 		return;
@@ -148,6 +159,7 @@ export const main = (view as any).extend({
 		const selectEl = <select class="cbi-input-select" style="min-width: 20em;"></select> as HTMLSelectElement;
 		const metadataEl = <div></div>;
 		const policyEl = <textarea class="cbi-input-text" rows={24} spellcheck={false} style="box-sizing: border-box; font-family: monospace; resize: vertical; width: 100%;"></textarea> as HTMLTextAreaElement;
+		const editorEl = <div style="display: none; height: 36em;"></div>;
 		const messageEl = <div style="min-height: 1.2em; margin-top: 0.75em;"></div>;
 		const loadEl = <button class="cbi-button cbi-button-action" type="button">{_("Load")}</button> as HTMLButtonElement;
 		const validateEl = <button class="cbi-button cbi-button-apply" type="button">{_("Validate")}</button> as HTMLButtonElement;
@@ -175,7 +187,7 @@ export const main = (view as any).extend({
 		selectEl.onchange = () => {
 			viewState.instance = selectEl.value;
 			viewState.etag = "";
-			viewState.policyEl.value = "";
+			setPolicy(viewState, "");
 			renderMetadata(viewState);
 			setMessage(viewState, viewState.instance ? _("Load the ACL policy to begin editing.") : "");
 		};
@@ -184,6 +196,25 @@ export const main = (view as any).extend({
 		};
 		validateEl.onclick = () => validatePolicy(viewState);
 		saveEl.onclick = () => savePolicy(viewState);
+		void createMonacoTextEditor(
+			editorEl,
+			() => policyEl.value,
+			(value) => {
+				policyEl.value = value;
+			},
+		)
+			.then((editor) => {
+				if (!editorEl.isConnected) {
+					editor.dispose();
+					return;
+				}
+				viewState.policyEditor = editor;
+				policyEl.hidden = true;
+				editorEl.style.display = "block";
+			})
+			.catch(() => {
+				setMessage(viewState, _("Advanced editor could not be loaded; using the plain text editor."), "#c60");
+			});
 
 		return (
 			<div>
@@ -199,6 +230,7 @@ export const main = (view as any).extend({
 				<div class="cbi-section">
 					<h3>{_("ACL Policy (HuJSON)")}</h3>
 					{policyEl}
+					{editorEl}
 					<div style="margin-top: 0.75em;">
 						{loadEl} {validateEl} {saveEl}
 					</div>

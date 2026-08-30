@@ -213,18 +213,96 @@ const callSetTailnetACL = tailnets_e.declare({
     reject: !0
 });
 
+;// CONCATENATED MODULE: ./src/shared/monaco.ts
+let monaco_e, monaco_t;
+
+
+let monaco_r = "https://cdn.jsdelivr.net/npm/monaco-editor@".concat("0.56.0", "/esm");
+function monaco_a(e) {
+    let t = "import ".concat(JSON.stringify("".concat(monaco_r, "/").concat(e)), ";");
+    return URL.createObjectURL(new Blob([
+        t
+    ], {
+        type: "text/javascript"
+    }));
+}
+function monaco_i(e) {
+    return Function("url", "return import(url);")(e);
+}
+async function createMonacoTextEditor(s, c, l) {
+    let u = await function() {
+        if (monaco_e) return monaco_e;
+        !function() {
+            if (monaco_t) return;
+            let e = monaco_a("vs/editor/editor.worker.js"), r = monaco_a("vs/language/json/json.worker.js");
+            monaco_t = [
+                e,
+                r
+            ];
+            let i = globalThis, s = i.MonacoEnvironment;
+            i.MonacoEnvironment = _object_spread_props(_object_spread({}, s), {
+                getWorker: (t, o)=>(null == s ? void 0 : s.getWorker) ? s.getWorker(t, o) : new Worker("json" === o ? r : e, {
+                        type: "module"
+                    })
+            });
+        }();
+        let s = Promise.all([
+            monaco_i("".concat(monaco_r, "/vs/editor/editor.api.js")),
+            monaco_i("".concat(monaco_r, "/vs/language/json/monaco.contribution.js"))
+        ]).then((e)=>{
+            let [t, o] = e;
+            return o.jsonDefaults.setDiagnosticsOptions({
+                allowComments: !0,
+                enableSchemaRequest: !1,
+                trailingCommas: "ignore",
+                validate: !0
+            }), t;
+        });
+        return monaco_e = s, s.catch(()=>{
+            monaco_e === s && (monaco_e = void 0);
+        }), s;
+    }(), d = u.editor.createModel(c(), "json"), p = u.editor.create(s, {
+        automaticLayout: !0,
+        minimap: {
+            enabled: !1
+        },
+        model: d,
+        scrollBeyondLastLine: !1,
+        tabSize: 2,
+        wordWrap: "on"
+    }), m = d.onDidChangeContent(()=>l(d.getValue()));
+    return {
+        getValue: ()=>d.getValue(),
+        setValue (e) {
+            d.setValue(e);
+        },
+        dispose () {
+            m.dispose(), p.dispose(), d.dispose();
+        }
+    };
+}
+
 ;// CONCATENATED MODULE: ./src/views/tailnets.tsx
 
 
-let tailnets_c = L.view;
-function tailnets_o(e, i) {
+
+let tailnets_o = L.view;
+function tailnets_r(e, i) {
     let l = arguments.length > 2 && void 0 !== arguments[2] ? arguments[2] : "";
     e.messageEl.style.color = l, e.messageEl.textContent = i;
 }
-function tailnets_r(e, i) {
+function tailnets_s(e, i) {
     e.loadEl.disabled = i, e.validateEl.disabled = i, e.saveEl.disabled = i;
 }
-function tailnets_s(l) {
+function tailnets_d(e) {
+    var i, l;
+    return null != (i = null == (l = e.policyEditor) ? void 0 : l.getValue()) ? i : e.policyEl.value;
+}
+function tailnets_u(e, i) {
+    var l;
+    e.policyEl.value = i, null == (l = e.policyEditor) || l.setValue(i);
+}
+function h(l) {
     let n = l.tailnets.find((e)=>e.name === l.instance);
     n ? l.metadataEl.replaceChildren(jsxs("div", {
         class: "cbi-value",
@@ -255,90 +333,98 @@ function tailnets_s(l) {
         children: _("Select a configured API instance to manage its ACL policy.")
     }));
 }
-function d(e) {
+function v(e) {
     let i = arguments.length > 1 && void 0 !== arguments[1] && arguments[1];
-    if (!e.instance) return tailnets_o(e, _("Select an API instance first."), "#cf222e"), Promise.resolve();
-    let l = e.policyEl.value;
-    return tailnets_r(e, !0), tailnets_o(e, _("Loading ACL policy...")), callTailnetACL(e.instance).then((l)=>{
+    if (!e.instance) return tailnets_r(e, _("Select an API instance first."), "#cf222e"), Promise.resolve();
+    let l = tailnets_d(e);
+    return tailnets_s(e, !0), tailnets_r(e, _("Loading ACL policy...")), callTailnetACL(e.instance).then((l)=>{
         if (null == l ? void 0 : l.error) throw Error(l.error);
-        e.etag = (null == l ? void 0 : l.etag) || "", i || (e.policyEl.value = (null == l ? void 0 : l.hujson) || ""), tailnets_o(e, i ? _("The server policy changed. Your draft was retained; review it before saving again.") : _("ACL policy loaded."), i ? "#c60" : "#1a7f37");
+        e.etag = (null == l ? void 0 : l.etag) || "", i || tailnets_u(e, (null == l ? void 0 : l.hujson) || ""), tailnets_r(e, i ? _("The server policy changed. Your draft was retained; review it before saving again.") : _("ACL policy loaded."), i ? "#c60" : "#1a7f37");
     }).catch((i)=>{
-        e.policyEl.value = l, tailnets_o(e, i instanceof Error ? i.message : _("Unable to load ACL policy."), "#cf222e");
+        tailnets_u(e, l), tailnets_r(e, i instanceof Error ? i.message : _("Unable to load ACL policy."), "#cf222e");
     }).finally(()=>{
-        tailnets_r(e, !1);
+        tailnets_s(e, !1);
     });
 }
-const main = tailnets_c.extend({
+const main = tailnets_o.extend({
     load: ()=>callTailnets().catch(()=>({
                 instances: []
             })),
     render (n) {
-        let a = jsx("select", {
+        let t = jsx("select", {
             class: "cbi-input-select",
             style: "min-width: 20em;"
-        }), c = jsx("div", {}), u = jsx("textarea", {
+        }), o = jsx("div", {}), p = jsx("textarea", {
             class: "cbi-input-text",
             rows: 24,
             spellcheck: !1,
             style: "box-sizing: border-box; font-family: monospace; resize: vertical; width: 100%;"
-        }), v = jsx("div", {
+        }), f = jsx("div", {
+            style: "display: none; height: 36em;"
+        }), b = jsx("div", {
             style: "min-height: 1.2em; margin-top: 0.75em;"
-        }), h = jsx("button", {
+        }), y = jsx("button", {
             class: "cbi-button cbi-button-action",
             type: "button",
             children: _("Load")
-        }), f = jsx("button", {
+        }), m = jsx("button", {
             class: "cbi-button cbi-button-apply",
             type: "button",
             children: _("Validate")
-        }), p = jsx("button", {
+        }), g = jsx("button", {
             class: "cbi-button cbi-button-save",
             type: "button",
             children: _("Save")
-        }), b = (n.instances || []).filter((e)=>e.configured && e.name), y = {
-            selectEl: a,
-            metadataEl: c,
-            policyEl: u,
-            messageEl: v,
-            loadEl: h,
-            validateEl: f,
-            saveEl: p,
-            tailnets: b,
+        }), A = (n.instances || []).filter((e)=>e.configured && e.name), C = {
+            selectEl: t,
+            metadataEl: o,
+            policyEl: p,
+            messageEl: b,
+            loadEl: y,
+            validateEl: m,
+            saveEl: g,
+            tailnets: A,
             instance: "",
             etag: ""
         };
-        return a.replaceChildren(jsx("option", {
+        return t.replaceChildren(jsx("option", {
             value: "",
             children: _("Select an API instance")
-        }), ...b.map((i)=>jsx("option", {
+        }), ...A.map((i)=>jsx("option", {
                 value: i.name || "",
                 children: i.label || i.name
-            }))), tailnets_s(y), a.onchange = ()=>{
-            y.instance = a.value, y.etag = "", y.policyEl.value = "", tailnets_s(y), tailnets_o(y, y.instance ? _("Load the ACL policy to begin editing.") : "");
-        }, h.onclick = ()=>{
-            d(y);
-        }, f.onclick = ()=>{
+            }))), h(C), t.onchange = ()=>{
+            C.instance = t.value, C.etag = "", tailnets_u(C, ""), h(C), tailnets_r(C, C.instance ? _("Load the ACL policy to begin editing.") : "");
+        }, y.onclick = ()=>{
+            v(C);
+        }, m.onclick = ()=>{
             let e;
-            return e = y.policyEl.value, void (!y.instance ? tailnets_o(y, _("Select an API instance first."), "#cf222e") : !e.trim() ? tailnets_o(y, _("ACL policy is required."), "#cf222e") : (tailnets_r(y, !0), tailnets_o(y, _("Validating ACL policy...")), callValidateTailnetACL(y.instance, e).then((e)=>{
+            return e = tailnets_d(C), void (!C.instance ? tailnets_r(C, _("Select an API instance first."), "#cf222e") : !e.trim() ? tailnets_r(C, _("ACL policy is required."), "#cf222e") : (tailnets_s(C, !0), tailnets_r(C, _("Validating ACL policy...")), callValidateTailnetACL(C.instance, e).then((e)=>{
                 if (null == e ? void 0 : e.error) throw Error(e.error);
-                tailnets_o(y, _("ACL policy is valid."), "#1a7f37");
+                tailnets_r(C, _("ACL policy is valid."), "#1a7f37");
             }).catch((e)=>{
-                tailnets_o(y, e instanceof Error ? e.message : _("ACL policy validation failed."), "#cf222e");
+                tailnets_r(C, e instanceof Error ? e.message : _("ACL policy validation failed."), "#cf222e");
             }).finally(()=>{
-                tailnets_r(y, !1);
+                tailnets_s(C, !1);
             })));
-        }, p.onclick = ()=>{
+        }, g.onclick = ()=>{
             let e;
-            return e = y.policyEl.value, void (!y.instance ? tailnets_o(y, _("Select an API instance first."), "#cf222e") : !e.trim() || !y.etag ? tailnets_o(y, _("Load an ACL policy before saving."), "#cf222e") : (tailnets_r(y, !0), tailnets_o(y, _("Saving ACL policy...")), callSetTailnetACL(y.instance, e, y.etag).then((e)=>{
-                if (null == e ? void 0 : e.conflict) return d(y, !0);
+            return e = tailnets_d(C), void (!C.instance ? tailnets_r(C, _("Select an API instance first."), "#cf222e") : !e.trim() || !C.etag ? tailnets_r(C, _("Load an ACL policy before saving."), "#cf222e") : (tailnets_s(C, !0), tailnets_r(C, _("Saving ACL policy...")), callSetTailnetACL(C.instance, e, C.etag).then((e)=>{
+                if (null == e ? void 0 : e.conflict) return v(C, !0);
                 if (null == e ? void 0 : e.error) throw Error(e.error);
-                return d(y);
+                return v(C);
             }).catch((e)=>{
-                tailnets_o(y, e instanceof Error ? e.message : _("Unable to save ACL policy."), "#cf222e");
+                tailnets_r(C, e instanceof Error ? e.message : _("Unable to save ACL policy."), "#cf222e");
             }).finally(()=>{
-                tailnets_r(y, !1);
+                tailnets_s(C, !1);
             })));
-        }, jsxs("div", {
+        }, createMonacoTextEditor(f, ()=>p.value, (e)=>{
+            p.value = e;
+        }).then((e)=>{
+            f.isConnected ? (C.policyEditor = e, p.hidden = !0, f.style.display = "block") : e.dispose();
+        }).catch(()=>{
+            tailnets_r(C, _("Advanced editor could not be loaded; using the plain text editor."), "#c60");
+        }), jsxs("div", {
             children: [
                 jsx("h2", {
                     children: _("Tailnet ACL Management")
@@ -358,11 +444,11 @@ const main = tailnets_c.extend({
                                 }),
                                 jsx("div", {
                                     class: "cbi-value-field",
-                                    children: a
+                                    children: t
                                 })
                             ]
                         }),
-                        c
+                        o
                     ]
                 }),
                 jsxs("div", {
@@ -371,18 +457,19 @@ const main = tailnets_c.extend({
                         jsx("h3", {
                             children: _("ACL Policy (HuJSON)")
                         }),
-                        u,
+                        p,
+                        f,
                         jsxs("div", {
                             style: "margin-top: 0.75em;",
                             children: [
-                                h,
+                                y,
                                 " ",
-                                f,
+                                m,
                                 " ",
-                                p
+                                g
                             ]
                         }),
-                        v
+                        b
                     ]
                 })
             ]
