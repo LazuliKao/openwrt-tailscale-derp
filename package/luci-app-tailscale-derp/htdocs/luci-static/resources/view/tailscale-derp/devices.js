@@ -591,7 +591,7 @@ function showDeviceEditor(l, c) {
         let e = o.selected();
         if (!e) return N(g);
         P(_("Delete Device"), _("This permanently removes the device from this tailnet."), ()=>callDeleteDevice(e.instance, e.nodeId), c, _("Device deleted."));
-    }, w.showModal(_("Edit Device"), jsxs("div", {
+    }, w.showModal(_("Edit Device"), jsxs(Fragment, {
         children: [
             o.element,
             detailField(_("Name"), jsxs(Fragment, {
@@ -724,7 +724,7 @@ function showAttributesEditor(n, i) {
         type: "text"
     }), h = jsx("div", {
         style: "min-height: 1.2em; margin-top: 0.75em;"
-    }), v = jsx("button", {
+    }), p = jsx("button", {
         class: "cbi-button cbi-button-save",
         type: "button",
         children: _("Set Attribute")
@@ -784,7 +784,7 @@ function showAttributesEditor(n, i) {
             })), h.textContent = "";
         }).catch((e)=>setMessage(h, dialogs_S(e, _("Unable to load posture attributes.")), !0));
     };
-    o.select && (o.select.onchange = m), v.onclick = ()=>{
+    o.select && (o.select.onchange = m), p.onclick = ()=>{
         let e = o.selected(), t = a.value.trim(), n = d.value.trim(), l = u.value.trim();
         if (!e) return N(h);
         if (!t || !n || !l) return setMessage(h, _("Attribute key, JSON value, and expiry are required."), !0);
@@ -793,7 +793,7 @@ function showAttributesEditor(n, i) {
         } catch (e) {
             return setMessage(h, _("Attribute value must be valid JSON."), !0);
         }
-        C(v, h, ()=>callSetDeviceAttribute(e.instance, e.nodeId, t, n, l, b.value.trim()), i, _("Posture attribute updated."), m);
+        C(p, h, ()=>callSetDeviceAttribute(e.instance, e.nodeId, t, n, l, b.value.trim()), i, _("Posture attribute updated."), m);
     }, w.showModal(_("Posture Attributes"), jsxs("div", {
         children: [
             o.element,
@@ -847,7 +847,7 @@ function showAttributesEditor(n, i) {
                         children: _("Close")
                     }),
                     " ",
-                    v
+                    p
                 ]
             })
         ]

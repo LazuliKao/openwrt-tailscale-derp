@@ -15,6 +15,8 @@ export default defineConfig({
   source: {
     entry: {
       "main": "./src/views/main.tsx",
+      "external": "./src/views/external.tsx",
+      "authentication": "./src/views/authentication.tsx",
       "status": "./src/views/status.tsx",
       "peers": "./src/views/peers.tsx",
       "devices": "./src/views/devices.tsx",

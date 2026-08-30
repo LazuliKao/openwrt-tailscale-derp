@@ -215,7 +215,7 @@ function captureExpectedStatus(e) {
 }
 function savePendingStatus(o) {
     if (!window.sessionStorage) return;
-    let n = _object_spread_props(_object_spread({}, o), {
+    let n = t(e({}, o), {
         savedAt: Date.now()
     });
     window.sessionStorage.setItem(pendingStatusStorageKey, JSON.stringify(n));
@@ -233,46 +233,66 @@ function readPendingStatus() {
     }
 }
 
-;// CONCATENATED MODULE: ./src/views/main.tsx
+;// CONCATENATED MODULE: ./src/views/authentication.tsx
 
 
-let main_r = L.view, main_n = L.form, main_l = L.rpc, d = L.uci, main_p = L.ui, main_c = main_l.declare({
+let authentication_a = L.view, authentication_n = L.form, authentication_i = L.rpc, authentication_l = L.uci, authentication_o = L.ui, authentication_r = authentication_i.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
-function m(e, t) {
-    let a = this.section.formvalue(e, "enabled");
-    return "1" !== a && !0 !== a || !!t || _("Mesh key is required when mesh mode is enabled");
+function d(e, t) {
+    let a = this.section.formvalue(e, "derpmap_sync");
+    return "1" !== a && !0 !== a || !!String(null != t ? t : "").trim() || _("This field is required when DERP map synchronization is enabled");
 }
-const main = main_r.extend({
-    map: null,
-    load: ()=>d.load("tailscale-derp"),
-    handleSaveApply (o, i) {
-        let r = captureExpectedStatus(this.map);
+function authentication_s(e, t) {
+    var a;
+    return "1" !== t && !0 !== t || "1" === String(null != (a = authentication_l.get("tailscale-derp", "external", "enabled")) ? a : "") || _("Enable the external endpoint before enabling DERP map synchronization");
+}
+function authentication_c(e, t) {
+    e.load = ()=>"", e.write = (e, a)=>{
+        let n = String((Array.isArray(a) ? a[0] : a) || "").trim();
+        return n && authentication_l.set("tailscale-derp", e, t, n), null;
+    }, e.remove = ()=>void 0;
+}
+function authentication_p(e) {
+    e.modalonly = !0;
+}
+const main = authentication_a.extend({
+    load: ()=>authentication_l.load("tailscale-derp"),
+    handleSaveApply (t, a) {
         return this.super("handleSaveApply", [
-            o,
-            i
-        ]).then(()=>main_c()).then(()=>{
-            savePendingStatus(r), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
+            t,
+            a
+        ]).then(()=>authentication_r()).then(()=>{
+            window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((t)=>{
-            clearPendingStatus();
-            let s = t instanceof Error ? t.message : "unknown error";
-            throw main_p.addNotification(null, jsxs("p", {
+            let a = t instanceof Error ? t.message : "unknown error";
+            throw authentication_o.addNotification(null, jsxs("p", {
                 children: [
                     _("Failed to reload DERP configuration:"),
                     " ",
-                    s
+                    a
                 ]
             })), t;
         });
     },
     render () {
-        let e = new main_n.Map("tailscale-derp", _("Service Configuration"), _("Configure the local Tailscale DERP relay service."));
-        this.map = e;
-        let t = e.section(main_n.TypedSection, "settings", _("Global Settings"));
-        t.anonymous = !0;
-        let a = t.option(main_n.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
-        return a.default = "1", a.rmempty = !1, (a = t.option(main_n.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", a.rmempty = !1, a.placeholder = ":3478", a.validate = (e, t)=>validateSocketAddress("Listen address", t), (a = t.option(main_n.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", a.rmempty = !1, (t = e.section(main_n.TypedSection, "mesh", _("Mesh Settings"))).anonymous = !0, (a = t.option(main_n.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", a.rmempty = !1, (a = t.option(main_n.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, a.depends("enabled", "1"), a.password = !0, a.validate = m, (t = e.section(main_n.TypedSection, "ops", _("Operations"))).anonymous = !0, (a = t.option(main_n.Value, "socket", _("Ops Unix Socket"), _("Unix socket used by LuCI and local management requests"))).default = "/var/run/tailscale-derp/ops.sock", a.rmempty = !1, a.placeholder = "/var/run/tailscale-derp/ops.sock", a.validate = (e, t)=>validateUnixSocketPath("Ops Unix Socket", t), (a = t.option(main_n.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", a.rmempty = !1, a.placeholder = ":9912", a.validate = (e, t)=>validateSocketAddress("Health address", t), (t = e.section(main_n.TypedSection, "traffic", _("Traffic Statistics"))).anonymous = !0, (a = t.option(main_n.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", a.rmempty = !1, (a = t.option(main_n.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", a.rmempty = !0, a.placeholder = "/tmp/tailscale-derp-traffic.json", a.depends("persist", "1"), (a = t.option(main_n.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", a.rmempty = !0, a.placeholder = "60", a.datatype = "uinteger", a.depends("persist", "1"), e.render();
+        let e = new authentication_n.Map("tailscale-derp", _("Authentication"), _("Configure client admission verification and Tailscale API credentials.")), a = e.section(authentication_n.TypedSection, "verify", _("Client Verification"));
+        a.anonymous = !0;
+        let i = a.option(authentication_n.Flag, "enabled", _("Enable Client Verification"), _("Require a client to pass at least one enabled verification method"));
+        i.default = "0", i.rmempty = !1, (i = a.option(authentication_n.Flag, "url_enabled", _("Enable Verify URLs"), _("Allow clients accepted by any configured admission controller URL"))).default = "0", i.rmempty = !1, i.depends("enabled", "1"), (i = a.option(authentication_n.DynamicList, "url", _("Verify URLs"), _("Admission controller URLs for verifying DERP clients"))).rmempty = !0, i.placeholder = "https://your-admission-controller/verify", i.depends({
+            "tailscale-derp.verify.enabled": "1",
+            "tailscale-derp.verify.url_enabled": "1"
+        }), (i = a.option(authentication_n.Flag, "tailscaled_enabled", _("Enable tailscaled Verification"), _("Verify clients against the local tailscaled instance using its default socket"))).default = "0", i.rmempty = !1, i.depends("enabled", "1"), (i = a.option(authentication_n.Flag, "tailscaled_socket_enabled", _("Use Custom tailscaled Socket"), _("Use a custom socket path instead of tailscaled's default socket"))).default = "0", i.rmempty = !1, i.depends({
+            "tailscale-derp.verify.enabled": "1",
+            "tailscale-derp.verify.tailscaled_enabled": "1"
+        }), (i = a.option(authentication_n.Value, "tailscaled_socket", _("Custom tailscaled Socket"), _("Path to the local tailscaled socket"))).rmempty = !0, i.placeholder = "/var/run/tailscale/tailscaled.sock", i.validate = (e, a)=>!a || validateUnixSocketPath("tailscaled socket path", a), i.depends({
+            "tailscale-derp.verify.enabled": "1",
+            "tailscale-derp.verify.tailscaled_enabled": "1",
+            "tailscale-derp.verify.tailscaled_socket_enabled": "1"
+        }), (i = a.option(authentication_n.Flag, "api_enabled", _("Enable Official API Verification"), _("Allow authorized, non-expired devices from configured Tailscale API instances"))).default = "0", i.rmempty = !1, i.depends("enabled", "1"), (i = a.option(authentication_n.Value, "sync_interval", _("API Sync Interval (seconds)"), _("How often to refresh configured Tailscale API instances"))).default = "300", i.rmempty = !1, i.datatype = "uinteger", i.depends("enabled", "1"), (i = a.option(authentication_n.Value, "cache_ttl", _("API Cache TTL (seconds)"), _("Cached devices older than this are not used for authentication"))).default = "900", i.rmempty = !1, i.datatype = "uinteger", i.depends("enabled", "1");
+        let l = e.section(authentication_n.GridSection, "verify_api", _("Official API Instances"), _("Add one instance per Tailscale API credential. Select Edit to configure credentials and optional DERP Map synchronization."));
+        return l.anonymous = !0, l.addremove = !0, l.sortable = !0, l.nodescriptions = !0, l.addbtntitle = _("Add API Instance"), l.delbtntitle = _("Delete"), (i = l.option(authentication_n.Value, "label", _("Name"), _("A display name used in LuCI and device sources"))).rmempty = !0, (i = l.option(authentication_n.Value, "tailnet", _("Tailnet"), _("Use - for the credential's default tailnet, or enter a tailnet ID"))).default = "-", i.rmempty = !1, (i = l.option(authentication_n.ListValue, "auth_type", _("Authentication"), _("Choose API access token or OAuth Client Credentials. OAuth access tokens are acquired and renewed automatically."))).value("api_key", _("API Access Token")), i.value("oauth", _("OAuth Client Credentials")), i.default = "api_key", i.rmempty = !1, (i = l.option(authentication_n.Flag, "derpmap_sync", _("Sync DERP Map"), _("Publish this router's mapped endpoint into this Tailnet policy. Credentials must have policy file write permission."))).default = "0", i.rmempty = !1, i.validate = authentication_s, (i = l.option(authentication_n.Value, "api_key", _("API Access Token"), _("Enter a new API access token; leave empty to keep the current value"))).password = !0, i.rmempty = !0, i.placeholder = _("Leave empty to keep the current key"), i.depends("auth_type", "api_key"), authentication_c(i, "api_key"), authentication_p(i), (i = l.option(authentication_n.Value, "oauth_client_id", _("OAuth Client ID"), _("Enter a new client ID; leave empty to keep the current value"))).rmempty = !0, i.placeholder = _("Leave empty to keep the current client ID"), i.depends("auth_type", "oauth"), authentication_c(i, "oauth_client_id"), authentication_p(i), (i = l.option(authentication_n.Value, "oauth_client_secret", _("OAuth Client Secret"), _("Enter a new client secret; leave empty to keep the current value"))).password = !0, i.rmempty = !0, i.placeholder = _("Leave empty to keep the current client secret"), i.depends("auth_type", "oauth"), authentication_c(i, "oauth_client_secret"), authentication_p(i), (i = l.option(authentication_n.Value, "region_id", _("Region ID"), _("Custom DERP region ID (900-999)"))).placeholder = "900", i.datatype = "range(900,999)", i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "region_code", _("Region Code"))).placeholder = "openwrt-derp", i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "region_name", _("Region Name"))).placeholder = _("OpenWrt DERP Relay"), i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "node_name", _("Node Name"), _("Stable ownership key used to update or withdraw only this managed node"))).placeholder = "900a", i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "hostname", _("TLS Hostname"), _("Stable DNS name covered by the DERP server certificate"))).placeholder = "derp.example.com", i.rmempty = !0, i.depends("derpmap_sync", "1"), i.validate = d, authentication_p(i), (i = l.option(authentication_n.Value, "cert_name", _("Certificate Name"), _("Optional TLS certificate verification name when it differs from the hostname"))).rmempty = !0, i.depends("derpmap_sync", "1"), authentication_p(i), e.render();
     }
 });
 

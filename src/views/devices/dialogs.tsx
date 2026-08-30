@@ -250,7 +250,7 @@ export function showDeviceEditor(device: Device, actions: DeviceDialogActions): 
 
 	ui.showModal(
 		_("Edit Device"),
-		<div>
+		<>
 			{target.element}
 			{detailField(_("Name"), <>{nameInput} {saveName}</>)}
 			{detailField(_("IPv4 Address"), <>{ipv4Input} {saveIPv4}</>)}
@@ -263,7 +263,7 @@ export function showDeviceEditor(device: Device, actions: DeviceDialogActions): 
 			<div style="margin-top: 0.75em; text-align: right;">
 				<button class="cbi-button cbi-button-neutral" type="button" onclick={ui.hideModal}>{_("Close")}</button>
 			</div>
-		</div>,
+		</>,
 	);
 }
 

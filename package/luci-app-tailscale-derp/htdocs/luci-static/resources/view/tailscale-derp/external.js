@@ -178,101 +178,66 @@ function jsxDEV(e, t) {
 ;// CONCATENATED MODULE: ./node_modules/.pnpm/@lazulikao+luci-types@https_cfc1ec583b455be203cca2d0660c10a7/node_modules/@lazulikao/luci-types/src/jsx/jsx-runtime.ts
 
 
-;// CONCATENATED MODULE: ./src/shared/config.ts
+;// CONCATENATED MODULE: ./src/views/external.tsx
 
-
-const pendingStatusStorageKey = "tailscale-derp.pendingStatus";
-function isSocketAddress(e) {
-    return /^(:\d+|[^\s:]+:\d+)$/.test(e);
-}
-function validateSocketAddress(e, t) {
-    return t ? !!isSocketAddress(t) || "".concat(e, " must be in :port or host:port format") : "".concat(e, " is required");
-}
-function validateUnixSocketPath(e, t) {
-    return t ? !(!t.startsWith("/") || /[\r\n]/.test(t)) || "".concat(e, " must be an absolute Unix socket path") : "".concat(e, " is required");
-}
-function firstOption(e, t, o) {
-    let n = e.lookupOption(o, t);
-    return n ? n[0] : null;
-}
-function optionFormValue(e, t, o, n) {
-    let r = firstOption(e, t, o), s = null == r ? void 0 : r.formvalue(t);
-    return null == s || "" === s ? n : String(s);
-}
-function boolFormValue(e, t, o, n) {
-    let r = optionFormValue(e, t, o, n ? "1" : "0");
-    return "1" === r || "true" === r;
-}
-function captureExpectedStatus(e) {
-    return {
-        enabled: boolFormValue(e, "global", "enabled", !0),
-        listen: optionFormValue(e, "global", "listen", ":3478"),
-        stun: boolFormValue(e, "global", "stun", !0),
-        mesh: boolFormValue(e, "mesh", "enabled", !1),
-        opsSocket: optionFormValue(e, "ops", "socket", "/var/run/tailscale-derp/ops.sock"),
-        health: optionFormValue(e, "ops", "health", ":9912")
-    };
-}
-function savePendingStatus(o) {
-    if (!window.sessionStorage) return;
-    let n = _object_spread_props(_object_spread({}, o), {
-        savedAt: Date.now()
-    });
-    window.sessionStorage.setItem(pendingStatusStorageKey, JSON.stringify(n));
-}
-function clearPendingStatus() {
-    window.sessionStorage && window.sessionStorage.removeItem(pendingStatusStorageKey);
-}
-function readPendingStatus() {
-    if (!window.sessionStorage) return null;
-    try {
-        let e = window.sessionStorage.getItem(pendingStatusStorageKey);
-        return e ? JSON.parse(e) : null;
-    } catch (e) {
-        return window.sessionStorage.removeItem(pendingStatusStorageKey), null;
-    }
-}
-
-;// CONCATENATED MODULE: ./src/views/main.tsx
-
-
-let main_r = L.view, main_n = L.form, main_l = L.rpc, d = L.uci, main_p = L.ui, main_c = main_l.declare({
+let external_t = L.view, external_a = L.form, external_n = L.rpc, external_r = L.uci, external_l = L.ui, external_i = external_n.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
-function m(e, t) {
-    let a = this.section.formvalue(e, "enabled");
-    return "1" !== a && !0 !== a || !!t || _("Mesh key is required when mesh mode is enabled");
+function external_o(e, t, a) {
+    let n = e.map.lookupOption(t, a);
+    return null == n ? void 0 : n[0].formvalue(n[1]);
 }
-const main = main_r.extend({
-    map: null,
-    load: ()=>d.load("tailscale-derp"),
-    handleSaveApply (o, i) {
-        let r = captureExpectedStatus(this.map);
+function d(e, t, a) {
+    let n, r = (n = this.section.formvalue(e, a) || "", (!t || !!n) && (!!t || !n) || _("Certificate and key must be provided together"));
+    if (!0 !== r) return r;
+    let l = external_o(this, "enabled", "external");
+    return "1" !== l && !0 !== l || !!t.trim() || _("Certificate and key are required when the external endpoint is enabled");
+}
+function external_p(e, t) {
+    var a, n;
+    if ("1" !== t && !0 !== t) return !0;
+    let r = String(null != (a = external_o(this, "certfile", "tls")) ? a : "").trim(), l = String(null != (n = external_o(this, "keyfile", "tls")) ? n : "").trim();
+    return !!r && !!l || _("Configure the TLS certificate and key before enabling the external endpoint");
+}
+function external_s(e, t) {
+    let a = String(null != t ? t : "").trim().toLowerCase();
+    if ("auto" === a) return !0;
+    let n = Number(a);
+    return !!Number.isInteger(n) && n >= 1 && n <= 65535 || _("Port must be auto or an integer from 1 to 65535");
+}
+const main = external_t.extend({
+    load: ()=>external_r.load("tailscale-derp"),
+    handleSaveApply (t, a) {
         return this.super("handleSaveApply", [
-            o,
-            i
-        ]).then(()=>main_c()).then(()=>{
-            savePendingStatus(r), window.location.href = "/cgi-bin/luci/admin/services/derp/status";
+            t,
+            a
+        ]).then(()=>external_i()).then(()=>{
+            window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((t)=>{
-            clearPendingStatus();
-            let s = t instanceof Error ? t.message : "unknown error";
-            throw main_p.addNotification(null, jsxs("p", {
+            let a = t instanceof Error ? t.message : "unknown error";
+            throw external_l.addNotification(null, jsxs("p", {
                 children: [
                     _("Failed to reload DERP configuration:"),
                     " ",
-                    s
+                    a
                 ]
             })), t;
         });
     },
     render () {
-        let e = new main_n.Map("tailscale-derp", _("Service Configuration"), _("Configure the local Tailscale DERP relay service."));
-        this.map = e;
-        let t = e.section(main_n.TypedSection, "settings", _("Global Settings"));
+        let e = new external_a.Map("tailscale-derp", _("External Endpoint"), _("Publish this DERP relay through a WAN gateway. Tailscale does not officially support custom DERP servers behind NAT.")), t = e.section(external_a.TypedSection, "tls", _("TLS Settings"));
         t.anonymous = !0;
-        let a = t.option(main_n.Flag, "enabled", _("Enable Service"), _("Start DERP service on boot"));
-        return a.default = "1", a.rmempty = !1, (a = t.option(main_n.Value, "listen", _("Listen Address"), _("Address and port for DERP/STUN (e.g. :3478)"))).default = ":3478", a.rmempty = !1, a.placeholder = ":3478", a.validate = (e, t)=>validateSocketAddress("Listen address", t), (a = t.option(main_n.Flag, "stun", _("Enable STUN"), _("Enable STUN server on the same port"))).default = "1", a.rmempty = !1, (t = e.section(main_n.TypedSection, "mesh", _("Mesh Settings"))).anonymous = !0, (a = t.option(main_n.Flag, "enabled", _("Enable Mesh"), _("Enable DERP mesh mode"))).default = "0", a.rmempty = !1, (a = t.option(main_n.Value, "key", _("Mesh Shared Key"), _("Shared mesh key passed to the DERP server when mesh mode is enabled"))).rmempty = !0, a.depends("enabled", "1"), a.password = !0, a.validate = m, (t = e.section(main_n.TypedSection, "ops", _("Operations"))).anonymous = !0, (a = t.option(main_n.Value, "socket", _("Ops Unix Socket"), _("Unix socket used by LuCI and local management requests"))).default = "/var/run/tailscale-derp/ops.sock", a.rmempty = !1, a.placeholder = "/var/run/tailscale-derp/ops.sock", a.validate = (e, t)=>validateUnixSocketPath("Ops Unix Socket", t), (a = t.option(main_n.Value, "health", _("Health Port"), _("Port for health check endpoint"))).default = ":9912", a.rmempty = !1, a.placeholder = ":9912", a.validate = (e, t)=>validateSocketAddress("Health address", t), (t = e.section(main_n.TypedSection, "traffic", _("Traffic Statistics"))).anonymous = !0, (a = t.option(main_n.Flag, "persist", _("Enable Persistence"), _("Save cumulative traffic statistics to file across restarts"))).default = "0", a.rmempty = !1, (a = t.option(main_n.Value, "path", _("Storage Path"), _("File path for storing traffic statistics (use tmpfs to minimize flash writes)"))).default = "/tmp/tailscale-derp-traffic.json", a.rmempty = !0, a.placeholder = "/tmp/tailscale-derp-traffic.json", a.depends("persist", "1"), (a = t.option(main_n.Value, "interval", _("Save Interval (seconds)"), _("How often to save traffic statistics (higher = less flash wear)"))).default = "60", a.rmempty = !0, a.placeholder = "60", a.datatype = "uinteger", a.depends("persist", "1"), e.render();
+        let n = t.option(external_a.Value, "certfile", _("Certificate File"), _("Path to TLS certificate (leave empty for auto)"));
+        return n.placeholder = "/etc/ssl/certs/derp.pem", n.rmempty = !0, n.validate = function(e, t) {
+            return d.call(this, e, t, "keyfile");
+        }, (n = t.option(external_a.Value, "keyfile", _("Key File"), _("Path to TLS private key (leave empty for auto)"))).placeholder = "/etc/ssl/private/derp.key", n.rmempty = !0, n.validate = function(e, t) {
+            return d.call(this, e, t, "certfile");
+        }, (t = e.section(external_a.TypedSection, "external", _("External Endpoint (Experimental)"), _("Acquire router port mappings and optionally publish the mapped endpoint into selected Tailnet policies."))).anonymous = !0, (n = t.option(external_a.Flag, "enabled", _("Enable External Endpoint"), _("Acquire router port mappings and allow selected API instances to publish this endpoint"))).default = "0", n.rmempty = !1, n.validate = external_p, (n = t.option(external_a.DynamicList, "method", _("Mapping Methods"), _("Methods are attempted in this order"))).value("pcp", "PCP"), n.value("natpmp", "NAT-PMP"), n.value("upnp", "UPnP IGD"), n.default = [
+            "pcp",
+            "natpmp",
+            "upnp"
+        ], n.rmempty = !1, n.depends("enabled", "1"), (n = t.option(external_a.Value, "wan_interface", _("WAN Interface"), _("Use auto to follow the IPv4 default route, or enter a network interface name"))).default = "auto", n.rmempty = !1, n.depends("enabled", "1"), (n = t.option(external_a.Value, "derp_port", _("External DERP Port"), _("auto reads the actual local TCP listener and requests the same public port; the gateway may assign another port"))).default = "auto", n.rmempty = !1, n.validate = external_s, n.depends("enabled", "1"), (n = t.option(external_a.Value, "stun_port", _("External STUN Port"), _("auto reads the actual local UDP listener and requests the same public port; the gateway may assign another port"))).default = "auto", n.rmempty = !1, n.validate = external_s, n.depends("enabled", "1"), (n = t.option(external_a.Value, "lease_seconds", _("Mapping Lease (seconds)"))).default = "7200", n.rmempty = !1, n.datatype = "uinteger", n.depends("enabled", "1"), (n = t.option(external_a.Value, "retry_seconds", _("Retry Interval (seconds)"))).default = "60", n.rmempty = !1, n.datatype = "uinteger", n.depends("enabled", "1"), (n = t.option(external_a.Value, "sync_interval", _("DERP Map Sync Interval (seconds)"))).default = "300", n.rmempty = !1, n.datatype = "uinteger", n.depends("enabled", "1"), (n = t.option(external_a.Flag, "validate_endpoint", _("Validate Endpoint Locally"), _("Require a local NAT-loopback DERP/TLS and STUN check before publishing. This does not prove Internet reachability. Three consecutive failures withdraw the managed nodes until recovery."))).default = "0", n.rmempty = !1, n.depends("enabled", "1"), e.render();
     }
 });
 
