@@ -19,6 +19,7 @@ export default defineConfig({
       "external": "./src/views/external.tsx",
       "authentication": "./src/views/authentication.tsx",
       "status": "./src/views/status.tsx",
+      "logs": "./src/views/logs.tsx",
       "peers": "./src/views/peers.tsx",
       "devices": "./src/views/devices.tsx",
       "tailnets": "./src/views/tailnets.tsx"
@@ -85,6 +86,14 @@ export default defineConfig({
       config.optimization.avoidEntryIife = true;
 
       config.plugins = config.plugins || [];
+      config.plugins.push(
+        new rspack.BannerPlugin({
+          banner: "'require tools.views as views';",
+          raw: true,
+          entryOnly: true,
+          test: /logs\.js$/
+        })
+      );
       config.plugins.push(
         new rspack.BannerPlugin({
           banner: luciRequires,

@@ -504,6 +504,9 @@ msgstr "保持为空以使用当前的密钥"
 msgid "Listen Address"
 msgstr "监听地址"
 
+msgid "Logs"
+msgstr "日志"
+
 msgid "Load"
 msgstr "加载"
 
@@ -887,6 +890,9 @@ msgstr "Tailnet实例"
 
 msgid "Tailscale DERP Status"
 msgstr "Tailscale DERP状态"
+
+msgid "Tailscale DERP Log"
+msgstr "Tailscale DERP 日志"
 
 msgid "Tailscale Devices"
 msgstr "Tailscale设备"

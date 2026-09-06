@@ -14,6 +14,9 @@
           "get_tailnet_acl",
           "get_device_routes",
           "get_device_attributes"
+        ],
+        "log": [
+          "read"
         ]
       },
       "uci": [
