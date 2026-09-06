@@ -73,6 +73,9 @@ msgstr "高级"
 msgid "Advanced editor could not be loaded; using the plain text editor."
 msgstr "无法加载高级编辑器；正在使用纯文本编辑器。"
 
+msgid "Advanced editor source"
+msgstr "高级编辑器来源"
+
 msgid "Advertised Routes"
 msgstr "已发布的路由"
 
@@ -126,6 +129,9 @@ msgid ""
 "auto reads the actual local UDP listener and requests the same public port; "
 "the gateway may assign another port"
 msgstr "自动读取实际的本地 UDP 监听器，并请求相同的公共端口；网关可能会分配另一个端口"
+
+msgid "Automatic (test all CDNs and use the fastest)"
+msgstr "自动（测试所有 CDN 并使用最快的）"
 
 msgid "Automatic Self-Signed"
 msgstr "自动生成自签名证书"
@@ -319,6 +325,9 @@ msgstr ""
 "编辑一个配置的 Tailscale API 实例的原始 HuJSON ACL 策略。保存时会验证该策略，并使用加载的 ETag "
 "以防止覆盖其他管理员的更改。"
 
+msgid "Enable advanced editor"
+msgstr "启用高级编辑器"
+
 msgid "Enable Client Verification"
 msgstr "启用客户端验证"
 
@@ -503,6 +512,9 @@ msgstr "保存之前，加载 ACL 策略。"
 
 msgid "Load the ACL policy to begin editing."
 msgstr "加载 ACL 策略以开始编辑。"
+
+msgid "Loading advanced editor..."
+msgstr "正在加载高级编辑器..."
 
 msgid "Loading ACL policy..."
 msgstr "正在加载 ACL 策略..."

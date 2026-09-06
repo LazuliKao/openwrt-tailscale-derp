@@ -10,11 +10,12 @@
     "dev:remote": "dotenvx run -- luci-types dev"
   },
   "devDependencies": {
-    "@lazulikao/luci-types": "github:LazuliKao/luci-types",
     "@biomejs/biome": "^2.4.15",
     "@dotenvx/dotenvx": "^1.59.1",
+    "@lazulikao/luci-types": "github:LazuliKao/luci-types",
     "@rsbuild/core": "^2.0.7",
     "@types/node": "^20.19.29",
+    "monaco-editor": "0.56.0",
     "tsx": "^4.22.1",
     "typescript": "^6.0.3"
   }

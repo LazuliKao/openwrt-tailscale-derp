@@ -214,85 +214,230 @@ const callSetTailnetACL = tailnets_e.declare({
 });
 
 ;// CONCATENATED MODULE: ./src/shared/monaco.ts
-let monaco_e, monaco_t, monaco_o;
+let monaco_e, monaco_o;
 
 
-let monaco_a = "0.56.0", monaco_s = "https://esm.sh/monaco-editor@".concat(monaco_a, "?bundle"), monaco_c = "https://esm.sh/monaco-editor@".concat(monaco_a, "/esm/vs/editor/editor.worker?worker"), monaco_l = "https://esm.sh/monaco-editor@".concat(monaco_a, "/esm/vs/language/json/json.worker?worker"), monaco_i = "".concat("https://cdn.jsdelivr.net/npm/monaco-editor@".concat(monaco_a), "/min/vs/editor/editor.main.css"), d = "https://raw.githubusercontent.com/joneskoo/tailscale/claude/tailscale-acl-json-schema-v2/acl-schema.json";
-function monaco_m(e) {
+let monaco_n = "0.56.0", monaco_a = "0.56.1", monaco_s = "https://raw.githubusercontent.com/joneskoo/tailscale/claude/tailscale-acl-json-schema-v2/acl-schema.json", monaco_l = [
+    {
+        id: "esm",
+        name: "esm.sh",
+        moduleUrl: "https://esm.sh/monaco-editor@".concat(monaco_n, "?bundle"),
+        probeUrls: [
+            "https://esm.sh/monaco-editor@".concat(monaco_n, "/es2022/monaco-editor.bundle.mjs")
+        ],
+        editorWorkerUrl: "https://esm.sh/monaco-editor@".concat(monaco_n, "/esm/vs/editor/editor.worker.js"),
+        jsonWorkerUrl: "https://esm.sh/monaco-editor@".concat(monaco_n, "/esm/vs/language/json/json.worker.js"),
+        styleUrl: "https://esm.sh/monaco-editor@".concat(monaco_n, "/min/vs/editor/editor.main.css")
+    },
+    ...[
+        [
+            "jsdelivr",
+            "jsDelivr",
+            "https://cdn.jsdelivr.net/npm/@node-projects/monaco-editor-esm"
+        ],
+        [
+            "fastly",
+            "jsDelivr (Fastly)",
+            "https://fastly.jsdelivr.net/npm/@node-projects/monaco-editor-esm"
+        ],
+        [
+            "gcore",
+            "jsDelivr (Gcore)",
+            "https://gcore.jsdelivr.net/npm/@node-projects/monaco-editor-esm"
+        ],
+        [
+            "unpkg",
+            "unpkg",
+            "https://unpkg.com/@node-projects/monaco-editor-esm"
+        ]
+    ].map((e)=>{
+        let [o, r, t] = e;
+        return {
+            id: o,
+            name: r,
+            moduleUrl: "".concat(t, "@").concat(monaco_a, "/esm/vs/editor/editor.api.js"),
+            jsonModuleUrl: "".concat(t, "@").concat(monaco_a, "/esm/vs/languages/features/json/register.js"),
+            jsonModeUrl: "".concat(t, "@").concat(monaco_a, "/esm/vs/languages/features/json/jsonMode.js"),
+            editorWorkerUrl: "".concat(t, "@").concat(monaco_a, "/esm/vs/editor/editor.worker.js"),
+            jsonWorkerUrl: "".concat(t, "@").concat(monaco_a, "/esm/vs/language/json/json.worker.js"),
+            styleUrl: "".concat(t, "@").concat(monaco_a, "/min/vs/editor/editor.main.css")
+        };
+    })
+];
+function monaco_c(e) {
+    let o = new Blob([
+        "import ".concat(JSON.stringify(e), ";")
+    ], {
+        type: "application/javascript"
+    }), r = URL.createObjectURL(o);
+    try {
+        return new Worker(r, {
+            type: "module"
+        });
+    } finally{
+        URL.revokeObjectURL(r);
+    }
+}
+function monaco_i(e) {
     return Function("url", "return import(url);")(e);
 }
-async function createMonacoTextEditor(a, u, h) {
-    let p = await function() {
+async function monaco_d(e) {
+    let o = new AbortController(), r = window.setTimeout(()=>o.abort(), 15000), t = performance.now();
+    try {
+        var n;
+        let r = (null != (n = e.probeUrls) ? n : [
+            e.moduleUrl,
+            e.jsonModuleUrl,
+            e.jsonModeUrl
+        ]).filter((e)=>!!e), a = await Promise.all(r.map((e)=>fetch(e, {
+                signal: o.signal
+            })));
+        if (a.some((e)=>!e.ok)) throw Error("Monaco CDN probe failed.");
+        return await Promise.all(a.map((e)=>e.arrayBuffer())), performance.now() - t;
+    } finally{
+        window.clearTimeout(r);
+    }
+}
+async function monaco_m() {
+    return (await Promise.all(monaco_l.map(async (e, o)=>{
+        try {
+            return {
+                candidate: e,
+                duration: await monaco_d(e),
+                index: o
+            };
+        } catch (r) {
+            return {
+                candidate: e,
+                duration: 1 / 0,
+                index: o
+            };
+        }
+    }))).sort((e, o)=>e.duration - o.duration || e.index - o.index).map((e)=>{
+        let { candidate: o } = e;
+        return o;
+    });
+}
+async function u(e) {
+    let o;
+    for (let r of e)try {
+        return await function(e) {
+            var o, r;
+            let t = (o = e.styleUrl, new Promise((e, r)=>{
+                let t = document.createElement("link");
+                t.rel = "stylesheet", t.href = o, t.onload = ()=>e(t), t.onerror = ()=>{
+                    t.remove(), r(Error("Unable to load Monaco stylesheet from ".concat(o, ".")));
+                }, document.head.appendChild(t);
+            })), n = monaco_i(e.moduleUrl), a = e.jsonModuleUrl && e.jsonModeUrl ? Promise.all([
+                monaco_i(e.jsonModuleUrl),
+                monaco_i(e.jsonModeUrl)
+            ]).then((e)=>{
+                let [o] = e;
+                return o.jsonDefaults;
+            }) : n.then((e)=>{
+                var o;
+                if (!(null == (o = e.json) ? void 0 : o.jsonDefaults)) throw Error("Monaco JSON support is unavailable.");
+                return e.json.jsonDefaults;
+            });
+            return (r = Promise.all([
+                n,
+                a,
+                t
+            ]).then((o)=>{
+                let [r, t, n] = o;
+                return {
+                    monaco: r,
+                    jsonDefaults: t,
+                    createEditorWorker: ()=>monaco_c(e.editorWorkerUrl),
+                    createJsonWorker: ()=>monaco_c(e.jsonWorkerUrl),
+                    style: n
+                };
+            }), new Promise((e, o)=>{
+                let t = window.setTimeout(()=>o(Error("Monaco CDN request timed out.")), 15000);
+                r.then((o)=>{
+                    window.clearTimeout(t), e(o);
+                }, (e)=>{
+                    window.clearTimeout(t), o(e);
+                });
+            })).catch((o)=>{
+                throw t.then((e)=>e.remove(), ()=>void 0), Error("Unable to load Monaco from ".concat(e.name, "."), {
+                    cause: o
+                });
+            });
+        }(r);
+    } catch (e) {
+        o = e;
+    }
+    throw null != o ? o : Error("Unable to load Monaco from any CDN.");
+}
+async function createMonacoTextEditor(n, a, c) {
+    let i = arguments.length > 3 && void 0 !== arguments[3] ? arguments[3] : "auto", d = await function(n) {
         if (monaco_e) return monaco_e;
         let a = Promise.all([
-            monaco_m(monaco_s),
-            monaco_m(monaco_c),
-            monaco_m(monaco_l),
-            (monaco_t || (monaco_t = new Promise((e, t)=>{
-                let o = document.createElement("link");
-                o.rel = "stylesheet", o.href = monaco_i, o.onload = ()=>e(), o.onerror = ()=>t(Error("Unable to load Monaco stylesheet.")), document.head.appendChild(o);
-            })).catch(()=>{
-                monaco_t = void 0;
-            }), monaco_t),
-            monaco_o || (monaco_o = fetch(d).then((e)=>{
+            "auto" === n ? monaco_m() : Promise.resolve(monaco_l.filter((e)=>e.id === n)),
+            monaco_o || (monaco_o = fetch(monaco_s).then((e)=>{
                 if (!e.ok) throw Error("Unable to load the Tailscale ACL schema.");
                 return e.json();
             }).catch(()=>void 0))
         ]).then((e)=>{
-            let t, o, [a, s, c, , l] = e;
-            return o = (t = globalThis).MonacoEnvironment, t.MonacoEnvironment = _object_spread_props(_object_spread({}, o), {
-                getWorker: (e, t)=>(null == o ? void 0 : o.getWorker) ? o.getWorker(e, t) : ("json" === t ? c : s).default()
-            }), a.json.jsonDefaults.setDiagnosticsOptions({
-                allowComments: !0,
-                enableSchemaRequest: !1,
-                schemas: l ? [
-                    {
-                        fileMatch: [
-                            "*"
-                        ],
-                        schema: l,
-                        uri: d
-                    }
-                ] : [],
-                trailingCommas: "ignore",
-                validate: !0
-            }), a;
+            let [o, n] = e;
+            return u(o).then((e)=>{
+                var o, a;
+                let l, c;
+                return o = e.createEditorWorker, a = e.createJsonWorker, c = (l = globalThis).MonacoEnvironment, l.MonacoEnvironment = _object_spread_props(_object_spread({}, c), {
+                    getWorker: (e, r)=>(null == c ? void 0 : c.getWorker) ? c.getWorker(e, r) : ("json" === r ? a : o)()
+                }), e.jsonDefaults.setDiagnosticsOptions({
+                    allowComments: !0,
+                    enableSchemaRequest: !1,
+                    schemas: n ? [
+                        {
+                            fileMatch: [
+                                "*"
+                            ],
+                            schema: n,
+                            uri: monaco_s
+                        }
+                    ] : [],
+                    trailingCommas: "ignore",
+                    validate: !0
+                }), e.monaco;
+            });
         });
         return monaco_e = a, a.catch(()=>{
             monaco_e === a && (monaco_e = void 0);
         }), a;
-    }(), f = p.editor.createModel(u(), "json");
-    p.editor.setTheme(!function() {
+    }(i), p = d.editor.createModel(a(), "json");
+    d.editor.setTheme(!function() {
         for (let e of [
             document.body,
             document.documentElement
         ]){
-            let t = function(e) {
-                var t;
-                let o = null == (t = getComputedStyle(e).backgroundColor.match(/\d+/g)) ? void 0 : t.map(Number);
-                if (o && !(o.length < 3) && 0 !== o[3]) return 0.299 * o[0] + 0.587 * o[1] + 0.114 * o[2];
+            let o = function(e) {
+                var o;
+                let r = null == (o = getComputedStyle(e).backgroundColor.match(/\d+/g)) ? void 0 : o.map(Number);
+                if (r && !(r.length < 3) && 0 !== r[3]) return 0.299 * r[0] + 0.587 * r[1] + 0.114 * r[2];
             }(e);
-            if (void 0 !== t) return t < 128;
+            if (void 0 !== o) return o < 128;
         }
         return matchMedia("(prefers-color-scheme: dark)").matches;
     }() ? "vs" : "vs-dark");
-    let g = p.editor.create(a, {
+    let h = d.editor.create(n, {
         automaticLayout: !0,
         minimap: {
             enabled: !1
         },
-        model: f,
+        model: p,
         scrollBeyondLastLine: !1,
         tabSize: 2,
         wordWrap: "on"
-    }), v = f.onDidChangeContent(()=>h(f.getValue()));
+    }), j = p.onDidChangeContent(()=>c(p.getValue()));
     return {
-        getValue: ()=>f.getValue(),
+        getValue: ()=>p.getValue(),
         setValue (e) {
-            f.setValue(e);
+            p.setValue(e);
         },
         dispose () {
-            v.dispose(), g.dispose(), f.dispose();
+            j.dispose(), h.dispose(), p.dispose();
         }
     };
 }
@@ -307,7 +452,7 @@ function tailnets_r(e, i) {
     e.messageEl.style.color = l, e.messageEl.textContent = i;
 }
 function tailnets_s(e, i) {
-    e.loadEl.disabled = i, e.validateEl.disabled = i, e.saveEl.disabled = i;
+    e.validateEl.disabled = i, e.saveEl.disabled = i;
 }
 function tailnets_d(e) {
     var i, l;
@@ -317,7 +462,7 @@ function tailnets_u(e, i) {
     var l;
     e.policyEl.value = i, null == (l = e.policyEditor) || l.setValue(i);
 }
-function tailnets_h(l) {
+function v(l) {
     let n = l.tailnets.find((e)=>e.name === l.instance);
     n ? l.metadataEl.replaceChildren(jsxs("div", {
         class: "cbi-value",
@@ -348,17 +493,19 @@ function tailnets_h(l) {
         children: _("Select a configured API instance to manage its ACL policy.")
     }));
 }
-function tailnets_v(e) {
-    let i = arguments.length > 1 && void 0 !== arguments[1] && arguments[1];
-    if (!e.instance) return tailnets_r(e, _("Select an API instance first."), "#cf222e"), Promise.resolve();
-    let l = tailnets_d(e);
-    return tailnets_s(e, !0), tailnets_r(e, _("Loading ACL policy...")), callTailnetACL(e.instance).then((l)=>{
-        if (null == l ? void 0 : l.error) throw Error(l.error);
-        e.etag = (null == l ? void 0 : l.etag) || "", i || tailnets_u(e, (null == l ? void 0 : l.hujson) || ""), tailnets_r(e, i ? _("The server policy changed. Your draft was retained; review it before saving again.") : _("ACL policy loaded."), i ? "#c60" : "#1a7f37");
+function tailnets_h(e) {
+    let i = arguments.length > 1 && void 0 !== arguments[1] && arguments[1], l = e.instance;
+    if (!l) return tailnets_r(e, _("Select an API instance first."), "#cf222e"), Promise.resolve();
+    let t = ++e.loadGeneration, a = tailnets_d(e);
+    return tailnets_s(e, !0), tailnets_r(e, _("Loading ACL policy...")), callTailnetACL(l).then((l)=>{
+        if (t === e.loadGeneration) {
+            if (null == l ? void 0 : l.error) throw Error(l.error);
+            e.etag = (null == l ? void 0 : l.etag) || "", i || tailnets_u(e, (null == l ? void 0 : l.hujson) || ""), tailnets_r(e, i ? _("The server policy changed. Your draft was retained; review it before saving again.") : _("ACL policy loaded."), i ? "#c60" : "#1a7f37");
+        }
     }).catch((i)=>{
-        tailnets_u(e, l), tailnets_r(e, i instanceof Error ? i.message : _("Unable to load ACL policy."), "#cf222e");
+        t === e.loadGeneration && (tailnets_u(e, a), tailnets_r(e, i instanceof Error ? i.message : _("Unable to load ACL policy."), "#cf222e"));
     }).finally(()=>{
-        tailnets_s(e, !1);
+        t === e.loadGeneration && tailnets_s(e, !1);
     });
 }
 const main = tailnets_o.extend({
@@ -374,72 +521,113 @@ const main = tailnets_o.extend({
             rows: 24,
             spellcheck: !1,
             style: "box-sizing: border-box; font-family: monospace; resize: vertical; width: 100%;"
-        }), f = jsx("div", {
-            style: "display: none; height: 36em;"
         }), b = jsx("div", {
-            style: "min-height: 1.2em; margin-top: 0.75em;"
+            style: "display: none; height: 36em;"
+        }), f = jsx("select", {
+            class: "cbi-input-select"
         }), y = jsx("button", {
             class: "cbi-button cbi-button-action",
             type: "button",
-            children: _("Load")
-        }), m = jsx("button", {
+            children: _("Enable advanced editor")
+        }), m = jsxs("div", {
+            class: "cbi-value",
+            children: [
+                jsx("label", {
+                    class: "cbi-value-title",
+                    children: _("Advanced editor source")
+                }),
+                jsxs("div", {
+                    class: "cbi-value-field",
+                    children: [
+                        f,
+                        " ",
+                        y
+                    ]
+                })
+            ]
+        }), g = jsx("div", {
+            style: "min-height: 1.2em; margin-top: 0.75em;"
+        }), E = jsx("button", {
             class: "cbi-button cbi-button-apply",
             type: "button",
             children: _("Validate")
-        }), g = jsx("button", {
+        }), A = jsx("button", {
             class: "cbi-button cbi-button-save",
             type: "button",
             children: _("Save")
-        }), A = (n.instances || []).filter((e)=>e.configured && e.name), C = {
+        }), C = (n.instances || []).filter((e)=>e.configured && e.name), S = {
             selectEl: t,
             metadataEl: o,
             policyEl: p,
-            messageEl: b,
-            loadEl: y,
-            validateEl: m,
-            saveEl: g,
-            tailnets: A,
+            editorEl: b,
+            editorSettingsEl: m,
+            editorSourceEl: f,
+            enableEditorEl: y,
+            messageEl: g,
+            validateEl: E,
+            saveEl: A,
+            tailnets: C,
             instance: "",
-            etag: ""
+            etag: "",
+            loadGeneration: 0
         };
         return t.replaceChildren(jsx("option", {
             value: "",
             children: _("Select an API instance")
-        }), ...A.map((i)=>jsx("option", {
+        }), ...C.map((i)=>jsx("option", {
                 value: i.name || "",
                 children: i.label || i.name
-            }))), tailnets_h(C), t.onchange = ()=>{
-            C.instance = t.value, C.etag = "", tailnets_u(C, ""), tailnets_h(C), tailnets_r(C, C.instance ? _("Load the ACL policy to begin editing.") : "");
+            }))), f.replaceChildren(jsx("option", {
+            value: "auto",
+            children: _("Automatic (test all CDNs and use the fastest)")
+        }), jsx("option", {
+            value: "esm",
+            children: "esm.sh"
+        }), jsx("option", {
+            value: "jsdelivr",
+            children: "jsDelivr"
+        }), jsx("option", {
+            value: "fastly",
+            children: "jsDelivr (Fastly)"
+        }), jsx("option", {
+            value: "gcore",
+            children: "jsDelivr (Gcore)"
+        }), jsx("option", {
+            value: "unpkg",
+            children: "unpkg"
+        })), v(S), t.onchange = ()=>{
+            S.loadGeneration++, S.instance = t.value, S.etag = "", tailnets_u(S, ""), v(S), S.instance ? tailnets_h(S) : tailnets_r(S, "");
+        }, E.onclick = ()=>{
+            let e;
+            return e = tailnets_d(S), void (!S.instance ? tailnets_r(S, _("Select an API instance first."), "#cf222e") : !e.trim() ? tailnets_r(S, _("ACL policy is required."), "#cf222e") : (tailnets_s(S, !0), tailnets_r(S, _("Validating ACL policy...")), callValidateTailnetACL(S.instance, e).then((e)=>{
+                if (null == e ? void 0 : e.error) throw Error(e.error);
+                tailnets_r(S, _("ACL policy is valid."), "#1a7f37");
+            }).catch((e)=>{
+                tailnets_r(S, e instanceof Error ? e.message : _("ACL policy validation failed."), "#cf222e");
+            }).finally(()=>{
+                tailnets_s(S, !1);
+            })));
+        }, A.onclick = ()=>{
+            let e;
+            return e = tailnets_d(S), void (!S.instance ? tailnets_r(S, _("Select an API instance first."), "#cf222e") : !e.trim() || !S.etag ? tailnets_r(S, _("Load an ACL policy before saving."), "#cf222e") : (tailnets_s(S, !0), tailnets_r(S, _("Saving ACL policy...")), callSetTailnetACL(S.instance, e, S.etag).then((e)=>{
+                if (null == e ? void 0 : e.conflict) return tailnets_h(S, !0);
+                if (null == e ? void 0 : e.error) throw Error(e.error);
+                return tailnets_h(S);
+            }).catch((e)=>{
+                tailnets_r(S, e instanceof Error ? e.message : _("Unable to save ACL policy."), "#cf222e");
+            }).finally(()=>{
+                tailnets_s(S, !1);
+            })));
         }, y.onclick = ()=>{
-            tailnets_v(C);
-        }, m.onclick = ()=>{
             let e;
-            return e = tailnets_d(C), void (!C.instance ? tailnets_r(C, _("Select an API instance first."), "#cf222e") : !e.trim() ? tailnets_r(C, _("ACL policy is required."), "#cf222e") : (tailnets_s(C, !0), tailnets_r(C, _("Validating ACL policy...")), callValidateTailnetACL(C.instance, e).then((e)=>{
-                if (null == e ? void 0 : e.error) throw Error(e.error);
-                tailnets_r(C, _("ACL policy is valid."), "#1a7f37");
-            }).catch((e)=>{
-                tailnets_r(C, e instanceof Error ? e.message : _("ACL policy validation failed."), "#cf222e");
-            }).finally(()=>{
-                tailnets_s(C, !1);
-            })));
-        }, g.onclick = ()=>{
-            let e;
-            return e = tailnets_d(C), void (!C.instance ? tailnets_r(C, _("Select an API instance first."), "#cf222e") : !e.trim() || !C.etag ? tailnets_r(C, _("Load an ACL policy before saving."), "#cf222e") : (tailnets_s(C, !0), tailnets_r(C, _("Saving ACL policy...")), callSetTailnetACL(C.instance, e, C.etag).then((e)=>{
-                if (null == e ? void 0 : e.conflict) return tailnets_v(C, !0);
-                if (null == e ? void 0 : e.error) throw Error(e.error);
-                return tailnets_v(C);
-            }).catch((e)=>{
-                tailnets_r(C, e instanceof Error ? e.message : _("Unable to save ACL policy."), "#cf222e");
-            }).finally(()=>{
-                tailnets_s(C, !1);
-            })));
-        }, createMonacoTextEditor(f, ()=>p.value, (e)=>{
-            p.value = e;
-        }).then((e)=>{
-            f.isConnected ? (C.policyEditor = e, p.style.display = "none", f.style.display = "block") : e.dispose();
-        }).catch(()=>{
-            tailnets_r(C, _("Advanced editor could not be loaded; using the plain text editor."), "#c60");
-        }), jsxs("div", {
+            return e = S.editorSourceEl.value, void (S.editorSourceEl.disabled = !0, S.enableEditorEl.disabled = !0, tailnets_r(S, _("Loading advanced editor...")), createMonacoTextEditor(S.editorEl, ()=>S.policyEl.value, (e)=>{
+                S.policyEl.value = e;
+            }, e).then((e)=>{
+                S.editorEl.isConnected ? (S.policyEditor = e, S.policyEl.style.display = "none", S.editorEl.style.display = "block", S.editorSettingsEl.style.display = "none", tailnets_r(S, "")) : e.dispose();
+            }).catch(()=>{
+                S.editorSourceEl.disabled = !1, S.enableEditorEl.disabled = !1, tailnets_r(S, _("Advanced editor could not be loaded; using the plain text editor."), "#c60");
+            }));
+        }, jsxs("div", {
             children: [
                 jsx("h2", {
                     children: _("Tailnet ACL Management")
@@ -472,19 +660,18 @@ const main = tailnets_o.extend({
                         jsx("h3", {
                             children: _("ACL Policy (HuJSON)")
                         }),
+                        m,
                         p,
-                        f,
+                        b,
                         jsxs("div", {
                             style: "margin-top: 0.75em;",
                             children: [
-                                y,
+                                E,
                                 " ",
-                                m,
-                                " ",
-                                g
+                                A
                             ]
                         }),
-                        b
+                        g
                     ]
                 })
             ]
