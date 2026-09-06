@@ -58,7 +58,7 @@ export const main = (view as any).extend({
   load() {
     return uci.load("tailscale-derp").then(() => {
       ensureNamedSections(uci, "tailscale-derp", [
-        ["tls", "tls", { mode: "self_signed", state_dir: "/var/lib/tailscale-derp/tls" }],
+        ["tls", "tls", { mode: "self_signed", state_dir: "/etc/tailscale-derp/tls" }],
         ["external", "external", {
           enabled: "0", mode: "direct", method: ["pcp", "natpmp", "upnp"], wan_interface: "auto",
           derp_port: "auto", stun_port: "auto", lease_seconds: "7200", retry_seconds: "60",
@@ -87,8 +87,8 @@ export const main = (view as any).extend({
     o.default = "self_signed";
     o.rmempty = false;
     o = s.option(form.Value, "state_dir", _("Certificate State Directory"), _("Persistent directory for the automatic TLS private key and certificate"));
-    o.placeholder = "/var/lib/tailscale-derp/tls";
-    o.default = "/var/lib/tailscale-derp/tls";
+    o.placeholder = "/etc/tailscale-derp/tls";
+    o.default = "/etc/tailscale-derp/tls";
     o.rmempty = false;
     o.depends("mode", "self_signed");
     o = s.option(form.Value, "certfile", _("Certificate File"), _("Path to the TLS certificate"));

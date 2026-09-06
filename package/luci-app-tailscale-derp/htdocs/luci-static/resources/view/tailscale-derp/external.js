@@ -223,7 +223,7 @@ const main = external_a.extend({
                     "tls",
                     {
                         mode: "self_signed",
-                        state_dir: "/var/lib/tailscale-derp/tls"
+                        state_dir: "/etc/tailscale-derp/tls"
                     }
                 ],
                 [
@@ -267,7 +267,7 @@ const main = external_a.extend({
     },
     render () {
         let e = new external_n.Map("tailscale-derp", _("External Endpoint"), _("Publish this DERP relay through a WAN gateway. Tailscale does not officially support custom DERP servers behind NAT.")), t = e.section(external_n.NamedSection, "tls", "tls", _("TLS Settings")), a = t.option(external_n.ListValue, "mode", _("TLS Mode"), _("Automatic TLS generates and persists a self-signed certificate. The published DERP map pins its certificate hash."));
-        return a.value("self_signed", _("Automatic Self-Signed")), a.value("manual", _("Manual Certificate Files")), a.default = "self_signed", a.rmempty = !1, (a = t.option(external_n.Value, "state_dir", _("Certificate State Directory"), _("Persistent directory for the automatic TLS private key and certificate"))).placeholder = "/var/lib/tailscale-derp/tls", a.default = "/var/lib/tailscale-derp/tls", a.rmempty = !1, a.depends("mode", "self_signed"), (a = t.option(external_n.Value, "certfile", _("Certificate File"), _("Path to the TLS certificate"))).placeholder = "/etc/ssl/certs/derp.pem", a.rmempty = !0, a.validate = function(e, t) {
+        return a.value("self_signed", _("Automatic Self-Signed")), a.value("manual", _("Manual Certificate Files")), a.default = "self_signed", a.rmempty = !1, (a = t.option(external_n.Value, "state_dir", _("Certificate State Directory"), _("Persistent directory for the automatic TLS private key and certificate"))).placeholder = "/etc/tailscale-derp/tls", a.default = "/etc/tailscale-derp/tls", a.rmempty = !1, a.depends("mode", "self_signed"), (a = t.option(external_n.Value, "certfile", _("Certificate File"), _("Path to the TLS certificate"))).placeholder = "/etc/ssl/certs/derp.pem", a.rmempty = !0, a.validate = function(e, t) {
             return external_s.call(this, e, t, "keyfile");
         }, a.depends("mode", "manual"), (a = t.option(external_n.Value, "keyfile", _("Key File"), _("Path to the TLS private key"))).placeholder = "/etc/ssl/private/derp.key", a.rmempty = !0, a.validate = function(e, t) {
             return external_s.call(this, e, t, "certfile");
