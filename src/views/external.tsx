@@ -113,8 +113,10 @@ export const main = (view as any).extend({
     o.default = "direct";
     o.rmempty = false;
     o.depends("enabled", "1");
-    o = s.option(form.Value, "wan_interface", _("Public Interface"), _("Use auto to follow the IPv4 default route, or enter the interface holding the public IPv4 address"));
+    o = s.option(widgets.DeviceSelect, "wan_interface", _("Public Interface"), _("Choose auto to follow the IPv4 default route, or select the device holding the public IPv4 address"));
+    o.value("auto", _("Automatic (IPv4 default route)"));
     o.default = "auto";
+    o.nocreate = true;
     o.rmempty = false;
     o.depends("enabled", "1");
     o = s.option(form.DynamicList, "method", _("Mapping Methods"), _("Methods are attempted in this order"));

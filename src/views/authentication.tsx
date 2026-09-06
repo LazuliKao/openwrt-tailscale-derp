@@ -36,10 +36,12 @@ function validateRequiredForDERPMap(
 }
 
 function validateDERPMapSync(
-	_sectionId: string,
-	value: unknown,
+	this: FormOption,
+	sectionId: string,
+	_value: unknown,
 ): true | string {
-	if (value !== "1" && value !== true) {
+	const enabled = this.formvalue(sectionId);
+	if (enabled !== "1" && enabled !== true) {
 		return true;
 	}
 
