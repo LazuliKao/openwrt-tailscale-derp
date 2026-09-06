@@ -637,7 +637,7 @@ const main = tailnets_o.extend({
                     class: "cbi-section",
                     children: [
                         jsx("p", {
-                            children: _("Edit the raw HuJSON ACL policy for one configured Tailscale API instance. Saving validates the policy and uses the loaded ETag to prevent overwriting another administrator's changes.")
+                            children: _("Edit the raw ACL policy for one configured Tailscale API instance. Saving validates the policy and uses the loaded ETag to prevent overwriting another administrator's changes.")
                         }),
                         jsxs("div", {
                             class: "cbi-value",
@@ -659,7 +659,7 @@ const main = tailnets_o.extend({
                     class: "cbi-section",
                     children: [
                         jsx("h3", {
-                            children: _("ACL Policy (HuJSON)")
+                            children: _("ACL Policy")
                         }),
                         m,
                         p,
