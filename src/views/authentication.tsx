@@ -227,14 +227,14 @@ export const main = (view as any).extend({
     o.validate = validateRequiredForDERPMap;
     modalOnly(o);
 
-    o = apiSection.option(form.Value, "hostname", _("TLS Hostname"), _("Stable DNS name covered by the DERP server certificate"));
+    o = apiSection.option(form.Value, "hostname", _("TLS Hostname"), _("DNS hostname or literal IP address for this DERP node. Automatic TLS adds every synchronized instance to the certificate."));
     o.placeholder = "derp.example.com";
     o.rmempty = true;
     o.depends("derpmap_sync", "1");
     o.validate = validateRequiredForDERPMap;
     modalOnly(o);
 
-    o = apiSection.option(form.Value, "cert_name", _("Certificate Name"), _("Optional TLS certificate verification name when it differs from the hostname"));
+    o = apiSection.option(form.Value, "cert_name", _("Certificate Name"), _("Optional verification name for manual TLS. Automatic TLS publishes a pinned certificate hash instead."));
     o.rmempty = true;
     o.depends("derpmap_sync", "1");
     modalOnly(o);

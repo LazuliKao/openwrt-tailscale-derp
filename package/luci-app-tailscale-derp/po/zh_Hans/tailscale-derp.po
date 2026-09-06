@@ -1,7 +1,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: luci-app-tailscale-derp\n"
-"POT-Creation-Date: 2026-08-30 18:12+0800\n"
+"POT-Creation-Date: 2026-09-06 00:30+0800\n"
 "PO-Revision-Date: \n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -12,141 +12,158 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 msgid "%d connected peer(s)"
-msgstr ""
+msgstr "%d 个连接的对等节点"
 
 msgid "%d device(s)"
-msgstr ""
+msgstr "%d 个设备"
 
 msgid "%dd %dh %dm"
-msgstr ""
+msgstr "%dd %dh %dm"
 
 msgid "%dh %dm %ds"
-msgstr ""
+msgstr "%dh %dm %ds"
 
 msgid "%dm %ds"
-msgstr ""
+msgstr "%dm %ds"
 
 msgid "%ds"
-msgstr ""
+msgstr "%ds"
 
 msgid "A display name used in LuCI and device sources"
-msgstr ""
+msgstr "在 LuCI 和设备源中使用的显示名称"
 
 msgid "ACL Policy (HuJSON)"
-msgstr ""
+msgstr "ACL 策略 (HuJSON)"
 
 msgid "ACL policy is required."
-msgstr ""
+msgstr "需要 ACL 策略。"
 
 msgid "ACL policy is valid."
-msgstr ""
+msgstr "ACL 策略有效。"
 
 msgid "ACL policy loaded."
-msgstr ""
+msgstr "已加载 ACL 策略。"
 
 msgid "ACL policy validation failed."
-msgstr ""
-
-msgid ""
-"Acquire router port mappings and allow selected API instances to publish "
-"this endpoint"
-msgstr ""
+msgstr "ACL 策略验证失败。"
 
 msgid "Actions"
-msgstr ""
+msgstr "操作"
 
 msgid "Add API Instance"
-msgstr ""
+msgstr "添加 API 实例"
+
+msgid ""
+"Add one instance per Tailscale API credential. Select Edit to configure "
+"credentials and optional DERP Map synchronization."
+msgstr "为每个 Tailscale API 凭据添加一个实例。选择“编辑”以配置凭据和可选的 DERP 地图同步。"
 
 msgid "Address and port for DERP/STUN (e.g. :3478)"
-msgstr ""
+msgstr "DERP/STUN 的地址和端口 (例如 :3478)"
 
 msgid "Addresses"
-msgstr ""
+msgstr "地址"
 
 msgid "Admission controller URLs for verifying DERP clients"
-msgstr ""
+msgstr "用于验证 DERP 客户端的准入控制器 URL"
 
 msgid "Advanced"
-msgstr ""
+msgstr "高级"
+
+msgid "Advanced editor could not be loaded; using the plain text editor."
+msgstr "无法加载高级编辑器；正在使用纯文本编辑器。"
 
 msgid "Advertised Routes"
-msgstr ""
+msgstr "已发布的路由"
 
 msgid ""
 "Allow authorized, non-expired devices from configured Tailscale API "
 "instances"
-msgstr ""
+msgstr "允许来自配置的 Tailscale API 实例的授权、未过期的设备"
 
 msgid "Allow clients accepted by any configured admission controller URL"
-msgstr ""
+msgstr "允许任何配置的准入控制器 URL 接受的客户端"
+
+msgid "Allow selected API instances to publish this relay endpoint"
+msgstr "允许选定的 API 实例发布此中继端点"
 
 msgid "API Access Token"
 msgstr "API 访问令牌"
 
 msgid "API Cache TTL (seconds)"
-msgstr ""
+msgstr "API 缓存 TTL (秒)"
 
 msgid "API Instance"
-msgstr ""
+msgstr "API 实例"
 
 msgid "API instance(s)"
-msgstr ""
+msgstr "API 实例"
 
 msgid "API Sync Interval (seconds)"
-msgstr ""
+msgstr "API 同步间隔 (秒)"
 
 msgid "Are you sure you want to"
-msgstr ""
+msgstr "您确定要"
 
 msgid "Attribute key, JSON value, and expiry are required."
-msgstr ""
+msgstr "必须提供属性键、JSON 值和到期时间。"
 
 msgid "Attribute value must be valid JSON."
-msgstr ""
+msgstr "属性值必须是有效的 JSON。"
 
 msgid "Authentication"
 msgstr "认证方式"
 
 msgid "Authorized"
-msgstr ""
+msgstr "已授权"
 
 msgid ""
 "auto reads the actual local TCP listener and requests the same public port; "
 "the gateway may assign another port"
-msgstr ""
+msgstr "自动读取实际的本地 TCP 监听器，并请求相同的公共端口；网关可能会分配另一个端口"
 
 msgid ""
 "auto reads the actual local UDP listener and requests the same public port; "
 "the gateway may assign another port"
-msgstr ""
+msgstr "自动读取实际的本地 UDP 监听器，并请求相同的公共端口；网关可能会分配另一个端口"
+
+msgid "Automatic Self-Signed"
+msgstr "自动生成自签名证书"
+
+msgid ""
+"Automatic TLS generates and persists a self-signed certificate. The "
+"published DERP map pins its certificate hash."
+msgstr "自动 TLS 生成和持久化一个自签名证书。发布的 DERP 地图会使用其证书哈希。"
 
 msgid "Backend unavailable"
-msgstr ""
+msgstr "后端不可用"
 
 msgid "Cached devices older than this are not used for authentication"
-msgstr ""
+msgstr "比此旧的缓存设备将不用于身份验证"
 
 msgid "Cancel"
-msgstr ""
+msgstr "取消"
 
 msgid "cancelled."
-msgstr ""
+msgstr "已取消。"
 
 msgid "Certificate and key are required when the external endpoint is enabled"
-msgstr ""
+msgstr "当启用外部端点时，需要证书和密钥。"
 
 msgid "Certificate and key must be provided together"
-msgstr ""
+msgstr "必须同时提供证书和密钥。"
 
 msgid "Certificate File"
-msgstr ""
+msgstr "证书文件"
 
 msgid "Certificate Name"
-msgstr ""
+msgstr "证书名称"
+
+msgid "Certificate State Directory"
+msgstr "证书状态目录"
 
 msgid "Check Locally"
-msgstr ""
+msgstr "本地检查"
 
 msgid ""
 "Choose API access token or OAuth Client Credentials. OAuth access tokens are "
@@ -154,435 +171,446 @@ msgid ""
 msgstr "选择 API 访问令牌或 OAuth 客户端凭据。OAuth 访问令牌会自动获取和续期。"
 
 msgid "Client Verification"
-msgstr ""
+msgstr "客户端验证"
 
 msgid "Close"
-msgstr ""
+msgstr "关闭"
 
 msgid "Comment"
-msgstr ""
+msgstr "注释"
 
 msgid "completed successfully."
-msgstr ""
+msgstr "已成功完成。"
 
-msgid "Configure the Tailscale DERP relay server."
-msgstr ""
+msgid ""
+"Configure automatic TLS or provide both a certificate and key before "
+"enabling the external endpoint"
+msgstr "配置自动 TLS，或在启用外部端点之前提供证书和密钥。"
 
-msgid "Configure the TLS certificate and key before enabling the external endpoint"
-msgstr ""
+msgid "Configure client admission verification and Tailscale API credentials."
+msgstr "配置客户端访问验证以及 Tailscale API 凭据。"
+
+msgid "Configure the local Tailscale DERP relay service."
+msgstr "配置本地的 Tailscale DERP 中继服务。"
 
 msgid "Confirm"
-msgstr ""
+msgstr "确认"
 
 msgid "connected"
-msgstr ""
+msgstr "已连接"
 
 msgid "Connected At"
-msgstr ""
+msgstr "连接时间"
 
 msgid "Connected Clients"
-msgstr ""
+msgstr "已连接客户端"
 
 msgid "connected peer(s)"
-msgstr ""
+msgstr "已连接的对等方(们)"
 
 msgid "Connected Peers"
-msgstr ""
+msgstr "已连接的对等方"
 
 msgid "Connected to Control"
-msgstr ""
+msgstr "已连接到控制中心"
 
 msgid "Consecutive Failures"
-msgstr ""
-
-msgid "Copied!"
-msgstr ""
-
-msgid "Copy"
-msgstr ""
+msgstr "连续失败次数"
 
 msgid "Custom DERP region ID (900-999)"
-msgstr ""
+msgstr "自定义 DERP 区域 ID (900-999)"
 
 msgid "Custom tailscaled Socket"
-msgstr ""
+msgstr "自定义 tailscaled 套接字"
 
 msgid "Danger Zone"
-msgstr ""
+msgstr "危险区域"
 
 msgid "Delete"
-msgstr ""
+msgstr "删除"
 
 msgid "Delete Device"
-msgstr ""
-
-msgid "DERP configuration JSON will be available here when the service is running."
-msgstr ""
+msgstr "删除设备"
 
 msgid "DERP Connected Peers"
-msgstr ""
+msgstr "已连接的 DERP 同行节点"
 
 msgid "DERP Map Sync Interval (seconds)"
-msgstr ""
-
-msgid "DERP Port"
-msgstr ""
+msgstr "DERP 地图同步间隔 (秒)"
 
 msgid "DERP Server Status"
-msgstr ""
+msgstr "DERP 服务器状态"
 
 msgid "Details"
-msgstr ""
+msgstr "详细信息"
 
 msgid "Device"
-msgstr ""
+msgstr "设备"
 
 msgid "Device authorization updated."
-msgstr ""
+msgstr "设备授权已更新。"
 
 msgid "Device data refreshed."
-msgstr ""
+msgstr "设备数据已刷新。"
 
 msgid "Device deleted."
-msgstr ""
+msgstr "设备已删除。"
 
 msgid "Device Details"
-msgstr ""
+msgstr "设备详细信息"
 
 msgid "Device IPv4 address updated."
-msgstr ""
+msgstr "设备 IPv4 地址已更新。"
 
 msgid "Device key expired."
-msgstr ""
+msgstr "设备密钥已过期。"
 
 msgid "Device key setting updated."
-msgstr ""
+msgstr "设备密钥设置已更新。"
 
 msgid "Device name is required."
-msgstr ""
+msgstr "必须填写设备名称。"
 
 msgid "Device name updated."
-msgstr ""
+msgstr "设备名称已更新。"
 
 msgid "Device routes updated."
-msgstr ""
+msgstr "设备路由已更新。"
 
 msgid "Device tags updated."
-msgstr ""
+msgstr "设备标签已更新。"
 
 msgid "Device update failed."
-msgstr ""
+msgstr "设备更新失败。"
 
 msgid "Devices"
-msgstr ""
+msgstr "设备"
+
+msgid ""
+"Direct is for a public IPv4 address assigned to this router. NAT mapping "
+"asks the upstream gateway to forward ports."
+msgstr "Direct 用于分配给此路由器的公共 IPv4 地址。NAT 映射要求上游网关转发端口。"
+
+msgid "Direct Public IPv4"
+msgstr "直接使用公共 IPv4"
 
 msgid "Disable Key Expiry"
-msgstr ""
+msgstr "禁用密钥过期"
 
 msgid "Disabled"
-msgstr ""
+msgstr "已禁用"
+
+msgid ""
+"DNS hostname or literal IP address for this DERP node. Automatic TLS adds "
+"every synchronized instance to the certificate."
+msgstr "此 DERP 节点的 DNS 主机名或字面 IP 地址。自动 TLS 将每个同步实例添加到证书中。"
 
 msgid "Duration"
-msgstr ""
+msgstr "持续时间"
 
 msgid "Edit Device"
-msgstr ""
+msgstr "编辑设备"
 
 msgid ""
 "Edit the raw HuJSON ACL policy for one configured Tailscale API instance. "
 "Saving validates the policy and uses the loaded ETag to prevent overwriting "
 "another administrator's changes."
 msgstr ""
+"编辑一个配置的 Tailscale API 实例的原始 HuJSON ACL 策略。保存时会验证该策略，并使用加载的 ETag "
+"以防止覆盖其他管理员的更改。"
 
 msgid "Enable Client Verification"
-msgstr ""
+msgstr "启用客户端验证"
 
 msgid "Enable DERP mesh mode"
-msgstr ""
+msgstr "启用 DERP 网状模式"
 
 msgid "Enable External Endpoint"
-msgstr ""
+msgstr "启用外部端点"
 
 msgid "Enable Mesh"
-msgstr ""
+msgstr "启用网状"
 
 msgid "Enable Official API Verification"
-msgstr ""
+msgstr "启用官方 API 验证"
 
 msgid "Enable Persistence"
-msgstr ""
+msgstr "启用持久性"
 
 msgid "Enable Service"
-msgstr ""
+msgstr "启用服务"
 
 msgid "Enable STUN"
-msgstr ""
+msgstr "启用 STUN"
 
 msgid "Enable STUN server on the same port"
-msgstr ""
+msgstr "启用相同端口上的 STUN 服务器"
 
 msgid "Enable tailscaled Verification"
-msgstr ""
+msgstr "启用 tailscaled 验证"
 
 msgid "Enable the external endpoint before enabling DERP map synchronization"
-msgstr ""
+msgstr "在启用 DERP 地图同步之前，先启用外部端点"
 
 msgid "Enable Verify URLs"
-msgstr ""
+msgstr "启用 URL 验证"
 
 msgid "Enabled Routes"
-msgstr ""
+msgstr "已启用的路由"
 
 msgid "Enabled, but no methods configured"
-msgstr ""
+msgstr "已启用，但未配置任何方法"
 
 msgid "Enter a new API access token; leave empty to keep the current value"
-msgstr ""
+msgstr "输入一个新的 API 访问令牌；留空以保留当前值"
 
 msgid "Enter a new client ID; leave empty to keep the current value"
-msgstr ""
+msgstr "输入一个新的客户端 ID；留空以保留当前值"
 
 msgid "Enter a new client secret; leave empty to keep the current value"
-msgstr ""
+msgstr "输入一个新的客户端密钥；留空以保留当前值"
 
 msgid "Enter a valid IPv4 address."
-msgstr ""
+msgstr "请输入一个有效的 IPv4 地址。"
 
 msgid "Enter one CIDR route per line. Saving replaces the enabled route list."
-msgstr ""
+msgstr "每行输入一个 CIDR 路由。保存会替换已启用的路由列表。"
 
 msgid "Ephemeral"
-msgstr ""
+msgstr "临时性的"
 
 msgid "Expire Device Key"
-msgstr ""
+msgstr "过期设备密钥"
 
 msgid "Expire Key"
-msgstr ""
+msgstr "过期密钥"
 
 msgid "Expiry"
-msgstr ""
+msgstr "到期时间"
 
 msgid "Expiry (RFC3339)"
-msgstr ""
+msgstr "到期时间 (RFC3339)"
+
+msgid "Exposure Mode"
+msgstr "暴露模式"
 
 msgid "External"
-msgstr ""
+msgstr "外部的"
 
 msgid "External DERP Port"
-msgstr ""
+msgstr "外部 DERP 端口"
+
+msgid "External Endpoint"
+msgstr "外部端点"
 
 msgid "External Endpoint (Experimental)"
-msgstr ""
+msgstr "外部端点 (实验性)"
 
 msgid "External endpoint backend unavailable"
-msgstr ""
+msgstr "外部端点后端不可用"
 
 msgid "External Error"
-msgstr ""
+msgstr "外部错误"
 
 msgid "External STUN Port"
-msgstr ""
+msgstr "外部 STUN 端口"
 
 msgid "failed"
-msgstr ""
-
-msgid "Failed to copy configuration to clipboard:"
-msgstr ""
+msgstr "失败"
 
 msgid "Failed to reload DERP configuration:"
-msgstr ""
+msgstr "重新加载 DERP 配置失败："
 
 msgid "failed:"
-msgstr ""
+msgstr "失败："
 
 msgid ""
 "File path for storing traffic statistics (use tmpfs to minimize flash "
 "writes)"
-msgstr ""
+msgstr "存储流量统计的路径 (使用 tmpfs 以减少闪存写入)"
 
 msgid "Fresh"
-msgstr ""
+msgstr "新鲜"
 
 msgid "Global Settings"
-msgstr ""
+msgstr "全局设置"
 
 msgid "Health Address"
-msgstr ""
+msgstr "健康地址"
 
 msgid "Health Port"
-msgstr ""
+msgstr "健康端口"
 
 msgid "Hostname"
-msgstr ""
+msgstr "主机名"
 
 msgid "How often to refresh configured Tailscale API instances"
-msgstr ""
+msgstr "多久刷新配置的 Tailscale API 实例"
 
 msgid "How often to save traffic statistics (higher = less flash wear)"
-msgstr ""
+msgstr "多久保存流量统计 (数值越高，闪存磨损越少)"
 
 msgid "in progress..."
-msgstr ""
+msgstr "正在进行..."
 
 msgid "Instance"
-msgstr ""
+msgstr "实例"
 
 msgid "IPv4"
-msgstr ""
+msgstr "IPv4"
 
 msgid "IPv4 Address"
-msgstr ""
+msgstr "IPv4 地址"
 
 msgid "Key"
-msgstr ""
+msgstr "密钥"
 
 msgid "Key Expiry"
-msgstr ""
+msgstr "密钥到期时间"
 
 msgid "Key File"
-msgstr ""
+msgstr "密钥文件"
 
 msgid "Last Error"
-msgstr ""
+msgstr "上次错误"
 
 msgid "Last Seen"
-msgstr ""
+msgstr "最后一次出现时间"
 
 msgid "Last updated: %s"
-msgstr ""
+msgstr "最后更新: %s"
 
 msgid "Lease Until"
-msgstr ""
+msgstr "租约到期时间"
 
 msgid "Leave empty to keep the current client ID"
-msgstr ""
+msgstr "保持为空以使用当前的客户端 ID"
 
 msgid "Leave empty to keep the current client secret"
-msgstr ""
+msgstr "保持为空以使用当前的客户端密钥"
 
 msgid "Leave empty to keep the current key"
-msgstr ""
+msgstr "保持为空以使用当前的密钥"
 
 msgid "Listen Address"
-msgstr ""
+msgstr "监听地址"
 
 msgid "Load"
-msgstr ""
+msgstr "加载"
 
 msgid "Load an ACL policy before saving."
-msgstr ""
+msgstr "保存之前，加载 ACL 策略。"
 
 msgid "Load the ACL policy to begin editing."
-msgstr ""
+msgstr "加载 ACL 策略以开始编辑。"
 
 msgid "Loading ACL policy..."
-msgstr ""
+msgstr "正在加载 ACL 策略..."
 
 msgid "Loading posture attributes..."
-msgstr ""
+msgstr "正在加载安全属性..."
 
 msgid "Loading routes..."
-msgstr ""
+msgstr "正在加载路由..."
 
 msgid "local NAT loopback only"
-msgstr ""
+msgstr "仅本地 NAT 回环"
 
 msgid "Local NAT-loopback Check"
-msgstr ""
+msgstr "本地 NAT-回环检查"
 
 msgid "Manage"
-msgstr ""
+msgstr "管理"
+
+msgid "Manual Certificate Files"
+msgstr "手动证书文件"
 
 msgid "Mapped Endpoint"
-msgstr ""
-
-msgid "Mapped Public IPv4"
-msgstr ""
+msgstr "映射的端点"
 
 msgid "Mapping Lease (seconds)"
-msgstr ""
+msgstr "映射租期 (秒)"
 
 msgid "Mapping Method"
-msgstr ""
+msgstr "映射方法"
 
 msgid "Mapping Methods"
-msgstr ""
+msgstr "映射方法"
 
 msgid "Mesh Enabled"
-msgstr ""
+msgstr "启用网状"
 
 msgid "Mesh key is required when mesh mode is enabled"
-msgstr ""
+msgstr "当启用网状模式时，需要网状密钥"
 
 msgid "Mesh Settings"
-msgstr ""
+msgstr "网状设置"
 
 msgid "Mesh Shared Key"
-msgstr ""
+msgstr "网状共享密钥"
 
 msgid "Methods are attempted in this order"
-msgstr ""
+msgstr "方法将按照此顺序尝试"
 
 msgid "Multiple Connections"
-msgstr ""
+msgstr "多重连接"
 
 msgid "N/A"
-msgstr ""
+msgstr "N/A"
 
 msgid "Name"
-msgstr ""
+msgstr "名称"
 
 msgid "No"
-msgstr ""
+msgstr "否"
 
 msgid "No action executed yet."
-msgstr ""
+msgstr "尚未执行任何操作。"
 
 msgid "No API source is available for this device."
-msgstr ""
+msgstr "此设备没有可用的 API 来源。"
 
 msgid "No configuration change pending."
-msgstr ""
+msgstr "没有待处理的配置更改。"
 
 msgid "No connected peers"
-msgstr ""
+msgstr "无连接的对等节点"
 
 msgid "No devices available"
-msgstr ""
+msgstr "没有可用设备"
 
 msgid "No matching devices"
-msgstr ""
+msgstr "没有匹配的设备"
 
 msgid "No Official API instances are configured."
-msgstr ""
+msgstr "未配置任何官方 API 实例。"
 
 msgid "No posture attributes configured."
-msgstr ""
+msgstr "未配置任何策略属性。"
 
 msgid "No synchronized instances"
-msgstr ""
+msgstr "没有同步实例"
 
 msgid "Node ID"
-msgstr ""
+msgstr "节点 ID"
 
 msgid "Node Key"
-msgstr ""
+msgstr "节点密钥"
 
 msgid "Node Name"
-msgstr ""
+msgstr "节点名称"
 
 msgid "None"
-msgstr ""
+msgstr "无"
 
 msgid "Not authorized"
-msgstr ""
+msgstr "未授权"
 
 msgid "Not configured"
-msgstr ""
+msgstr "未配置"
 
 msgid "Not mapped"
-msgstr ""
+msgstr "未映射"
 
 msgid "OAuth Client Credentials"
 msgstr "OAuth 客户端凭据"
@@ -594,396 +622,396 @@ msgid "OAuth Client Secret"
 msgstr "OAuth 客户端密钥"
 
 msgid "Official API"
-msgstr ""
+msgstr "官方 API"
 
 msgid "Official API Instances"
-msgstr ""
+msgstr "官方 API 实例"
 
 msgid "Official API Synchronization"
-msgstr ""
+msgstr "官方 API 同步"
 
 msgid "Offline"
 msgstr "离线"
 
 msgid "OpenWrt DERP Relay"
-msgstr ""
+msgstr "OpenWrt DERP 中继"
 
 msgid "Operations"
-msgstr ""
+msgstr "操作"
 
 msgid "Ops Unix Socket"
-msgstr ""
-
-msgid "Optional TLS certificate verification name when it differs from the hostname"
-msgstr ""
-
-msgid "Path to the local tailscaled socket"
-msgstr ""
-
-msgid "Path to TLS certificate (leave empty for auto)"
-msgstr ""
-
-msgid "Path to TLS private key (leave empty for auto)"
-msgstr ""
-
-msgid "Platform"
-msgstr ""
-
-msgid "Port for health check endpoint"
-msgstr ""
-
-msgid "Port must be auto or an integer from 1 to 65535"
-msgstr ""
-
-msgid "Posture attribute deleted."
-msgstr ""
-
-msgid "Posture attribute updated."
-msgstr ""
-
-msgid "Posture Attributes"
-msgstr ""
-
-msgid "Public Key"
-msgstr ""
+msgstr "Ops Unix 套接字"
 
 msgid ""
-"Publish DERP and STUN through PCP, NAT-PMP, or UPnP and synchronize the "
-"mapped endpoint into selected Tailnet policies. Tailscale does not "
-"officially support custom DERP servers behind NAT."
-msgstr ""
+"Optional verification name for manual TLS. Automatic TLS publishes a pinned "
+"certificate hash instead."
+msgstr "用于手动 TLS 的可选验证名称。自动 TLS 会发布一个固定的证书哈希。"
+
+msgid "Path to the local tailscaled socket"
+msgstr "本地 tailscaled 套接字的路径"
+
+msgid "Path to the TLS certificate"
+msgstr "TLS 证书的路径"
+
+msgid "Path to the TLS private key"
+msgstr "TLS 私钥的路径"
+
+msgid "Persistent directory for the automatic TLS private key and certificate"
+msgstr "用于自动 TLS 私钥和证书的持久化目录"
+
+msgid "Platform"
+msgstr "平台"
+
+msgid "Port for health check endpoint"
+msgstr "健康检查端点的端口"
+
+msgid "Port must be auto or an integer from 1 to 65535"
+msgstr "端口必须设置为自动或在 1 到 65535 之间的整数"
+
+msgid "Posture attribute deleted."
+msgstr "已删除姿态属性。"
+
+msgid "Posture attribute updated."
+msgstr "已更新姿态属性。"
+
+msgid "Posture Attributes"
+msgstr "姿态属性"
+
+msgid "Public Interface"
+msgstr "公共接口"
+
+msgid "Public Key"
+msgstr "公钥"
+
+msgid ""
+"Publish a public IPv4 endpoint into selected Tailnet policies. Direct mode "
+"uses the selected interface address; router NAT mapping is available for "
+"advanced setups."
+msgstr "将此公共 IPv4 端点发布到选定的 Tailnet 策略。直接模式使用所选接口地址；对于高级设置，可以使用路由器 NAT 映射。"
+
+msgid ""
+"Publish this DERP relay through a WAN gateway. Tailscale does not officially "
+"support custom DERP servers behind NAT."
+msgstr "通过 WAN 网关发布此 DERP 中继服务器。Tailscale 不正式支持位于 NAT 后面的自定义 DERP 服务器。"
 
 msgid ""
 "Publish this router's mapped endpoint into this Tailnet policy. Credentials "
 "must have policy file write permission."
-msgstr ""
+msgstr "将此路由器的映射端点发布到此 Tailnet 策略。凭据必须具有策略文件写入权限。"
 
 msgid "Refresh"
-msgstr ""
+msgstr "刷新"
 
 msgid "Refresh failed"
-msgstr ""
+msgstr "刷新失败"
 
 msgid "Refreshing Official API devices..."
-msgstr ""
+msgstr "正在刷新官方 API 设备..."
 
 msgid "Region Code"
-msgstr ""
+msgstr "区域代码"
 
 msgid "Region ID"
-msgstr ""
+msgstr "区域 ID"
 
 msgid "Region Name"
-msgstr ""
+msgstr "区域名称"
 
 msgid "Reload"
-msgstr ""
+msgstr "重新加载"
 
 msgid "Reload Config"
-msgstr ""
+msgstr "重新加载配置"
 
 msgid "Remap Now"
-msgstr ""
+msgstr "立即重映射"
 
 msgid "Remote Address"
-msgstr ""
+msgstr "远程地址"
 
 msgid "Require a client to pass at least one enabled verification method"
-msgstr ""
+msgstr "要求客户端至少通过一种启用的验证方法"
 
 msgid ""
-"Require a local NAT-loopback DERP/TLS and STUN check before publishing. This "
-"does not prove Internet reachability. Three consecutive failures withdraw "
-"the managed nodes until recovery."
-msgstr ""
+"Require a local DERP/TLS and STUN check before publishing. This does not "
+"prove Internet reachability. Three consecutive failures withdraw the managed "
+"nodes until recovery."
+msgstr "在发布之前，需要进行本地 DERP/TLS 和 STUN 检查。这不能证明互联网可达性。连续三次失败将撤销受管节点，直到恢复。"
 
 msgid "Restart"
-msgstr ""
+msgstr "重启"
 
 msgid "Retry Interval (seconds)"
-msgstr ""
+msgstr "重试间隔 (秒)"
+
+msgid "Router NAT Mapping"
+msgstr "路由器 NAT 映射"
 
 msgid "Running"
-msgstr ""
+msgstr "运行中"
 
 msgid "Save"
-msgstr ""
+msgstr "保存"
 
 msgid "Save Authorization"
-msgstr ""
+msgstr "保存授权信息"
 
 msgid "Save cumulative traffic statistics to file across restarts"
-msgstr ""
+msgstr "在重启后，将累计流量统计数据保存到文件"
 
 msgid "Save Interval (seconds)"
-msgstr ""
+msgstr "保存间隔 (秒)"
 
 msgid "Save IPv4"
-msgstr ""
+msgstr "保存 IPv4 设置"
 
 msgid "Save Key Setting"
-msgstr ""
+msgstr "保存密钥设置"
 
 msgid "Save Name"
-msgstr ""
+msgstr "保存名称"
 
 msgid "Save Routes"
-msgstr ""
+msgstr "保存路由"
 
 msgid "Save Tags"
-msgstr ""
+msgstr "保存标签"
 
 msgid "Saved configuration is now active."
-msgstr ""
+msgstr "已保存的配置现在生效。"
 
 msgid "Saved configuration status expired before it could be confirmed."
-msgstr ""
+msgstr "在确认之前，已保存的配置状态已过期。"
 
 msgid "Saving ACL policy..."
-msgstr ""
+msgstr "正在保存 ACL 策略..."
 
 msgid "Saving..."
-msgstr ""
+msgstr "正在保存..."
 
 msgid "Search devices..."
-msgstr ""
+msgstr "搜索设备..."
 
 msgid "Select a configured API instance to manage its ACL policy."
-msgstr ""
+msgstr "选择一个已配置的 API 实例以管理其 ACL 策略。"
 
 msgid "Select an API instance"
-msgstr ""
+msgstr "选择一个 API 实例"
 
 msgid "Select an API instance first."
-msgstr ""
+msgstr "请先选择一个 API 实例。"
 
 msgid "Service Actions"
-msgstr ""
+msgstr "服务操作"
+
+msgid "Service Configuration"
+msgstr "服务配置"
 
 msgid "Service Status"
-msgstr ""
+msgstr "服务状态"
 
 msgid "Set Attribute"
-msgstr ""
+msgstr "设置属性"
 
 msgid "Shared mesh key passed to the DERP server when mesh mode is enabled"
-msgstr ""
+msgstr "当启用网状模式时，传递给 DERP 服务器的共享网状密钥"
 
 msgid "Sources"
-msgstr ""
-
-msgid "Stable DNS name covered by the DERP server certificate"
-msgstr ""
+msgstr "来源"
 
 msgid "Stable ownership key used to update or withdraw only this managed node"
-msgstr ""
+msgstr "用于更新或撤销此受管节点的稳定所有权密钥"
 
 msgid "Stale or not synchronized"
-msgstr ""
+msgstr "过时或未同步"
 
 msgid "Start"
-msgstr ""
+msgstr "开始"
 
 msgid "Start DERP service on boot"
-msgstr ""
+msgstr "启动时启动 DERP 服务"
 
 msgid "State"
-msgstr ""
+msgstr "状态"
 
 msgid "Status"
-msgstr ""
+msgstr "状态"
 
 msgid "Status backend unavailable"
-msgstr ""
+msgstr "状态后端不可用"
 
 msgid "Stop"
-msgstr ""
+msgstr "停止"
 
 msgid "Stopped"
-msgstr ""
+msgstr "已停止"
 
 msgid "Storage Path"
-msgstr ""
+msgstr "存储路径"
 
 msgid "STUN disabled"
-msgstr ""
+msgstr "STUN已禁用"
 
 msgid "STUN Enabled"
-msgstr ""
-
-msgid "STUN Port"
-msgstr ""
+msgstr "启用STUN"
 
 msgid "Subnet Routes"
-msgstr ""
+msgstr "子网路由"
 
 msgid "Sync DERP Map"
-msgstr ""
+msgstr "同步DERP地图"
 
 msgid "Tags"
-msgstr ""
+msgstr "标签"
 
 msgid "Tailnet"
-msgstr ""
+msgstr "Tailnet"
 
 msgid "Tailnet ACL Management"
-msgstr ""
+msgstr "Tailnet ACL管理"
 
 msgid "Tailnet Instances"
-msgstr ""
-
-msgid "Tailscale ACL Configuration (DERP Map)"
-msgstr ""
-
-msgid "Tailscale DERP Relay"
-msgstr ""
+msgstr "Tailnet实例"
 
 msgid "Tailscale DERP Status"
-msgstr ""
+msgstr "Tailscale DERP状态"
 
 msgid "Tailscale Devices"
-msgstr ""
+msgstr "Tailscale设备"
 
 msgid "tailscaled"
-msgstr ""
+msgstr "tailscaled"
 
 msgid "the DERP service?"
-msgstr ""
+msgstr "DERP服务？"
 
 msgid ""
 "The optional availability check runs from this router through NAT loopback. "
 "A pass does not prove Internet reachability, and a failure may only mean "
 "that the gateway does not support hairpin NAT."
-msgstr ""
+msgstr "可选的可用性检查从此路由器通过NAT回环运行。 成功并不证明互联网可达性，而失败可能仅仅意味着网关不支持Hairpin NAT。"
 
 msgid ""
 "The server policy changed. Your draft was retained; review it before saving "
 "again."
-msgstr ""
+msgstr "服务器策略已更改。您的草稿已保留；在再次保存之前请进行审查。"
 
 msgid "This field is required when DERP map synchronization is enabled"
-msgstr ""
+msgstr "当启用DERP地图同步时，此字段是必需的"
 
 msgid ""
 "This immediately expires the device key. The device must reauthenticate to "
 "reconnect."
-msgstr ""
+msgstr "这会立即使设备密钥失效。 设备必须重新身份验证才能重新连接。"
 
 msgid "This permanently removes the device from this tailnet."
-msgstr ""
+msgstr "这将永久地从此Tailnet中删除该设备。"
 
 msgid "TLS Hostname"
-msgstr ""
+msgstr "TLS主机名"
+
+msgid "TLS Mode"
+msgstr "TLS模式"
 
 msgid "TLS Settings"
-msgstr ""
+msgstr "TLS设置"
 
 msgid "total accepted"
-msgstr ""
+msgstr "总已接受"
 
 msgid "Traffic"
-msgstr ""
-
-msgid "Traffic (Session)"
-msgstr ""
+msgstr "流量"
 
 msgid "Traffic (Total)"
-msgstr ""
+msgstr "总流量"
 
 msgid "Traffic Statistics"
-msgstr ""
+msgstr "流量统计"
 
 msgid "Unable to load ACL policy."
-msgstr ""
+msgstr "无法加载 ACL 策略。"
 
 msgid "Unable to load posture attributes."
-msgstr ""
+msgstr "无法加载策略属性。"
 
 msgid "Unable to load routes."
-msgstr ""
+msgstr "无法加载路由。"
 
 msgid "Unable to save ACL policy."
-msgstr ""
+msgstr "无法保存 ACL 策略。"
 
 msgid "Unavailable"
-msgstr ""
+msgstr "不可用"
 
 msgid "Unix socket used by LuCI and local management requests"
-msgstr ""
+msgstr "LuCI 和本地管理请求使用的 Unix 套接字"
 
 msgid "Unknown"
-msgstr ""
+msgstr "未知"
 
 msgid "unknown error"
-msgstr ""
+msgstr "未知错误"
 
 msgid "Unnamed device"
-msgstr ""
+msgstr "未命名设备"
 
 msgid "Unnamed instance"
-msgstr ""
+msgstr "未命名的实例"
 
 msgid "URLs"
-msgstr ""
+msgstr "网址"
 
 msgid "Use - for the credential's default tailnet, or enter a tailnet ID"
 msgstr "使用 - 表示该凭据的默认 tailnet，或输入 tailnet ID"
 
 msgid "Use a custom socket path instead of tailscaled's default socket"
-msgstr ""
+msgstr "使用自定义套接字路径，而不是 tailscaled 的默认套接字"
 
-msgid "Use auto to follow the IPv4 default route, or enter a network interface name"
-msgstr ""
+msgid ""
+"Use auto to follow the IPv4 default route, or enter the interface holding "
+"the public IPv4 address"
+msgstr "选择“自动”以跟踪 IPv4 默认路由，或输入持有公共 IPv4 地址的接口"
 
 msgid "Use Custom tailscaled Socket"
-msgstr ""
+msgstr "使用自定义 tailscaled 套接字"
 
 msgid "User"
-msgstr ""
+msgstr "用户"
 
 msgid "Validate"
-msgstr ""
+msgstr "验证"
 
 msgid "Validate Endpoint Locally"
-msgstr ""
+msgstr "本地验证端点"
 
 msgid "Validating ACL policy..."
-msgstr ""
+msgstr "正在验证 ACL 策略..."
 
 msgid "Value"
-msgstr ""
+msgstr "值"
 
 msgid "Value (JSON)"
-msgstr ""
+msgstr "值 (JSON)"
 
 msgid "Verify Clients"
-msgstr ""
+msgstr "验证客户端"
 
 msgid ""
 "Verify clients against the local tailscaled instance using its default "
 "socket"
-msgstr ""
+msgstr "使用其默认套接字，针对本地 tailscaled 实例验证客户端"
 
 msgid "Verify URLs"
-msgstr ""
+msgstr "验证 URL"
 
 msgid "Version"
-msgstr ""
+msgstr "版本"
 
 msgid "Waiting for saved configuration to become active:"
-msgstr ""
+msgstr "等待已保存的配置生效："
 
 msgid "Waiting for saved configuration to become active..."
-msgstr ""
-
-msgid "WAN Interface"
-msgstr ""
+msgstr "等待已保存的配置生效..."
 
 msgid "Yes"
-msgstr ""
-
-msgid ""
-"You can paste this JSON into your Tailscale ACL configuration (derpMap "
-"section) to allow clients to use this relay. Customize the parameters below "
-"to match your public setup:"
-msgstr ""
+msgstr "是"

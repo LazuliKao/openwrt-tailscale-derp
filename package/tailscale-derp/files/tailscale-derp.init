@@ -9,7 +9,7 @@ PROG=/usr/bin/tailscale-derp
 CONFIG_FILE=/etc/config/tailscale-derp
 
 start_service() {
-    local enabled listen stun certfile keyfile mesh mesh_key socket health
+    local enabled listen stun tls_mode certfile keyfile mesh mesh_key socket health
 
     config_load tailscale-derp
     config_get enabled global enabled '1'
@@ -17,6 +17,7 @@ start_service() {
 
     config_get listen global listen ':3478'
     config_get stun global stun '1'
+    config_get tls_mode tls mode 'manual'
     config_get certfile tls certfile ''
     config_get keyfile tls keyfile ''
     config_get mesh mesh enabled '0'
@@ -29,7 +30,7 @@ start_service() {
 
     [ "$stun" = "1" ] && procd_append_param command --stun
 
-    if [ -n "$certfile" ] && [ -n "$keyfile" ]; then
+    if [ "$tls_mode" = "manual" ] && [ -n "$certfile" ] && [ -n "$keyfile" ]; then
         procd_append_param command --certfile "$certfile"
         procd_append_param command --keyfile "$keyfile"
     fi
