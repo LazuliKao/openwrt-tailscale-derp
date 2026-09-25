@@ -14,7 +14,15 @@ type ExternalActionName = "reconcile" | "check" | "sync";
 const view = L.view;
 const rpc = L.rpc;
 const ui = L.ui;
+const uci = L.uci;
 const poll = L.Poll;
+
+const firewallRuleName = "Allow Tailscale DERP";
+
+type FirewallRuleSection = {
+	".name"?: string;
+	name?: string;
+};
 
 type ActionResponse = {
 	action?: string;
@@ -107,6 +115,39 @@ const callVersion = rpc.declare<VersionResponse>({
 	object: "luci.tailscale-derp",
 	method: "get_version",
 });
+
+function findFirewallRule(): string | null {
+	const sections = (uci.sections("firewall", "rule") || []) as FirewallRuleSection[];
+	const section = sections.find((candidate) => candidate.name === firewallRuleName);
+	return section?.[".name"] || null;
+}
+
+function configuredListenPort(): string {
+	const listen = String(uci.get("tailscale-derp", "global", "listen") || ":3478").trim();
+	const match = listen.match(/:(\d+)$/);
+	const port = match ? Number(match[1]) : NaN;
+	if (!Number.isInteger(port) || port < 1 || port > 65535) {
+		throw new Error(_("The configured DERP listen port is invalid."));
+	}
+	return String(port);
+}
+
+function stageFirewallRule(): string {
+	const port = configuredListenPort();
+	const section = findFirewallRule() || uci.add("firewall", "rule");
+	if (!section) {
+		throw new Error(_("Unable to create the firewall rule."));
+	}
+
+	const stun = String(uci.get("tailscale-derp", "global", "stun") || "1") === "1";
+	uci.set("firewall", section, "name", firewallRuleName);
+	uci.set("firewall", section, "src", "wan");
+	uci.set("firewall", section, "proto", stun ? ["tcp", "udp"] : ["tcp"]);
+	uci.set("firewall", section, "dest_port", port);
+	uci.set("firewall", section, "target", "ACCEPT");
+	uci.set("firewall", section, "enabled", "1");
+	return port;
+}
 
 function formatBytes(n: number): string {
 	if (n < 1024) return `${n} B`;
@@ -327,6 +368,8 @@ type StatusView = {
 	trafficTotalEl: HTMLElement;
 	syncEl: HTMLElement;
 	resultEl: HTMLElement;
+	firewallEl: HTMLElement;
+	firewallButton: HTMLButtonElement;
 	actionButtons: HTMLButtonElement[];
 	externalStateEl: HTMLElement;
 	externalEndpointEl: HTMLElement;
@@ -339,6 +382,7 @@ type StatusView = {
 	externalButtons: HTMLButtonElement[];
 	handleAction: (action: ActionName) => Promise<void>;
 	handleExternalAction: (action: ExternalActionName) => Promise<void>;
+	handleFirewall: () => void;
 };
 
 function pollStatus(view: StatusView): Promise<void> {
@@ -496,18 +540,43 @@ export const main = (view as any).extend({
 			});
 	},
 
+	handleFirewall(this: StatusView) {
+		this.firewallButton.disabled = true;
+		try {
+			const port = stageFirewallRule();
+			this.firewallEl.style.color = "#1a7f37";
+			this.firewallEl.textContent = _(
+				"Rule staged for port %s; click Save & Apply to activate it.",
+			).format(port);
+			this.resultEl.style.color = "#1a7f37";
+			this.resultEl.textContent = _(
+				"The firewall rule was added to the pending UCI changes.",
+			);
+		} catch (err: unknown) {
+			const message = err instanceof Error ? err.message : _("unknown error");
+			this.firewallEl.style.color = "#cf222e";
+			this.firewallEl.textContent = message;
+			this.resultEl.style.color = "#cf222e";
+			this.resultEl.textContent = _("Unable to stage the firewall rule:") + ` ${message}`;
+		} finally {
+			this.firewallButton.disabled = false;
+		}
+	},
+
 	load() {
-		return Promise.all([
-			callStatus().catch((err: unknown) => ({
-				error:
-					err instanceof Error ? err.message : _("Status backend unavailable"),
-			})),
-			callVersion().catch(() => ({ version: _("Unavailable") })),
-			callExternalStatus().catch((err: unknown) => ({
-				state: "unavailable",
-				error: err instanceof Error ? err.message : _("External endpoint backend unavailable"),
-			})),
-		]);
+		return Promise.all([uci.load("tailscale-derp"), uci.load("firewall")]).then(() =>
+			Promise.all([
+				callStatus().catch((err: unknown) => ({
+					error:
+						err instanceof Error ? err.message : _("Status backend unavailable"),
+				})),
+				callVersion().catch(() => ({ version: _("Unavailable") })),
+				callExternalStatus().catch((err: unknown) => ({
+					state: "unavailable",
+					error: err instanceof Error ? err.message : _("External endpoint backend unavailable"),
+				})),
+			]),
+		);
 	},
 
 	render(this: StatusView, data: [StatusResponse, VersionResponse, ExternalStatus]) {
@@ -528,6 +597,7 @@ export const main = (view as any).extend({
 		const handleReconcile = ui.createHandlerFn(this, "handleExternalAction", "reconcile");
 		const handleCheck = ui.createHandlerFn(this, "handleExternalAction", "check");
 		const handleSync = ui.createHandlerFn(this, "handleExternalAction", "sync");
+		const handleFirewall = ui.createHandlerFn(this, "handleFirewall");
 
 		const statusEl = <td class="td">{normalized.running ? _("Running") : _("Stopped")}</td>;
 		const versionEl = <td class="td">{normalized.error ? _("Unavailable") : version.version || _("Unknown")}</td>;
@@ -541,6 +611,11 @@ export const main = (view as any).extend({
 		const clientsEl = <td class="td">{`${normalized.clients} ${_("connected")} (${normalized.accepts} ${_("total accepted")})`}</td>;
 		const trafficEl = <td class="td">{`↓ ${formatBytes(normalized.bytesRecv)} / ↑ ${formatBytes(normalized.bytesSent)}`}</td>;
 		const trafficTotalEl = <td class="td" style="display: none;"></td>;
+		const firewallEl = (
+			<td class="td">
+				{findFirewallRule() ? _("Configured") : _("Not configured")}
+			</td>
+		);
 		const externalStateEl = <td class="td">{external.state || (external.enabled ? _("Unknown") : _("Disabled"))}</td>;
 		const externalEndpointEl = <td class="td">{formatExternalEndpoint(external)}</td>;
 		const externalMethodEl = <td class="td">{external.endpoint?.method || _("N/A")}</td>;
@@ -580,6 +655,7 @@ export const main = (view as any).extend({
 		this.clientsEl = clientsEl;
 		this.trafficEl = trafficEl;
 		this.trafficTotalEl = trafficTotalEl;
+		this.firewallEl = firewallEl;
 		this.syncEl = syncEl;
 		this.resultEl = resultEl;
 		this.externalStateEl = externalStateEl;
@@ -626,9 +702,15 @@ export const main = (view as any).extend({
 		const btnReconcile = <button class="cbi-button cbi-button-action" onclick={handleReconcile}>{_("Remap Now")}</button>;
 		const btnCheck = <button class="cbi-button cbi-button-action" onclick={handleCheck}>{_("Check Locally")}</button>;
 		const btnSync = <button class="cbi-button cbi-button-action" onclick={handleSync}>{_("Sync DERP Map")}</button>;
+		const btnFirewall = (
+			<button class="cbi-button cbi-button-action" type="button" onclick={handleFirewall}>
+				{_("Stage Firewall Rule")}
+			</button>
+		) as HTMLButtonElement;
 
 		this.actionButtons = [btnStart, btnStop, btnRestart, btnReload] as HTMLButtonElement[];
 		this.externalButtons = [btnReconcile, btnCheck, btnSync] as HTMLButtonElement[];
+		this.firewallButton = btnFirewall;
 
 		poll.add(() => pollStatus(this), 5);
 
@@ -684,6 +766,10 @@ export const main = (view as any).extend({
 							{healthEl}
 						</tr>
 						<tr class="tr">
+							<td class="td">{_("Firewall Rule")}</td>
+							{firewallEl}
+						</tr>
+						<tr class="tr">
 							<td class="td">{_("Last Error")}</td>
 							{errorEl}
 						</tr>
@@ -704,6 +790,13 @@ export const main = (view as any).extend({
 					</table>
 					<div class="cbi-section-node" style="margin-top: 0.75em;">
 						{btnReconcile} {" "} {btnCheck} {" "} {btnSync}
+					</div>
+				</div>
+				<div class="cbi-section" style="margin-top: 1em;">
+					<h3>{_("Firewall")}</h3>
+					<p>{_("Add a WAN firewall rule for the configured DERP port. The rule is only staged in UCI; click Save & Apply to activate it.")}</p>
+					<div class="cbi-section-node">
+						{btnFirewall}
 					</div>
 				</div>
 				<div class="cbi-section" style="margin-top: 1em;">

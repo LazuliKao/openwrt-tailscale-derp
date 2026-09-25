@@ -20,7 +20,8 @@
         ]
       },
       "uci": [
-        "tailscale-derp"
+        "tailscale-derp",
+        "firewall"
       ]
     },
     "write": {
@@ -49,7 +50,8 @@
         ]
       },
       "uci": [
-        "tailscale-derp"
+        "tailscale-derp",
+        "firewall"
       ]
     }
   }

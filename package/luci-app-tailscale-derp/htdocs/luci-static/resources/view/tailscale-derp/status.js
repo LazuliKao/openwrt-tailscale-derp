@@ -259,39 +259,43 @@ const externalActionCalls = {
 
 
 
-let status_r = L.view, status_o = L.rpc, status_s = L.ui, status_i = L.Poll, status_d = {
-    start: status_o.declare({
+let status_c = L.view, status_s = L.rpc, status_o = L.ui, status_i = L.uci, status_d = L.Poll, status_h = "Allow Tailscale DERP", status_u = {
+    start: status_s.declare({
         object: "luci.tailscale-derp",
         method: "start"
     }),
-    stop: status_o.declare({
+    stop: status_s.declare({
         object: "luci.tailscale-derp",
         method: "stop"
     }),
-    restart: status_o.declare({
+    restart: status_s.declare({
         object: "luci.tailscale-derp",
         method: "restart"
     }),
-    reload: status_o.declare({
+    reload: status_s.declare({
         object: "luci.tailscale-derp",
         method: "reload_config"
     })
-}, status_h = status_o.declare({
+}, status_f = status_s.declare({
     object: "luci.tailscale-derp",
     method: "get_status"
-}), status_u = status_o.declare({
+}), status_b = status_s.declare({
     object: "luci.tailscale-derp",
     method: "get_version"
 });
-function b(t) {
+function status_E() {
+    let t = (status_i.sections("firewall", "rule") || []).find((t)=>t.name === status_h);
+    return (null == t ? void 0 : t[".name"]) || null;
+}
+function status_p(t) {
     return t < 1024 ? "".concat(t, " B") : t < 1048576 ? "".concat((t / 1024).toFixed(1), " KB") : t < 1073741824 ? "".concat((t / 1048576).toFixed(1), " MB") : "".concat((t / 1073741824).toFixed(1), " GB");
 }
-function status_f(t) {
-    var e, n, l, c, a, r, o, s;
+function v(t) {
+    var e, n, l, r, a, c, s, o;
     let i = [];
     t.verifyURLsEnabled && i.push(_("URLs")), t.verifyTailscaled && i.push(_("tailscaled")), t.verifyAPIEnabled && i.push(_("Official API"));
     let d = t.verifyEnabled ? i.length ? i.join(", ") : _("Enabled, but no methods configured") : _("Disabled");
-    return t.verifyAPIInstances && t.verifyAPIInstances > 0 && (d += " (".concat(t.verifyAPIInstances, " ").concat(_("API instance(s)"), ")")), (null == (s = t.verifyClients) ? void 0 : s.length) && (d += "; ".concat(t.verifyClients.join(", "))), {
+    return t.verifyAPIInstances && t.verifyAPIInstances > 0 && (d += " (".concat(t.verifyAPIInstances, " ").concat(_("API instance(s)"), ")")), (null == (o = t.verifyClients) ? void 0 : o.length) && (d += "; ".concat(t.verifyClients.join(", "))), {
         verifyClients: d,
         running: !!t.running,
         listen: t.listen || _("N/A"),
@@ -303,26 +307,26 @@ function status_f(t) {
         clients: null != (e = t.clients) ? e : 0,
         accepts: null != (n = t.accepts) ? n : 0,
         bytesRecv: null != (l = t.bytesRecv) ? l : 0,
-        bytesSent: null != (c = t.bytesSent) ? c : 0,
+        bytesSent: null != (r = t.bytesSent) ? r : 0,
         bytesRecvTotal: null != (a = t.bytesRecvTotal) ? a : 0,
-        bytesSentTotal: null != (r = t.bytesSentTotal) ? r : 0,
-        acceptsTotal: null != (o = t.acceptsTotal) ? o : 0,
+        bytesSentTotal: null != (c = t.bytesSentTotal) ? c : 0,
+        acceptsTotal: null != (s = t.acceptsTotal) ? s : 0,
         trafficPersist: !!t.trafficPersist
     };
 }
-function status_E(t) {
+function y(t) {
     let e = t.endpoint;
     if (!(null == e ? void 0 : e.ipv4) || !e.derpPort) return _("Not mapped");
     let n = -1 === e.stunPort ? _("STUN disabled") : "UDP ".concat(e.ipv4, ":").concat(e.stunPort || 3478);
     return "TCP ".concat(e.ipv4, ":").concat(e.derpPort, "; ").concat(n);
 }
-function status_p(t) {
+function x(t) {
     let e = t.validation || {};
     if (!t.validationEnabled && (!e.state || "disabled" === e.state)) return "".concat(_("Disabled"), " (").concat(_("local NAT loopback only"), ")");
     let n = e.state || _("Unknown"), l = e.scope || "local_nat_loopback";
     return "".concat(n, " (").concat(l, ")").concat(e.error ? ": ".concat(e.error) : "");
 }
-function v(n) {
+function m(n) {
     let l = n.instances || [];
     return l.length ? l.map((n)=>jsxs("div", {
             children: [
@@ -337,23 +341,23 @@ function v(n) {
         })
     ];
 }
-function status_x(t, e) {
+function status_C(t, e) {
     var n, l;
-    t.externalStateEl.textContent = e.state || (e.enabled ? _("Unknown") : _("Disabled")), t.externalEndpointEl.textContent = status_E(e), t.externalMethodEl.textContent = (null == (n = e.endpoint) ? void 0 : n.method) || _("N/A"), t.externalLeaseEl.textContent = (null == (l = e.endpoint) ? void 0 : l.leaseUntil) || _("N/A"), t.externalValidationEl.textContent = status_p(e), t.externalFailuresEl.textContent = "".concat(e.failureCount || 0, "/").concat(e.failureThreshold || 3), t.externalErrorEl.textContent = e.error || _("None"), t.externalInstancesEl.replaceChildren(...v(e));
+    t.externalStateEl.textContent = e.state || (e.enabled ? _("Unknown") : _("Disabled")), t.externalEndpointEl.textContent = y(e), t.externalMethodEl.textContent = (null == (n = e.endpoint) ? void 0 : n.method) || _("N/A"), t.externalLeaseEl.textContent = (null == (l = e.endpoint) ? void 0 : l.leaseUntil) || _("N/A"), t.externalValidationEl.textContent = x(e), t.externalFailuresEl.textContent = "".concat(e.failureCount || 0, "/").concat(e.failureThreshold || 3), t.externalErrorEl.textContent = e.error || _("None"), t.externalInstancesEl.replaceChildren(...m(e));
 }
-function status_y(t) {
+function status_g(t) {
     if (!t) return "";
     if (/^:\d+$/.test(t)) return "0.0.0.0".concat(t);
     let e = t.match(/^\[::\]:(\d+)$/);
     return e ? "0.0.0.0:".concat(e[1]) : t;
 }
-function m(t, e) {
+function w(t, e) {
     let n = readPendingStatus();
     return n ? !n.savedAt || Date.now() - n.savedAt > 300000 ? {
         color: "#c60",
         text: _("Saved configuration status expired before it could be confirmed."),
         clear: !0
-    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && status_y(t.listen) === status_y(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.opsSocket === n.opsSocket && t.health === n.health) ? {
+    } : t && n && (!1 === n.enabled ? "" !== t.error || !1 === t.running : !0 === t.running && status_g(t.listen) === status_g(n.listen) && t.stun === (n.stun ? _("Yes") : _("No")) && t.mesh === (n.mesh ? _("Yes") : _("No")) && t.opsSocket === n.opsSocket && t.health === n.health) ? {
         color: "#1a7f37",
         text: _("Saved configuration is now active."),
         clear: !0
@@ -367,30 +371,30 @@ function m(t, e) {
         clear: !1
     };
 }
-function C(t) {
+function k(t) {
     return Promise.all([
-        status_h(),
-        status_u(),
+        status_f(),
+        status_b(),
         callExternalStatus().catch((t)=>({
                 state: "unavailable",
                 error: t instanceof Error ? t.message : _("External endpoint backend unavailable")
             }))
     ]).then((e)=>{
-        let [l, c, a] = e, r = status_f(l || {});
-        t.statusEl.textContent = r.running ? _("Running") : _("Stopped"), t.versionEl.textContent = r.error ? _("Unavailable") : (null == c ? void 0 : c.version) || _("Unknown"), t.listenEl.textContent = r.error ? _("Unavailable") : r.listen, t.stunEl.textContent = r.error ? _("Unknown") : r.stun, t.meshEl.textContent = r.error ? _("Unknown") : r.mesh, t.verifyClientsEl.textContent = r.error ? _("Unknown") : r.verifyClients, t.opsSocketEl.textContent = r.error ? _("Unavailable") : r.opsSocket, t.healthEl.textContent = r.error ? _("Unavailable") : r.health, t.errorEl.textContent = r.error || _("None"), t.clientsEl.textContent = "".concat(r.clients, " ").concat(_("connected"), " (").concat(r.accepts, " ").concat(_("total accepted"), ")"), r.trafficPersist ? (t.trafficEl.textContent = "Session: \u2193 ".concat(b(r.bytesRecv), " / \u2191 ").concat(b(r.bytesSent)), t.trafficTotalEl.textContent = "Total: \u2193 ".concat(b(r.bytesRecvTotal), " / \u2191 ").concat(b(r.bytesSentTotal)), t.trafficTotalEl.style.display = "") : (t.trafficEl.textContent = "\u2193 ".concat(b(r.bytesRecv), " / \u2191 ").concat(b(r.bytesSent)), t.trafficTotalEl.style.display = "none");
-        let o = m(r, r.error);
-        o.clear && clearPendingStatus(), t.syncEl.style.color = o.color, t.syncEl.textContent = o.text, status_x(t, a || {});
+        let [l, r, a] = e, c = v(l || {});
+        t.statusEl.textContent = c.running ? _("Running") : _("Stopped"), t.versionEl.textContent = c.error ? _("Unavailable") : (null == r ? void 0 : r.version) || _("Unknown"), t.listenEl.textContent = c.error ? _("Unavailable") : c.listen, t.stunEl.textContent = c.error ? _("Unknown") : c.stun, t.meshEl.textContent = c.error ? _("Unknown") : c.mesh, t.verifyClientsEl.textContent = c.error ? _("Unknown") : c.verifyClients, t.opsSocketEl.textContent = c.error ? _("Unavailable") : c.opsSocket, t.healthEl.textContent = c.error ? _("Unavailable") : c.health, t.errorEl.textContent = c.error || _("None"), t.clientsEl.textContent = "".concat(c.clients, " ").concat(_("connected"), " (").concat(c.accepts, " ").concat(_("total accepted"), ")"), c.trafficPersist ? (t.trafficEl.textContent = "Session: \u2193 ".concat(status_p(c.bytesRecv), " / \u2191 ").concat(status_p(c.bytesSent)), t.trafficTotalEl.textContent = "Total: \u2193 ".concat(status_p(c.bytesRecvTotal), " / \u2191 ").concat(status_p(c.bytesSentTotal)), t.trafficTotalEl.style.display = "") : (t.trafficEl.textContent = "\u2193 ".concat(status_p(c.bytesRecv), " / \u2191 ").concat(status_p(c.bytesSent)), t.trafficTotalEl.style.display = "none");
+        let s = w(c, c.error);
+        s.clear && clearPendingStatus(), t.syncEl.style.color = s.color, t.syncEl.textContent = s.text, status_C(t, a || {});
     }).catch((e)=>{
         let l = e instanceof Error ? e.message : _("Status backend unavailable");
         t.statusEl.textContent = _("Offline"), t.versionEl.textContent = _("Unavailable"), t.listenEl.textContent = _("Unavailable"), t.stunEl.textContent = _("Unknown"), t.meshEl.textContent = _("Unknown"), t.verifyClientsEl.textContent = _("Unknown"), t.opsSocketEl.textContent = _("Unavailable"), t.healthEl.textContent = _("Unavailable"), t.errorEl.textContent = l || _("Status backend unavailable"), t.clientsEl.textContent = "0 ".concat(_("connected"), " (0 ").concat(_("total accepted"), ")"), t.trafficEl.textContent = "\u2193 0 B / \u2191 0 B", t.trafficTotalEl.textContent = "", t.trafficTotalEl.style.display = "none";
-        let c = m(null, l || _("Status backend unavailable"));
-        c.clear && clearPendingStatus(), t.syncEl.style.color = c.color, t.syncEl.textContent = c.text, status_x(t, {
+        let r = w(null, l || _("Status backend unavailable"));
+        r.clear && clearPendingStatus(), t.syncEl.style.color = r.color, t.syncEl.textContent = r.text, status_C(t, {
             state: "unavailable",
             error: l
         });
     });
 }
-const main = status_r.extend({
+const main = status_c.extend({
     handleAction (t) {
         let e = function(t) {
             switch(t){
@@ -409,13 +413,13 @@ const main = status_r.extend({
             if (!window.confirm(n)) return this.resultEl.style.color = "#cf222e", this.resultEl.textContent = "".concat(e, " ").concat(_("cancelled.")), Promise.resolve();
         }
         for (let t of this.actionButtons)t.disabled = !0;
-        return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("in progress...")), status_d[t]().then((t)=>{
-            let n = t || {}, l = n.result || "ok", c = n.error;
-            if ("ok" !== l || c) throw Error(c || "".concat(e, " ").concat(_("failed")));
-            return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("completed successfully.")), C(this);
+        return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("in progress...")), status_u[t]().then((t)=>{
+            let n = t || {}, l = n.result || "ok", r = n.error;
+            if ("ok" !== l || r) throw Error(r || "".concat(e, " ").concat(_("failed")));
+            return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("completed successfully.")), k(this);
         }).catch((t)=>{
             let n = t instanceof Error ? t.message : _("unknown error");
-            return this.resultEl.style.color = "#cf222e", this.resultEl.textContent = "".concat(e, " ").concat(_("failed:"), " ").concat(n), C(this);
+            return this.resultEl.style.color = "#cf222e", this.resultEl.textContent = "".concat(e, " ").concat(_("failed:"), " ").concat(n), k(this);
         }).finally(()=>{
             for (let t of this.actionButtons)t.disabled = !1;
         });
@@ -434,139 +438,176 @@ const main = status_r.extend({
         for (let t of this.externalButtons)t.disabled = !0;
         return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("in progress...")), externalActionCalls[t]().then((t)=>{
             if ((null == t ? void 0 : t.result) !== "ok" || t.error) throw Error((null == t ? void 0 : t.error) || "".concat(e, " ").concat(_("failed")));
-            return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("completed successfully.")), C(this);
+            return this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = "".concat(e, " ").concat(_("completed successfully.")), k(this);
         }).catch((t)=>{
             let n = t instanceof Error ? t.message : _("unknown error");
-            return this.resultEl.style.color = "#cf222e", this.resultEl.textContent = "".concat(e, " ").concat(_("failed:"), " ").concat(n), C(this);
+            return this.resultEl.style.color = "#cf222e", this.resultEl.textContent = "".concat(e, " ").concat(_("failed:"), " ").concat(n), k(this);
         }).finally(()=>{
             for (let t of this.externalButtons)t.disabled = !1;
         });
     },
+    handleFirewall () {
+        this.firewallButton.disabled = !0;
+        try {
+            let t = function() {
+                let t = function() {
+                    let t = String(status_i.get("tailscale-derp", "global", "listen") || ":3478").trim().match(/:(\d+)$/), e = t ? Number(t[1]) : NaN;
+                    if (!Number.isInteger(e) || e < 1 || e > 65535) throw Error(_("The configured DERP listen port is invalid."));
+                    return String(e);
+                }(), e = status_E() || status_i.add("firewall", "rule");
+                if (!e) throw Error(_("Unable to create the firewall rule."));
+                let n = "1" === String(status_i.get("tailscale-derp", "global", "stun") || "1");
+                return status_i.set("firewall", e, "name", status_h), status_i.set("firewall", e, "src", "wan"), status_i.set("firewall", e, "proto", n ? [
+                    "tcp",
+                    "udp"
+                ] : [
+                    "tcp"
+                ]), status_i.set("firewall", e, "dest_port", t), status_i.set("firewall", e, "target", "ACCEPT"), status_i.set("firewall", e, "enabled", "1"), t;
+            }();
+            this.firewallEl.style.color = "#1a7f37", this.firewallEl.textContent = _("Rule staged for port %s; click Save & Apply to activate it.").format(t), this.resultEl.style.color = "#1a7f37", this.resultEl.textContent = _("The firewall rule was added to the pending UCI changes.");
+        } catch (e) {
+            let t = e instanceof Error ? e.message : _("unknown error");
+            this.firewallEl.style.color = "#cf222e", this.firewallEl.textContent = t, this.resultEl.style.color = "#cf222e", this.resultEl.textContent = _("Unable to stage the firewall rule:") + " ".concat(t);
+        } finally{
+            this.firewallButton.disabled = !1;
+        }
+    },
     load: ()=>Promise.all([
-            status_h().catch((t)=>({
-                    error: t instanceof Error ? t.message : _("Status backend unavailable")
-                })),
-            status_u().catch(()=>({
-                    version: _("Unavailable")
-                })),
-            callExternalStatus().catch((t)=>({
-                    state: "unavailable",
-                    error: t instanceof Error ? t.message : _("External endpoint backend unavailable")
-                }))
-        ]),
+            status_i.load("tailscale-derp"),
+            status_i.load("firewall")
+        ]).then(()=>Promise.all([
+                status_f().catch((t)=>({
+                        error: t instanceof Error ? t.message : _("Status backend unavailable")
+                    })),
+                status_b().catch(()=>({
+                        version: _("Unavailable")
+                    })),
+                callExternalStatus().catch((t)=>({
+                        state: "unavailable",
+                        error: t instanceof Error ? t.message : _("External endpoint backend unavailable")
+                    }))
+            ])),
     render (l) {
-        var c, a;
-        let r = l[0] || {}, o = l[1] || {}, d = status_f(r), h = l[2] || {}, u = m(d, d.error);
+        var r, a;
+        let c = l[0] || {}, s = l[1] || {}, i = v(c), h = l[2] || {}, u = w(i, i.error);
         u.clear && clearPendingStatus();
-        let x = status_s.createHandlerFn(this, "handleAction", "start"), y = status_s.createHandlerFn(this, "handleAction", "stop"), k = status_s.createHandlerFn(this, "handleAction", "restart"), S = status_s.createHandlerFn(this, "handleAction", "reload"), g = status_s.createHandlerFn(this, "handleExternalAction", "reconcile"), U = status_s.createHandlerFn(this, "handleExternalAction", "check"), A = status_s.createHandlerFn(this, "handleExternalAction", "sync"), T = jsx("td", {
+        let f = status_o.createHandlerFn(this, "handleAction", "start"), b = status_o.createHandlerFn(this, "handleAction", "stop"), C = status_o.createHandlerFn(this, "handleAction", "restart"), g = status_o.createHandlerFn(this, "handleAction", "reload"), S = status_o.createHandlerFn(this, "handleExternalAction", "reconcile"), U = status_o.createHandlerFn(this, "handleExternalAction", "check"), A = status_o.createHandlerFn(this, "handleExternalAction", "sync"), T = status_o.createHandlerFn(this, "handleFirewall"), N = jsx("td", {
             class: "td",
-            children: d.running ? _("Running") : _("Stopped")
-        }), w = jsx("td", {
-            class: "td",
-            children: d.error ? _("Unavailable") : o.version || _("Unknown")
-        }), N = jsx("td", {
-            class: "td",
-            children: d.error ? _("Unavailable") : d.listen
+            children: i.running ? _("Running") : _("Stopped")
         }), R = jsx("td", {
             class: "td",
-            children: d.error ? _("Unknown") : d.stun
+            children: i.error ? _("Unavailable") : s.version || _("Unknown")
         }), P = jsx("td", {
             class: "td",
-            children: d.error ? _("Unknown") : d.mesh
+            children: i.error ? _("Unavailable") : i.listen
         }), F = jsx("td", {
             class: "td",
-            children: d.error ? _("Unknown") : d.verifyClients
+            children: i.error ? _("Unknown") : i.stun
         }), I = jsx("td", {
             class: "td",
-            children: d.error ? _("Unavailable") : d.opsSocket
+            children: i.error ? _("Unknown") : i.mesh
         }), B = jsx("td", {
             class: "td",
-            children: d.error ? _("Unavailable") : d.health
-        }), j = jsx("td", {
-            class: "td",
-            children: d.error || _("None")
+            children: i.error ? _("Unknown") : i.verifyClients
         }), D = jsx("td", {
             class: "td",
-            children: "".concat(d.clients, " ").concat(_("connected"), " (").concat(d.accepts, " ").concat(_("total accepted"), ")")
-        }), M = jsx("td", {
+            children: i.error ? _("Unavailable") : i.opsSocket
+        }), j = jsx("td", {
             class: "td",
-            children: "\u2193 ".concat(b(d.bytesRecv), " / \u2191 ").concat(b(d.bytesSent))
+            children: i.error ? _("Unavailable") : i.health
         }), H = jsx("td", {
             class: "td",
-            style: "display: none;"
+            children: i.error || _("None")
+        }), M = jsx("td", {
+            class: "td",
+            children: "".concat(i.clients, " ").concat(_("connected"), " (").concat(i.accepts, " ").concat(_("total accepted"), ")")
         }), V = jsx("td", {
             class: "td",
-            children: h.state || (h.enabled ? _("Unknown") : _("Disabled"))
+            children: "\u2193 ".concat(status_p(i.bytesRecv), " / \u2191 ").concat(status_p(i.bytesSent))
         }), Y = jsx("td", {
             class: "td",
-            children: status_E(h)
+            style: "display: none;"
         }), O = jsx("td", {
             class: "td",
-            children: (null == (c = h.endpoint) ? void 0 : c.method) || _("N/A")
-        }), z = jsx("td", {
-            class: "td",
-            children: (null == (a = h.endpoint) ? void 0 : a.leaseUntil) || _("N/A")
+            children: status_E() ? _("Configured") : _("Not configured")
         }), W = jsx("td", {
             class: "td",
-            children: status_p(h)
+            children: h.state || (h.enabled ? _("Unknown") : _("Disabled"))
         }), $ = jsx("td", {
             class: "td",
-            children: "".concat(h.failureCount || 0, "/").concat(h.failureThreshold || 3)
+            children: y(h)
+        }), z = jsx("td", {
+            class: "td",
+            children: (null == (r = h.endpoint) ? void 0 : r.method) || _("N/A")
         }), G = jsx("td", {
             class: "td",
-            children: h.error || _("None")
+            children: (null == (a = h.endpoint) ? void 0 : a.leaseUntil) || _("N/A")
         }), K = jsx("td", {
             class: "td",
-            children: v(h)
+            children: x(h)
+        }), q = jsx("td", {
+            class: "td",
+            children: "".concat(h.failureCount || 0, "/").concat(h.failureThreshold || 3)
+        }), J = jsx("td", {
+            class: "td",
+            children: h.error || _("None")
+        }), Q = jsx("td", {
+            class: "td",
+            children: m(h)
         });
-        d.trafficPersist && (M.textContent = "Session: \u2193 ".concat(b(d.bytesRecv), " / \u2191 ").concat(b(d.bytesSent)), H.textContent = "Total: \u2193 ".concat(b(d.bytesRecvTotal), " / \u2191 ").concat(b(d.bytesSentTotal)), H.style.display = "");
-        let q = jsx("div", {
+        i.trafficPersist && (V.textContent = "Session: \u2193 ".concat(status_p(i.bytesRecv), " / \u2191 ").concat(status_p(i.bytesSent)), Y.textContent = "Total: \u2193 ".concat(status_p(i.bytesRecvTotal), " / \u2191 ").concat(status_p(i.bytesSentTotal)), Y.style.display = "");
+        let X = jsx("div", {
             style: "margin-bottom: 0.75em; color: ".concat(u.color, ";"),
             children: u.text
-        }), J = jsx("div", {
+        }), Z = jsx("div", {
             style: "margin-top: 0.75em; min-height: 1.2em; color: #1a7f37;",
             children: _("No action executed yet.")
         });
-        this.statusEl = T, this.versionEl = w, this.listenEl = N, this.stunEl = R, this.meshEl = P, this.verifyClientsEl = F, this.opsSocketEl = I, this.healthEl = B, this.errorEl = j, this.clientsEl = D, this.trafficEl = M, this.trafficTotalEl = H, this.syncEl = q, this.resultEl = J, this.externalStateEl = V, this.externalEndpointEl = Y, this.externalMethodEl = O, this.externalLeaseEl = z, this.externalValidationEl = W, this.externalFailuresEl = $, this.externalErrorEl = G, this.externalInstancesEl = K;
-        let Q = jsx("button", {
+        this.statusEl = N, this.versionEl = R, this.listenEl = P, this.stunEl = F, this.meshEl = I, this.verifyClientsEl = B, this.opsSocketEl = D, this.healthEl = j, this.errorEl = H, this.clientsEl = M, this.trafficEl = V, this.trafficTotalEl = Y, this.firewallEl = O, this.syncEl = X, this.resultEl = Z, this.externalStateEl = W, this.externalEndpointEl = $, this.externalMethodEl = z, this.externalLeaseEl = G, this.externalValidationEl = K, this.externalFailuresEl = q, this.externalErrorEl = J, this.externalInstancesEl = Q;
+        let tt = jsx("button", {
             class: "cbi-button cbi-button-action",
-            onclick: x,
+            onclick: f,
             children: _("Start")
-        }), X = jsx("button", {
-            class: "cbi-button cbi-button-negative",
-            onclick: y,
-            children: _("Stop")
-        }), Z = jsx("button", {
-            class: "cbi-button cbi-button-action",
-            onclick: k,
-            children: _("Restart")
-        }), tt = jsx("button", {
-            class: "cbi-button cbi-button-action",
-            onclick: S,
-            children: _("Reload Config")
         }), te = jsx("button", {
+            class: "cbi-button cbi-button-negative",
+            onclick: b,
+            children: _("Stop")
+        }), tn = jsx("button", {
+            class: "cbi-button cbi-button-action",
+            onclick: C,
+            children: _("Restart")
+        }), tl = jsx("button", {
             class: "cbi-button cbi-button-action",
             onclick: g,
+            children: _("Reload Config")
+        }), tr = jsx("button", {
+            class: "cbi-button cbi-button-action",
+            onclick: S,
             children: _("Remap Now")
-        }), tn = jsx("button", {
+        }), ta = jsx("button", {
             class: "cbi-button cbi-button-action",
             onclick: U,
             children: _("Check Locally")
-        }), tl = jsx("button", {
+        }), tc = jsx("button", {
             class: "cbi-button cbi-button-action",
             onclick: A,
             children: _("Sync DERP Map")
+        }), ts = jsx("button", {
+            class: "cbi-button cbi-button-action",
+            type: "button",
+            onclick: T,
+            children: _("Stage Firewall Rule")
         });
         return this.actionButtons = [
-            Q,
-            X,
-            Z,
-            tt
-        ], this.externalButtons = [
+            tt,
             te,
             tn,
             tl
-        ], status_i.add(()=>C(this), 5), jsxs("div", {
+        ], this.externalButtons = [
+            tr,
+            ta,
+            tc
+        ], this.firewallButton = ts, status_d.add(()=>k(this), 5), jsxs("div", {
             children: [
                 jsx("h2", {
                     children: _("Tailscale DERP Status")
@@ -577,7 +618,7 @@ const main = status_r.extend({
                         jsx("h3", {
                             children: _("DERP Server Status")
                         }),
-                        q,
+                        X,
                         jsxs("table", {
                             class: "table",
                             children: [
@@ -588,7 +629,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Service Status")
                                         }),
-                                        T
+                                        N
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -598,7 +639,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Version")
                                         }),
-                                        w
+                                        R
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -608,7 +649,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Connected Clients")
                                         }),
-                                        D
+                                        M
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -618,7 +659,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Traffic")
                                         }),
-                                        M
+                                        V
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -628,7 +669,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Traffic (Total)")
                                         }),
-                                        H
+                                        Y
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -638,7 +679,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Listen Address")
                                         }),
-                                        N
+                                        P
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -648,7 +689,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("STUN Enabled")
                                         }),
-                                        R
+                                        F
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -658,7 +699,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Mesh Enabled")
                                         }),
-                                        P
+                                        I
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -668,7 +709,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Verify Clients")
                                         }),
-                                        F
+                                        B
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -678,7 +719,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Ops Unix Socket")
                                         }),
-                                        I
+                                        D
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -688,7 +729,17 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Health Address")
                                         }),
-                                        B
+                                        j
+                                    ]
+                                }),
+                                jsxs("tr", {
+                                    class: "tr",
+                                    children: [
+                                        jsx("td", {
+                                            class: "td",
+                                            children: _("Firewall Rule")
+                                        }),
+                                        O
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -698,7 +749,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Last Error")
                                         }),
-                                        j
+                                        H
                                     ]
                                 })
                             ]
@@ -725,7 +776,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("State")
                                         }),
-                                        V
+                                        W
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -735,7 +786,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Mapped Endpoint")
                                         }),
-                                        Y
+                                        $
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -745,7 +796,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Mapping Method")
                                         }),
-                                        O
+                                        z
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -755,7 +806,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Lease Until")
                                         }),
-                                        z
+                                        G
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -765,7 +816,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Local NAT-loopback Check")
                                         }),
-                                        W
+                                        K
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -775,7 +826,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Consecutive Failures")
                                         }),
-                                        $
+                                        q
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -785,7 +836,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("Tailnet Instances")
                                         }),
-                                        K
+                                        Q
                                     ]
                                 }),
                                 jsxs("tr", {
@@ -795,7 +846,7 @@ const main = status_r.extend({
                                             class: "td",
                                             children: _("External Error")
                                         }),
-                                        G
+                                        J
                                     ]
                                 })
                             ]
@@ -804,16 +855,32 @@ const main = status_r.extend({
                             class: "cbi-section-node",
                             style: "margin-top: 0.75em;",
                             children: [
-                                te,
+                                tr,
                                 " ",
                                 " ",
                                 " ",
-                                tn,
+                                ta,
                                 " ",
                                 " ",
                                 " ",
-                                tl
+                                tc
                             ]
+                        })
+                    ]
+                }),
+                jsxs("div", {
+                    class: "cbi-section",
+                    style: "margin-top: 1em;",
+                    children: [
+                        jsx("h3", {
+                            children: _("Firewall")
+                        }),
+                        jsx("p", {
+                            children: _("Add a WAN firewall rule for the configured DERP port. The rule is only staged in UCI; click Save & Apply to activate it.")
+                        }),
+                        jsx("div", {
+                            class: "cbi-section-node",
+                            children: ts
                         })
                     ]
                 }),
@@ -827,16 +894,16 @@ const main = status_r.extend({
                         jsxs("div", {
                             class: "cbi-section-node",
                             children: [
-                                Q,
+                                tt,
                                 " ",
-                                X,
+                                te,
                                 " ",
-                                Z,
+                                tn,
                                 " ",
-                                tt
+                                tl
                             ]
                         }),
-                        J
+                        Z
                     ]
                 })
             ]

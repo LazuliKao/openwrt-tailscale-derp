@@ -1033,3 +1033,33 @@ msgstr "等待已保存的配置生效..."
 
 msgid "Yes"
 msgstr "是"
+
+msgid "Firewall"
+msgstr "防火墙"
+
+msgid "Firewall Rule"
+msgstr "防火墙规则"
+
+msgid "Configured"
+msgstr "已配置"
+
+msgid "Stage Firewall Rule"
+msgstr "暂存防火墙规则"
+
+msgid "Rule staged for port %s; click Save & Apply to activate it."
+msgstr "已暂存端口 %s 的规则；点击“保存并应用”以启用。"
+
+msgid "The firewall rule was added to the pending UCI changes."
+msgstr "防火墙规则已添加到待处理的 UCI 更改中。"
+
+msgid "Add a WAN firewall rule for the configured DERP port. The rule is only staged in UCI; click Save & Apply to activate it."
+msgstr "为配置的 DERP 端口添加 WAN 防火墙规则。规则仅暂存在 UCI 中；点击“保存并应用”以启用。"
+
+msgid "Unable to create the firewall rule."
+msgstr "无法创建防火墙规则。"
+
+msgid "Unable to stage the firewall rule:"
+msgstr "无法暂存防火墙规则："
+
+msgid "The configured DERP listen port is invalid."
+msgstr "配置的 DERP 监听端口无效。"
