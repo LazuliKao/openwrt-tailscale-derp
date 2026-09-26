@@ -377,6 +377,17 @@ export const main = (view as any).extend({
 		o.depends("derpmap_sync", "1");
 		modalOnly(o);
 
+		o = apiSection.option(
+			form.Flag,
+			"stun_only",
+			_("STUN Only"),
+			_("Publish this node as STUN-only without advertising it as a DERP relay"),
+		);
+		o.default = "0";
+		o.rmempty = false;
+		o.depends("derpmap_sync", "1");
+		modalOnly(o);
+
 		return m.render();
 	},
 });

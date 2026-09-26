@@ -870,6 +870,12 @@ msgstr "STUN已禁用"
 msgid "STUN Enabled"
 msgstr "启用STUN"
 
+msgid "STUN Only"
+msgstr "仅 STUN"
+
+msgid "Publish this node as STUN-only without advertising it as a DERP relay"
+msgstr "将此节点发布为仅 STUN 节点，不将其作为 DERP 中继公布"
+
 msgid "Subnet Routes"
 msgstr "子网路由"
 
