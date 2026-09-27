@@ -102,6 +102,7 @@ export const main = (view as any).extend({
 					{
 						enabled: "0",
 						mode: "direct",
+						address_family: "ipv4",
 						method: ["pcp", "natpmp", "upnp"],
 						wan_interface: "auto",
 						derp_port: "auto",
@@ -198,7 +199,7 @@ export const main = (view as any).extend({
 			"external",
 			_("External Endpoint (Experimental)"),
 			_(
-				"Publish a public IPv4 endpoint into selected Tailnet policies. Direct mode uses the selected interface address; router NAT mapping is available for advanced setups.",
+				"Publish a public endpoint into selected Tailnet policies. IPv4 can use Direct or router NAT mapping; IPv6 is always published directly.",
 			),
 		);
 		o = s.option(
@@ -212,29 +213,42 @@ export const main = (view as any).extend({
 		o.validate = validateExternalEnabled;
 		o = s.option(
 			form.ListValue,
-			"mode",
-			_("Exposure Mode"),
-			_(
-				"Direct is for a public IPv4 address assigned to this router. NAT mapping asks the upstream gateway to forward ports.",
-			),
+			"address_family",
+			_("Address Family"),
+			_("IPv6 requires a globally routable address and a WAN firewall rule. In dual-stack mode, IPv4 may use Direct or NAT mapping while IPv6 remains Direct. A wildcard IPv6 listener serves IPv4 only when net.ipv6.bindv6only is 0."),
 		);
-		o.value("direct", _("Direct Public IPv4"));
-		o.value("nat", _("Router NAT Mapping"));
-		o.default = "direct";
+		o.value("ipv4", _("IPv4 only"));
+		o.value("ipv6", _("IPv6 only (Direct)"));
+		o.value("dual", _("IPv4 + IPv6"));
+		o.default = "ipv4";
 		o.rmempty = false;
 		o.depends("enabled", "1");
+		o = s.option(
+			form.ListValue,
+			"mode",
+			_("IPv4 Exposure Mode"),
+			_(
+				"Direct uses a public IPv4 address assigned to this router. NAT mapping asks the upstream gateway to forward IPv4 ports. IPv6 is always Direct.",
+			),
+		);
+		o.value("direct", _("Direct IPv4"));
+		o.value("nat", _("IPv4 NAT Mapping"));
+		o.default = "direct";
+		o.rmempty = false;
+		o.depends({ enabled: "1", address_family: "ipv4" });
+		o.depends({ enabled: "1", address_family: "dual" });
 		o = s.option(
 			widgets.DeviceSelect,
 			"wan_interface",
 			_("Public Interface"),
 			_(
-				"Choose auto to follow the IPv4 default route, or select the device holding the public IPv4 address",
+				"Choose auto to follow the route for each enabled address family, or select the device holding the public address.",
 			),
 		);
-    o.value("auto", _("Automatic (IPv4 default route)"));
-    o.default = "auto";
-    o.noaliases = true;
-    o.nocreate = true;
+		o.value("auto", _("Automatic (default route)"));
+		o.default = "auto";
+		o.noaliases = true;
+		o.nocreate = true;
 		o.rmempty = false;
 		o.depends("enabled", "1");
 		o = s.option(
@@ -248,7 +262,8 @@ export const main = (view as any).extend({
 		o.value("upnp", "UPnP IGD");
 		o.default = ["pcp", "natpmp", "upnp"];
 		o.rmempty = false;
-		o.depends({ enabled: "1", mode: "nat" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "ipv4" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "dual" });
 		o = s.option(
 			form.Value,
 			"derp_port",
@@ -260,7 +275,8 @@ export const main = (view as any).extend({
 		o.default = "auto";
 		o.rmempty = false;
 		o.validate = validateExternalPort;
-		o.depends({ enabled: "1", mode: "nat" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "ipv4" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "dual" });
 		o = s.option(
 			form.Value,
 			"stun_port",
@@ -272,17 +288,20 @@ export const main = (view as any).extend({
 		o.default = "auto";
 		o.rmempty = false;
 		o.validate = validateExternalPort;
-		o.depends({ enabled: "1", mode: "nat" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "ipv4" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "dual" });
 		o = s.option(form.Value, "lease_seconds", _("Mapping Lease (seconds)"));
 		o.default = "7200";
 		o.rmempty = false;
 		o.datatype = "uinteger";
-		o.depends({ enabled: "1", mode: "nat" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "ipv4" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "dual" });
 		o = s.option(form.Value, "retry_seconds", _("Retry Interval (seconds)"));
 		o.default = "60";
 		o.rmempty = false;
 		o.datatype = "uinteger";
-		o.depends({ enabled: "1", mode: "nat" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "ipv4" });
+		o.depends({ enabled: "1", mode: "nat", address_family: "dual" });
 		o = s.option(
 			form.Value,
 			"sync_interval",
@@ -297,7 +316,7 @@ export const main = (view as any).extend({
 			"validate_endpoint",
 			_("Validate Endpoint Locally"),
 			_(
-				"Require a local DERP/TLS and STUN check before publishing. This does not prove Internet reachability. Three consecutive failures withdraw the managed nodes until recovery.",
+				"Require a local DERP/TLS and STUN check before publishing. This does not prove Internet reachability. IPv4 and IPv6 are checked independently.",
 			),
 		);
 		o.default = "0";

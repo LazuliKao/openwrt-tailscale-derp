@@ -14,7 +14,20 @@ type FormMap = LuCI.form.Map;
 type FormOption = LuCI.form.AbstractValue;
 
 export function isSocketAddress(value: string): boolean {
-  return /^(:\d+|[^\s:]+:\d+)$/.test(value);
+  return socketAddressPort(value) !== null;
+}
+
+export function socketAddressPort(value: string): number | null {
+  const text = value.trim();
+  const match = text.match(/^:(\d+)$/) ||
+    text.match(/^\[[0-9a-fA-F:.]+\]:(\d+)$/) ||
+    text.match(/^[^\s:\[\]]+:(\d+)$/);
+  if (!match) {
+    return null;
+  }
+
+  const port = Number(match[1]);
+  return Number.isInteger(port) && port >= 1 && port <= 65535 ? port : null;
 }
 
 export function validateSocketAddress(title: string, value: string): true | string {
@@ -23,7 +36,7 @@ export function validateSocketAddress(title: string, value: string): true | stri
   }
 
   if (!isSocketAddress(value)) {
-    return `${title} must be in :port or host:port format`;
+    return `${title} must be in :port, host:port, or [IPv6]:port format`;
   }
 
   return true;

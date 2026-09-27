@@ -187,38 +187,38 @@ function ensureNamedSections(e, t, o) {
 ;// CONCATENATED MODULE: ./src/views/external.tsx
 
 
-let external_a = L.view, external_n = L.form, external_i = L.rpc, external_r = L.uci, external_l = L.ui, external_o = external_i.declare({
+let external_a = L.view, external_l = L.form, external_n = L.rpc, external_i = L.uci, external_d = L.ui, external_r = external_n.declare({
     object: "luci.tailscale-derp",
     method: "reload_config"
 });
-function d(e, t, a) {
-    let n = e.map.lookupOption(t, a);
-    return null == n ? void 0 : n[0].formvalue(n[1]);
-}
 function external_s(e, t, a) {
-    var n;
-    let i;
-    if ("manual" !== String(null != (n = d(this, "mode", "tls")) ? n : "self_signed")) return !0;
-    let r = (i = this.section.formvalue(e, a) || "", (!t || !!i) && (!!t || !i) || _("Certificate and key must be provided together"));
-    if (!0 !== r) return r;
-    let l = d(this, "enabled", "external");
-    return !!("1" !== l && !0 !== l || t.trim()) || _("Certificate and key are required when the external endpoint is enabled");
+    let l = e.map.lookupOption(t, a);
+    return null == l ? void 0 : l[0].formvalue(l[1]);
+}
+function external_o(e, t, a) {
+    var l;
+    let n;
+    if ("manual" !== String(null != (l = external_s(this, "mode", "tls")) ? l : "self_signed")) return !0;
+    let i = (n = this.section.formvalue(e, a) || "", (!t || !!n) && (!!t || !n) || _("Certificate and key must be provided together"));
+    if (!0 !== i) return i;
+    let d = external_s(this, "enabled", "external");
+    return !!("1" !== d && !0 !== d || t.trim()) || _("Certificate and key are required when the external endpoint is enabled");
 }
 function external_p(e, t) {
-    var a, n, i;
+    var a, l, n;
     if ("1" !== t && !0 !== t) return !0;
-    let r = String(null != (a = d(this, "certfile", "tls")) ? a : "").trim(), l = String(null != (n = d(this, "keyfile", "tls")) ? n : "").trim();
-    return "self_signed" === String(null != (i = d(this, "mode", "tls")) ? i : "self_signed") || !!r && !!l || _("Configure automatic TLS or provide both a certificate and key before enabling the external endpoint");
+    let i = String(null != (a = external_s(this, "certfile", "tls")) ? a : "").trim(), d = String(null != (l = external_s(this, "keyfile", "tls")) ? l : "").trim();
+    return "self_signed" === String(null != (n = external_s(this, "mode", "tls")) ? n : "self_signed") || !!i && !!d || _("Configure automatic TLS or provide both a certificate and key before enabling the external endpoint");
 }
 function u(e, t) {
     let a = String(null != t ? t : "").trim().toLowerCase();
     if ("auto" === a) return !0;
-    let n = Number(a);
-    return !!Number.isInteger(n) && n >= 1 && n <= 65535 || _("Port must be auto or an integer from 1 to 65535");
+    let l = Number(a);
+    return !!Number.isInteger(l) && l >= 1 && l <= 65535 || _("Port must be auto or an integer from 1 to 65535");
 }
 const main = external_a.extend({
-    load: ()=>external_r.load("tailscale-derp").then(()=>{
-            ensureNamedSections(external_r, "tailscale-derp", [
+    load: ()=>external_i.load("tailscale-derp").then(()=>{
+            ensureNamedSections(external_i, "tailscale-derp", [
                 [
                     "tls",
                     "tls",
@@ -233,6 +233,7 @@ const main = external_a.extend({
                     {
                         enabled: "0",
                         mode: "direct",
+                        address_family: "ipv4",
                         method: [
                             "pcp",
                             "natpmp",
@@ -253,11 +254,11 @@ const main = external_a.extend({
         return this.super("handleSaveApply", [
             t,
             a
-        ]).then(()=>external_o()).then(()=>{
+        ]).then(()=>external_r()).then(()=>{
             window.location.href = "/cgi-bin/luci/admin/services/derp/status";
         }).catch((t)=>{
             let a = t instanceof Error ? t.message : "unknown error";
-            throw external_l.addNotification(null, jsxs("p", {
+            throw external_d.addNotification(null, jsxs("p", {
                 children: [
                     _("Failed to reload DERP configuration:"),
                     " ",
@@ -267,31 +268,62 @@ const main = external_a.extend({
         });
     },
     render () {
-        let e = new external_n.Map("tailscale-derp", _("External Endpoint"), _("Publish this DERP relay through a WAN gateway. Tailscale does not officially support custom DERP servers behind NAT.")), t = e.section(external_n.NamedSection, "tls", "tls", _("TLS Settings")), a = t.option(external_n.ListValue, "mode", _("TLS Mode"), _("Automatic TLS generates and persists a self-signed certificate. The published DERP map pins its certificate hash."));
-        return a.value("self_signed", _("Automatic Self-Signed")), a.value("manual", _("Manual Certificate Files")), a.default = "self_signed", a.rmempty = !1, (a = t.option(external_n.Value, "state_dir", _("Certificate State Directory"), _("Persistent directory for the automatic TLS private key and certificate"))).placeholder = "/etc/tailscale-derp/tls", a.default = "/etc/tailscale-derp/tls", a.rmempty = !1, a.depends("mode", "self_signed"), (a = t.option(external_n.Value, "certfile", _("Certificate File"), _("Path to the TLS certificate"))).placeholder = "/etc/ssl/certs/derp.pem", a.rmempty = !0, a.validate = function(e, t) {
-            return external_s.call(this, e, t, "keyfile");
-        }, a.depends("mode", "manual"), (a = t.option(external_n.Value, "keyfile", _("Key File"), _("Path to the TLS private key"))).placeholder = "/etc/ssl/private/derp.key", a.rmempty = !0, a.validate = function(e, t) {
-            return external_s.call(this, e, t, "certfile");
-        }, a.depends("mode", "manual"), (a = (t = e.section(external_n.NamedSection, "external", "external", _("External Endpoint (Experimental)"), _("Publish a public IPv4 endpoint into selected Tailnet policies. Direct mode uses the selected interface address; router NAT mapping is available for advanced setups."))).option(external_n.Flag, "enabled", _("Enable External Endpoint"), _("Allow selected API instances to publish this relay endpoint"))).default = "0", a.rmempty = !1, a.validate = external_p, (a = t.option(external_n.ListValue, "mode", _("Exposure Mode"), _("Direct is for a public IPv4 address assigned to this router. NAT mapping asks the upstream gateway to forward ports."))).value("direct", _("Direct Public IPv4")), a.value("nat", _("Router NAT Mapping")), a.default = "direct", a.rmempty = !1, a.depends("enabled", "1"), (a = t.option(widgets.DeviceSelect, "wan_interface", _("Public Interface"), _("Choose auto to follow the IPv4 default route, or select the device holding the public IPv4 address"))).value("auto", _("Automatic (IPv4 default route)")), a.default = "auto", a.noaliases = !0, a.nocreate = !0, a.rmempty = !1, a.depends("enabled", "1"), (a = t.option(external_n.DynamicList, "method", _("Mapping Methods"), _("Methods are attempted in this order"))).value("pcp", "PCP"), a.value("natpmp", "NAT-PMP"), a.value("upnp", "UPnP IGD"), a.default = [
+        let e = new external_l.Map("tailscale-derp", _("External Endpoint"), _("Publish this DERP relay through a WAN gateway. Tailscale does not officially support custom DERP servers behind NAT.")), t = e.section(external_l.NamedSection, "tls", "tls", _("TLS Settings")), a = t.option(external_l.ListValue, "mode", _("TLS Mode"), _("Automatic TLS generates and persists a self-signed certificate. The published DERP map pins its certificate hash."));
+        return a.value("self_signed", _("Automatic Self-Signed")), a.value("manual", _("Manual Certificate Files")), a.default = "self_signed", a.rmempty = !1, (a = t.option(external_l.Value, "state_dir", _("Certificate State Directory"), _("Persistent directory for the automatic TLS private key and certificate"))).placeholder = "/etc/tailscale-derp/tls", a.default = "/etc/tailscale-derp/tls", a.rmempty = !1, a.depends("mode", "self_signed"), (a = t.option(external_l.Value, "certfile", _("Certificate File"), _("Path to the TLS certificate"))).placeholder = "/etc/ssl/certs/derp.pem", a.rmempty = !0, a.validate = function(e, t) {
+            return external_o.call(this, e, t, "keyfile");
+        }, a.depends("mode", "manual"), (a = t.option(external_l.Value, "keyfile", _("Key File"), _("Path to the TLS private key"))).placeholder = "/etc/ssl/private/derp.key", a.rmempty = !0, a.validate = function(e, t) {
+            return external_o.call(this, e, t, "certfile");
+        }, a.depends("mode", "manual"), (a = (t = e.section(external_l.NamedSection, "external", "external", _("External Endpoint (Experimental)"), _("Publish a public endpoint into selected Tailnet policies. IPv4 can use Direct or router NAT mapping; IPv6 is always published directly."))).option(external_l.Flag, "enabled", _("Enable External Endpoint"), _("Allow selected API instances to publish this relay endpoint"))).default = "0", a.rmempty = !1, a.validate = external_p, (a = t.option(external_l.ListValue, "address_family", _("Address Family"), _("IPv6 requires a globally routable address and a WAN firewall rule. In dual-stack mode, IPv4 may use Direct or NAT mapping while IPv6 remains Direct. A wildcard IPv6 listener serves IPv4 only when net.ipv6.bindv6only is 0."))).value("ipv4", _("IPv4 only")), a.value("ipv6", _("IPv6 only (Direct)")), a.value("dual", _("IPv4 + IPv6")), a.default = "ipv4", a.rmempty = !1, a.depends("enabled", "1"), (a = t.option(external_l.ListValue, "mode", _("IPv4 Exposure Mode"), _("Direct uses a public IPv4 address assigned to this router. NAT mapping asks the upstream gateway to forward IPv4 ports. IPv6 is always Direct."))).value("direct", _("Direct IPv4")), a.value("nat", _("IPv4 NAT Mapping")), a.default = "direct", a.rmempty = !1, a.depends({
+            enabled: "1",
+            address_family: "ipv4"
+        }), a.depends({
+            enabled: "1",
+            address_family: "dual"
+        }), (a = t.option(widgets.DeviceSelect, "wan_interface", _("Public Interface"), _("Choose auto to follow the route for each enabled address family, or select the device holding the public address."))).value("auto", _("Automatic (default route)")), a.default = "auto", a.noaliases = !0, a.nocreate = !0, a.rmempty = !1, a.depends("enabled", "1"), (a = t.option(external_l.DynamicList, "method", _("Mapping Methods"), _("Methods are attempted in this order"))).value("pcp", "PCP"), a.value("natpmp", "NAT-PMP"), a.value("upnp", "UPnP IGD"), a.default = [
             "pcp",
             "natpmp",
             "upnp"
         ], a.rmempty = !1, a.depends({
             enabled: "1",
-            mode: "nat"
-        }), (a = t.option(external_n.Value, "derp_port", _("External DERP Port"), _("auto reads the actual local TCP listener and requests the same public port; the gateway may assign another port"))).default = "auto", a.rmempty = !1, a.validate = u, a.depends({
+            mode: "nat",
+            address_family: "ipv4"
+        }), a.depends({
             enabled: "1",
-            mode: "nat"
-        }), (a = t.option(external_n.Value, "stun_port", _("External STUN Port"), _("auto reads the actual local UDP listener and requests the same public port; the gateway may assign another port"))).default = "auto", a.rmempty = !1, a.validate = u, a.depends({
+            mode: "nat",
+            address_family: "dual"
+        }), (a = t.option(external_l.Value, "derp_port", _("External DERP Port"), _("auto reads the actual local TCP listener and requests the same public port; the gateway may assign another port"))).default = "auto", a.rmempty = !1, a.validate = u, a.depends({
             enabled: "1",
-            mode: "nat"
-        }), (a = t.option(external_n.Value, "lease_seconds", _("Mapping Lease (seconds)"))).default = "7200", a.rmempty = !1, a.datatype = "uinteger", a.depends({
+            mode: "nat",
+            address_family: "ipv4"
+        }), a.depends({
             enabled: "1",
-            mode: "nat"
-        }), (a = t.option(external_n.Value, "retry_seconds", _("Retry Interval (seconds)"))).default = "60", a.rmempty = !1, a.datatype = "uinteger", a.depends({
+            mode: "nat",
+            address_family: "dual"
+        }), (a = t.option(external_l.Value, "stun_port", _("External STUN Port"), _("auto reads the actual local UDP listener and requests the same public port; the gateway may assign another port"))).default = "auto", a.rmempty = !1, a.validate = u, a.depends({
             enabled: "1",
-            mode: "nat"
-        }), (a = t.option(external_n.Value, "sync_interval", _("DERP Map Sync Interval (seconds)"))).default = "300", a.rmempty = !1, a.datatype = "uinteger", a.depends("enabled", "1"), (a = t.option(external_n.Flag, "validate_endpoint", _("Validate Endpoint Locally"), _("Require a local DERP/TLS and STUN check before publishing. This does not prove Internet reachability. Three consecutive failures withdraw the managed nodes until recovery."))).default = "0", a.rmempty = !1, a.depends("enabled", "1"), e.render();
+            mode: "nat",
+            address_family: "ipv4"
+        }), a.depends({
+            enabled: "1",
+            mode: "nat",
+            address_family: "dual"
+        }), (a = t.option(external_l.Value, "lease_seconds", _("Mapping Lease (seconds)"))).default = "7200", a.rmempty = !1, a.datatype = "uinteger", a.depends({
+            enabled: "1",
+            mode: "nat",
+            address_family: "ipv4"
+        }), a.depends({
+            enabled: "1",
+            mode: "nat",
+            address_family: "dual"
+        }), (a = t.option(external_l.Value, "retry_seconds", _("Retry Interval (seconds)"))).default = "60", a.rmempty = !1, a.datatype = "uinteger", a.depends({
+            enabled: "1",
+            mode: "nat",
+            address_family: "ipv4"
+        }), a.depends({
+            enabled: "1",
+            mode: "nat",
+            address_family: "dual"
+        }), (a = t.option(external_l.Value, "sync_interval", _("DERP Map Sync Interval (seconds)"))).default = "300", a.rmempty = !1, a.datatype = "uinteger", a.depends("enabled", "1"), (a = t.option(external_l.Flag, "validate_endpoint", _("Validate Endpoint Locally"), _("Require a local DERP/TLS and STUN check before publishing. This does not prove Internet reachability. IPv4 and IPv6 are checked independently."))).default = "0", a.rmempty = !1, a.depends("enabled", "1"), e.render();
     }
 });
 

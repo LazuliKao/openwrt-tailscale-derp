@@ -2,6 +2,7 @@ const rpc = L.rpc;
 
 export type ExternalEndpoint = {
   ipv4?: string;
+  ipv6?: string;
   derpPort?: number;
   stunPort?: number;
   method?: string;
@@ -14,6 +15,15 @@ export type ExternalValidation = {
   derp?: boolean;
   stun?: boolean;
   checkedAt?: string;
+  error?: string;
+  ipv4?: ExternalFamilyValidation;
+  ipv6?: ExternalFamilyValidation;
+};
+
+export type ExternalFamilyValidation = {
+  state?: string;
+  derp?: boolean;
+  stun?: boolean;
   error?: string;
 };
 

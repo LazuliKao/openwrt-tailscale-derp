@@ -1,6 +1,7 @@
 import {
 	clearPendingStatus,
 	readPendingStatus,
+	socketAddressPort,
 	type ExpectedStatus,
 } from "@/shared/config";
 import {
@@ -124,9 +125,8 @@ function findFirewallRule(): string | null {
 
 function configuredListenPort(): string {
 	const listen = String(uci.get("tailscale-derp", "global", "listen") || ":3478").trim();
-	const match = listen.match(/:(\d+)$/);
-	const port = match ? Number(match[1]) : NaN;
-	if (!Number.isInteger(port) || port < 1 || port > 65535) {
+	const port = socketAddressPort(listen);
+	if (port === null) {
 		throw new Error(_("The configured DERP listen port is invalid."));
 	}
 	return String(port);
@@ -142,6 +142,7 @@ function stageFirewallRule(): string {
 	const stun = String(uci.get("tailscale-derp", "global", "stun") || "1") === "1";
 	uci.set("firewall", section, "name", firewallRuleName);
 	uci.set("firewall", section, "src", "wan");
+	uci.set("firewall", section, "family", "any");
 	uci.set("firewall", section, "proto", stun ? ["tcp", "udp"] : ["tcp"]);
 	uci.set("firewall", section, "dest_port", port);
 	uci.set("firewall", section, "target", "ACCEPT");
@@ -226,23 +227,32 @@ function externalActionLabel(action: ExternalActionName): string {
 
 function formatExternalEndpoint(status: ExternalStatus): string {
 	const endpoint = status.endpoint;
-	if (!endpoint?.ipv4 || !endpoint.derpPort) {
+	if (!endpoint?.derpPort || (!endpoint.ipv4 && !endpoint.ipv6)) {
 		return _("Not mapped");
 	}
+	const addresses = [
+		endpoint.ipv4 ? `IPv4 ${endpoint.ipv4}:${endpoint.derpPort}` : "",
+		endpoint.ipv6 ? `IPv6 [${endpoint.ipv6}]:${endpoint.derpPort}` : "",
+	].filter(Boolean);
 	const stun = endpoint.stunPort === -1
 		? _("STUN disabled")
-		: `UDP ${endpoint.ipv4}:${endpoint.stunPort || 3478}`;
-	return `TCP ${endpoint.ipv4}:${endpoint.derpPort}; ${stun}`;
+		: `UDP ${endpoint.ipv6 ? `[${endpoint.ipv6}]` : endpoint.ipv4}:${endpoint.stunPort || 3478}`;
+	return `TCP ${addresses.join("; ")}; ${stun}`;
 }
 
 function formatValidation(status: ExternalStatus): string {
 	const validation = status.validation || {};
 	if (!status.validationEnabled && (!validation.state || validation.state === "disabled")) {
-		return `${_("Disabled")} (${_("local NAT loopback only")})`;
+		return `${_("Disabled")} (${_("local reachability only")})`;
 	}
 	const state = validation.state || _("Unknown");
-	const scope = validation.scope || "local_nat_loopback";
-	return `${state} (${scope})${validation.error ? `: ${validation.error}` : ""}`;
+	const scope = validation.scope || "local_reachability";
+	const families = [
+		validation.ipv4 ? `IPv4 ${validation.ipv4.state || _("Unknown")}` : "",
+		validation.ipv6 ? `IPv6 ${validation.ipv6.state || _("Unknown")}` : "",
+	].filter(Boolean);
+	const details = families.length ? ` [${families.join(", ")}]` : "";
+	return `${state} (${scope})${details}${validation.error ? `: ${validation.error}` : ""}`;
 }
 
 function renderExternalInstances(status: ExternalStatus): HTMLElement[] {
@@ -276,11 +286,6 @@ function normalizeAddress(value: string): string {
 
 	if (/^:\d+$/.test(value)) {
 		return `0.0.0.0${value}`;
-	}
-
-	const match = value.match(/^\[::\]:(\d+)$/);
-	if (match) {
-		return `0.0.0.0:${match[1]}`;
 	}
 
 	return value;
@@ -777,13 +782,13 @@ export const main = (view as any).extend({
 				</div>
 				<div class="cbi-section" style="margin-top: 1em;">
 					<h3>{_("External Endpoint (Experimental)")}</h3>
-					<p>{_("The optional availability check runs from this router through NAT loopback. A pass does not prove Internet reachability, and a failure may only mean that the gateway does not support hairpin NAT.")}</p>
+					<p>{_("The optional availability check runs from this router. A pass does not prove Internet reachability; firewall, routing, and NAT behavior can still prevent external access.")}</p>
 					<table class="table">
 						<tr class="tr"><td class="td">{_("State")}</td>{externalStateEl}</tr>
 						<tr class="tr"><td class="td">{_("Mapped Endpoint")}</td>{externalEndpointEl}</tr>
 						<tr class="tr"><td class="td">{_("Mapping Method")}</td>{externalMethodEl}</tr>
 						<tr class="tr"><td class="td">{_("Lease Until")}</td>{externalLeaseEl}</tr>
-						<tr class="tr"><td class="td">{_("Local NAT-loopback Check")}</td>{externalValidationEl}</tr>
+						<tr class="tr"><td class="td">{_("Local Reachability Check")}</td>{externalValidationEl}</tr>
 						<tr class="tr"><td class="td">{_("Consecutive Failures")}</td>{externalFailuresEl}</tr>
 						<tr class="tr"><td class="td">{_("Tailnet Instances")}</td>{externalInstancesEl}</tr>
 						<tr class="tr"><td class="td">{_("External Error")}</td>{externalErrorEl}</tr>
@@ -794,7 +799,7 @@ export const main = (view as any).extend({
 				</div>
 				<div class="cbi-section" style="margin-top: 1em;">
 					<h3>{_("Firewall")}</h3>
-					<p>{_("Add a WAN firewall rule for the configured DERP port. The rule is only staged in UCI; click Save & Apply to activate it.")}</p>
+					<p>{_("Add a WAN firewall rule for the configured DERP port. The staged rule permits IPv4 and IPv6; custom IPv6 zones may require manual firewall changes. Click Save & Apply to activate it.")}</p>
 					<div class="cbi-section-node">
 						{btnFirewall}
 					</div>

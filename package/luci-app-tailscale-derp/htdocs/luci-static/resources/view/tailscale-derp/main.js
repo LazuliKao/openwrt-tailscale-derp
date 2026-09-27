@@ -183,35 +183,41 @@ function jsxDEV(e, t) {
 
 
 const pendingStatusStorageKey = "tailscale-derp.pendingStatus";
-function isSocketAddress(e) {
-    return /^(:\d+|[^\s:]+:\d+)$/.test(e);
+function isSocketAddress(t) {
+    return null !== socketAddressPort(t);
 }
-function validateSocketAddress(e, t) {
-    return t ? !!isSocketAddress(t) || "".concat(e, " must be in :port or host:port format") : "".concat(e, " is required");
+function socketAddressPort(t) {
+    let e = t.trim(), o = e.match(/^:(\d+)$/) || e.match(/^\[[0-9a-fA-F:.]+\]:(\d+)$/) || e.match(/^[^\s:\[\]]+:(\d+)$/);
+    if (!o) return null;
+    let n = Number(o[1]);
+    return Number.isInteger(n) && n >= 1 && n <= 65535 ? n : null;
 }
-function validateUnixSocketPath(e, t) {
-    return t ? !(!t.startsWith("/") || /[\r\n]/.test(t)) || "".concat(e, " must be an absolute Unix socket path") : "".concat(e, " is required");
+function validateSocketAddress(t, e) {
+    return e ? !!isSocketAddress(e) || "".concat(t, " must be in :port, host:port, or [IPv6]:port format") : "".concat(t, " is required");
 }
-function firstOption(e, t, o) {
-    let n = e.lookupOption(o, t);
+function validateUnixSocketPath(t, e) {
+    return e ? !(!e.startsWith("/") || /[\r\n]/.test(e)) || "".concat(t, " must be an absolute Unix socket path") : "".concat(t, " is required");
+}
+function firstOption(t, e, o) {
+    let n = t.lookupOption(o, e);
     return n ? n[0] : null;
 }
-function optionFormValue(e, t, o, n) {
-    let r = firstOption(e, t, o), s = null == r ? void 0 : r.formvalue(t);
+function optionFormValue(t, e, o, n) {
+    let r = firstOption(t, e, o), s = null == r ? void 0 : r.formvalue(e);
     return null == s || "" === s ? n : String(s);
 }
-function boolFormValue(e, t, o, n) {
-    let r = optionFormValue(e, t, o, n ? "1" : "0");
+function boolFormValue(t, e, o, n) {
+    let r = optionFormValue(t, e, o, n ? "1" : "0");
     return "1" === r || "true" === r;
 }
-function captureExpectedStatus(e) {
+function captureExpectedStatus(t) {
     return {
-        enabled: boolFormValue(e, "global", "enabled", !0),
-        listen: optionFormValue(e, "global", "listen", ":3478"),
-        stun: boolFormValue(e, "global", "stun", !0),
-        mesh: boolFormValue(e, "mesh", "enabled", !1),
-        opsSocket: optionFormValue(e, "ops", "socket", "/var/run/tailscale-derp/ops.sock"),
-        health: optionFormValue(e, "ops", "health", ":9912")
+        enabled: boolFormValue(t, "global", "enabled", !0),
+        listen: optionFormValue(t, "global", "listen", ":3478"),
+        stun: boolFormValue(t, "global", "stun", !0),
+        mesh: boolFormValue(t, "mesh", "enabled", !1),
+        opsSocket: optionFormValue(t, "ops", "socket", "/var/run/tailscale-derp/ops.sock"),
+        health: optionFormValue(t, "ops", "health", ":9912")
     };
 }
 function savePendingStatus(o) {
@@ -227,9 +233,9 @@ function clearPendingStatus() {
 function readPendingStatus() {
     if (!window.sessionStorage) return null;
     try {
-        let e = window.sessionStorage.getItem(pendingStatusStorageKey);
-        return e ? JSON.parse(e) : null;
-    } catch (e) {
+        let t = window.sessionStorage.getItem(pendingStatusStorageKey);
+        return t ? JSON.parse(t) : null;
+    } catch (t) {
         return window.sessionStorage.removeItem(pendingStatusStorageKey), null;
     }
 }
