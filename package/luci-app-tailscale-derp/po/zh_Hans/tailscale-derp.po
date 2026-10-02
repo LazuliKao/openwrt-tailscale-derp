@@ -1069,3 +1069,51 @@ msgstr "无法暂存防火墙规则："
 
 msgid "The configured DERP listen port is invalid."
 msgstr "配置的 DERP 监听端口无效。"
+
+msgid "Client Version"
+msgstr "客户端版本"
+
+msgid "Connections"
+msgstr "连接"
+
+msgid "Identity Source"
+msgstr "身份来源"
+
+msgid "Local tailscaled"
+msgstr "本地 tailscaled"
+
+msgid "OS"
+msgstr "操作系统"
+
+msgid "Peer Details"
+msgstr "对等节点详情"
+
+msgid "Peer disconnected"
+msgstr "对等节点已断开连接"
+
+msgid "Receive rate (5s)"
+msgstr "接收速率（约 5 秒）"
+
+msgid "Received (DERP payload)"
+msgstr "已接收（DERP 数据载荷）"
+
+msgid "Sampling…"
+msgstr "正在采样…"
+
+msgid "Send rate (5s)"
+msgstr "发送速率（约 5 秒）"
+
+msgid "Sent (DERP payload)"
+msgstr "已发送（DERP 数据载荷）"
+
+msgid "Tailscale API"
+msgstr "Tailscale API"
+
+msgid "Unknown device"
+msgstr "未知设备"
+
+msgid "Unknown or resolving"
+msgstr "未知或正在解析"
+
+msgid "Traffic counts DERP packet payload only; rates update about every 5 seconds."
+msgstr "仅统计 DERP 数据包载荷；速率约每 5 秒更新一次。"

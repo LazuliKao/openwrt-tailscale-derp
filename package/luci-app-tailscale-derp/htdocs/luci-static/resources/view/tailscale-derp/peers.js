@@ -181,107 +181,180 @@ function jsxDEV(e, t) {
 
 ;// CONCATENATED MODULE: ./src/views/peers.tsx
 
-let peers_l = L.view, peers_n = L.rpc, peers_r = L.Poll, peers_c = peers_n.declare({
+let peers_n = L.rpc.declare({
     object: "luci.tailscale-derp",
     method: "get_peers"
-}), peers_d = peers_n.declare({
-    object: "luci.tailscale-derp",
-    method: "get_status"
 });
-function peers_o(e) {
+function peers_l(e) {
+    let t = new Date(e);
+    return Number.isNaN(t.getTime()) ? "-" : t.toLocaleString();
+}
+function peers_i(e) {
     return e < 1024 ? "".concat(e, " B") : e < 1048576 ? "".concat((e / 1024).toFixed(1), " KB") : e < 1073741824 ? "".concat((e / 1048576).toFixed(1), " MB") : "".concat((e / 1073741824).toFixed(1), " GB");
 }
-function peers_a(l) {
-    return 0 === l.length ? [
-        jsx("tr", {
-            class: "tr",
-            children: jsx("td", {
-                class: "td",
-                colSpan: 4,
-                style: "text-align: center;",
-                children: _("No connected peers")
+function peers_o(e) {
+    return null == e ? _("Sampling\u2026") : "".concat(peers_i(e), "/s");
+}
+function peers_d(e) {
+    var t, n;
+    return (null == (t = e.identity) ? void 0 : t.name) || (null == (n = e.identity) ? void 0 : n.hostname) || _("Unknown device");
+}
+function peers_r(n, l) {
+    return jsxs("div", {
+        class: "cbi-value",
+        style: "padding: 0.3em 0;",
+        children: [
+            jsx("label", {
+                class: "cbi-value-title",
+                children: n
+            }),
+            jsx("div", {
+                class: "cbi-value-field",
+                style: "overflow-wrap: anywhere;",
+                children: l || "-"
             })
-        })
-    ] : l.map((l)=>{
-        var n;
-        return jsxs("tr", {
-            class: "tr",
+        ]
+    });
+}
+function peers_c(e, t) {
+    return t ? peers_r(e, t) : null;
+}
+function peers_a(e) {
+    var n, a, s;
+    let u = e.identity;
+    return jsxs("div", {
+        children: [
+            peers_r(_("Device"), peers_d(e)),
+            peers_r(_("Identity Source"), u ? "official_api" === u.source ? _("Tailscale API") : _("Local tailscaled") : _("Unknown or resolving")),
+            peers_r(_("Node Key"), e.publicKey),
+            peers_c(_("Node ID"), null == u ? void 0 : u.nodeId),
+            peers_c(_("Hostname"), null == u ? void 0 : u.hostname),
+            peers_c(_("User"), null == u ? void 0 : u.user),
+            peers_c(_("Addresses"), null == u || null == (n = u.addresses) ? void 0 : n.join(", ")),
+            peers_c(_("OS"), null == u ? void 0 : u.os),
+            peers_c(_("Client Version"), null == u ? void 0 : u.clientVersion),
+            peers_c(_("Tags"), null == u || null == (a = u.tags) ? void 0 : a.join(", ")),
+            peers_c(_("Sources"), null == u || null == (s = u.sources) ? void 0 : s.join(", ")),
+            peers_r(_("Duration"), function(e) {
+                let t = new Date(e).getTime();
+                if (Number.isNaN(t)) return "-";
+                let n = Math.floor(Math.max(0, Date.now() - t) / 1000), l = Math.floor(n / 60), i = Math.floor(l / 60), o = Math.floor(i / 24);
+                return o ? _("%dd %dh %dm").format(o, i % 24, l % 60) : i ? _("%dh %dm %ds").format(i, l % 60, n % 60) : l ? _("%dm %ds").format(l, n % 60) : _("%ds").format(n);
+            }(e.connectedAt)),
+            peers_r(_("Connected At"), peers_l(e.connectedAt)),
+            peers_r(_("Received (DERP payload)"), peers_i(e.bytesRecv)),
+            peers_r(_("Sent (DERP payload)"), peers_i(e.bytesSent)),
+            peers_r(_("Receive rate (5s)"), peers_o(e.recvBytesPerSecond)),
+            peers_r(_("Send rate (5s)"), peers_o(e.sentBytesPerSecond)),
+            jsxs("h4", {
+                children: [
+                    _("Connections"),
+                    " (",
+                    e.connections.length,
+                    ")"
+                ]
+            }),
+            e.connections.map((e)=>jsxs("div", {
+                    style: "padding: 0.4em 0; border-top: 1px solid #ddd; overflow-wrap: anywhere;",
+                    children: [
+                        e.remoteAddr,
+                        " \xb7 ",
+                        peers_l(e.connectedAt)
+                    ]
+                }))
+        ]
+    });
+}
+function peers_s(n, l) {
+    if (n.peers = l, n.countEl.textContent = _("%d connected peer(s)").format(l.length), n.listEl.replaceChildren(...l.length ? l.map((l)=>{
+        var i;
+        return jsxs("div", {
+            style: "flex: 1 1 250px; min-width: 0; padding: 0.8em; border: 1px solid #ddd; border-radius: 4px; overflow-wrap: anywhere;",
             children: [
-                jsx("td", {
-                    class: "td",
-                    style: "font-family: monospace;",
-                    title: l.publicKey,
-                    children: (n = l.publicKey).length > 20 ? n.substring(0, 16) + "..." : n
+                jsx("div", {
+                    style: "font-weight: bold;",
+                    children: peers_d(l)
                 }),
-                jsx("td", {
-                    class: "td",
+                jsx("div", {
+                    style: "font-family: monospace; font-size: 0.85em;",
+                    title: l.publicKey,
+                    children: (i = l.publicKey).length > 24 ? "".concat(i.slice(0, 20), "\u2026") : i
+                }),
+                jsx("div", {
+                    style: "margin-top: 0.4em;",
                     children: l.remoteAddr
                 }),
-                jsx("td", {
-                    class: "td",
-                    children: function(e) {
-                        try {
-                            let t = new Date(e).getTime(), l = Date.now(), n = Math.max(0, l - t), r = Math.floor(n / 1000), c = Math.floor(r / 60), d = Math.floor(c / 60), o = Math.floor(d / 24);
-                            if (o > 0) return _("%dd %dh %dm").format(o, d % 24, c % 60);
-                            if (d > 0) return _("%dh %dm %ds").format(d, c % 60, r % 60);
-                            if (c > 0) return _("%dm %ds").format(c, r % 60);
-                            return _("%ds").format(r);
-                        } catch (e) {
-                            return "-";
-                        }
-                    }(l.connectedAt)
+                jsxs("div", {
+                    style: "margin-top: 0.4em;",
+                    children: [
+                        "\u2193 ",
+                        peers_o(l.recvBytesPerSecond),
+                        " \xb7 \u2191 ",
+                        peers_o(l.sentBytesPerSecond)
+                    ]
                 }),
-                jsx("td", {
-                    class: "td",
-                    children: function(e) {
-                        try {
-                            return new Date(e).toLocaleString();
-                        } catch (t) {
-                            return e;
-                        }
-                    }(l.connectedAt)
+                jsx("button", {
+                    class: "cbi-button cbi-button-neutral",
+                    type: "button",
+                    style: "margin-top: 0.6em;",
+                    onclick: ()=>{
+                        let i;
+                        return i = jsx("div", {
+                            children: peers_a(l)
+                        }), void (n.selectedKey = l.publicKey, n.dialogBody = i, L.ui.showModal(_("Peer Details"), jsxs("div", {
+                            children: [
+                                i,
+                                jsx("div", {
+                                    style: "margin-top: 1em; text-align: right;",
+                                    children: jsx("button", {
+                                        class: "cbi-button cbi-button-neutral",
+                                        type: "button",
+                                        onclick: ()=>{
+                                            n.selectedKey = null, n.dialogBody = null, L.ui.hideModal();
+                                        },
+                                        children: _("Close")
+                                    })
+                                })
+                            ]
+                        })));
+                    },
+                    children: _("Details")
                 })
             ]
         });
-    });
+    }) : [
+        jsx("p", {
+            children: _("No connected peers")
+        })
+    ]), n.dialogBody && n.selectedKey) {
+        let t = l.find((e)=>e.publicKey === n.selectedKey);
+        n.dialogBody.replaceChildren(t ? peers_a(t) : jsx("p", {
+            children: _("Peer disconnected")
+        }));
+    }
 }
-const main = peers_l.extend({
-    load: ()=>Promise.all([
-            peers_c().catch(()=>({
-                    peers: [],
-                    count: 0
-                })),
-            peers_d().catch(()=>({}))
-        ]),
+const main = L.view.extend({
+    load: ()=>peers_n().catch(()=>({
+                peers: [],
+                count: 0,
+                sampledAt: ""
+            })),
     render (l) {
-        var n, s;
-        let i = l[0] || {}, h = l[1] || {}, u = i.peers || [], m = null != (n = h.bytesRecv) ? n : 0, f = null != (s = h.bytesSent) ? s : 0, p = jsx("div", {
-            style: "margin-bottom: 0.75em;",
-            children: _("%d connected peer(s)").format(u.length)
-        }), b = jsx("div", {
+        let i = jsx("div", {
+            style: "margin-bottom: 0.75em;"
+        }), o = jsx("div", {
             style: "margin-bottom: 0.5em; min-height: 1.2em; color: #cf222e;"
-        }), y = jsx("div", {
+        }), d = jsx("div", {
             style: "margin-bottom: 0.5em; font-size: 0.9em;"
-        }), v = jsx("div", {
-            style: "margin-bottom: 0.75em;",
-            children: "\u2193 " + peers_o(m) + " / \u2191 " + peers_o(f)
-        }), x = jsx("tbody", {});
-        for (let e of (this.tableBody = x, this.countEl = p, this.errorEl = b, this.lastUpdatedEl = y, this.trafficEl = v, peers_a(u)))x.appendChild(e);
-        return peers_r.add(()=>{
+        }), r = jsx("div", {
+            style: "display: flex; flex-wrap: wrap; gap: 0.75em;"
+        });
+        return this.listEl = r, this.countEl = i, this.errorEl = o, this.lastUpdatedEl = d, this.selectedKey = null, this.dialogBody = null, peers_s(this, (null == l ? void 0 : l.peers) || []), L.Poll.add(()=>{
             var e;
-            return e = this, Promise.all([
-                peers_c(),
-                peers_d()
-            ]).then((t)=>{
-                var l, n;
-                let [r, c] = t, d = (null == r ? void 0 : r.peers) || [];
-                e.countEl.textContent = _("%d connected peer(s)").format(d.length), e.errorEl.textContent = "", e.lastUpdatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString());
-                let s = null != (l = null == c ? void 0 : c.bytesRecv) ? l : 0, i = null != (n = null == c ? void 0 : c.bytesSent) ? n : 0;
-                for(e.trafficEl.textContent = "\u2193 " + peers_o(s) + " / \u2191 " + peers_o(i); e.tableBody.firstChild;)e.tableBody.removeChild(e.tableBody.firstChild);
-                for (let t of peers_a(d))e.tableBody.appendChild(t);
+            return e = this, peers_n().then((t)=>{
+                peers_s(e, (null == t ? void 0 : t.peers) || []), e.errorEl.textContent = "", e.lastUpdatedEl.textContent = _("Last updated: %s").format(new Date().toLocaleTimeString());
             }).catch((t)=>{
-                let l = t instanceof Error ? t.message : "Backend unavailable";
-                e.errorEl.textContent = l, e.countEl.textContent = "0 " + _("connected peer(s)");
+                e.errorEl.textContent = t instanceof Error ? t.message : _("Backend unavailable");
             });
         }, 5), jsxs("div", {
             children: [
@@ -294,39 +367,14 @@ const main = peers_l.extend({
                         jsx("h3", {
                             children: _("Connected Peers")
                         }),
-                        p,
-                        v,
-                        y,
-                        b,
-                        jsxs("table", {
-                            class: "table",
-                            children: [
-                                jsx("thead", {
-                                    children: jsxs("tr", {
-                                        class: "tr",
-                                        children: [
-                                            jsx("th", {
-                                                class: "th",
-                                                children: _("Public Key")
-                                            }),
-                                            jsx("th", {
-                                                class: "th",
-                                                children: _("Remote Address")
-                                            }),
-                                            jsx("th", {
-                                                class: "th",
-                                                children: _("Duration")
-                                            }),
-                                            jsx("th", {
-                                                class: "th",
-                                                children: _("Connected At")
-                                            })
-                                        ]
-                                    })
-                                }),
-                                x
-                            ]
-                        })
+                        i,
+                        jsx("p", {
+                            style: "font-size: 0.9em;",
+                            children: _("Traffic counts DERP packet payload only; rates update about every 5 seconds.")
+                        }),
+                        d,
+                        o,
+                        r
                     ]
                 })
             ]
