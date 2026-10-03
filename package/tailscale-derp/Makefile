@@ -20,6 +20,7 @@ PKG_BUILD_PARALLEL:=1
 PKG_BUILD_FLAGS:=no-mips16
 
 GO_PKG:=github.com/LazuliKao/tailscale-derp
+GO_PKG_TAGS:=uciconfig
 GO_PKG_LDFLAGS_X:=main.version=$(PKG_VERSION)
 
 # The upstream DERP dependency must stay pinned in src/go.mod.
